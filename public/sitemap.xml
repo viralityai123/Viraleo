@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://viraleo.pro/</loc><priority>1.0</priority><changefreq>weekly</changefreq></url>
+  <url><loc>https://viraleo.pro/blog</loc><priority>0.7</priority><changefreq>weekly</changefreq></url>
+  <url><loc>https://viraleo.pro/blog/thumbnails-matter</loc><priority>0.6</priority><changefreq>monthly</changefreq></url>
+  <url><loc>https://viraleo.pro/blog/niche-finding-guide</loc><priority>0.6</priority><changefreq>monthly</changefreq></url>
+  <url><loc>https://viraleo.pro/login</loc><priority>0.5</priority><changefreq>monthly</changefreq></url>
+  <url><loc>https://viraleo.pro/select-plan</loc><priority>0.7</priority><changefreq>monthly</changefreq></url>
+  <url><loc>https://viraleo.pro/pre-analysis</loc><priority>0.8</priority><changefreq>weekly</changefreq></url>
+  <url><loc>https://viraleo.pro/thumbnail-test</loc><priority>0.8</priority><changefreq>weekly</changefreq></url>
+  <url><loc>https://viraleo.pro/niche-ranker</loc><priority>0.8</priority><changefreq>weekly</changefreq></url>
+  <url><loc>https://viraleo.pro/shadowban-detector</loc><priority>0.8</priority><changefreq>weekly</changefreq></url>
+  <url><loc>https://viraleo.pro/history</loc><priority>0.4</priority><changefreq>monthly</changefreq></url>
+  <url><loc>https://viraleo.pro/account</loc><priority>0.4</priority><changefreq>monthly</changefreq></url>
+  <url><loc>https://viraleo.pro/partner-program</loc><priority>0.6</priority><changefreq>monthly</changefreq></url>
+  <url><loc>https://viraleo.pro/support</loc><priority>0.6</priority><changefreq>weekly</changefreq></url>
+  <url><loc>https://viraleo.pro/faq</loc><priority>0.6</priority><changefreq>monthly</changefreq></url>
+  <url><loc>https://viraleo.pro/terms</loc><priority>0.3</priority><changefreq>yearly</changefreq></url>
+  <url><loc>https://viraleo.pro/privacy-policy</loc><priority>0.3</priority><changefreq>yearly</changefreq></url>
+  <url><loc>https://viraleo.pro/cookies</loc><priority>0.3</priority><changefreq>yearly</changefreq></url>
+</urlset>

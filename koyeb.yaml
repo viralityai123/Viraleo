@@ -1,0 +1,43 @@
+# =============================================================================
+# Koyeb Deploy Config — Viraleo
+# =============================================================================
+# 1. Push this repo to GitHub
+# 2. Go to https://app.koyeb.com
+# 3. Create App → Deploy from GitHub → Select your repo
+# 4. Koyeb auto-detects this config
+# =============================================================================
+
+name: viraleo
+region: was   # Washington DC (closest to India). Change if needed.
+
+env:
+  - key: NODE_ENV
+    value: production
+  - key: PORT
+    value: "3000"
+  - key: HOST
+    value: 0.0.0.0
+
+# ── Build ────────────────────────────────────────────────────────────────────
+build:
+  builder: NIXPACKS   # Buildpacks (auto-detects Node.js)
+  # Use vite build directly (not npm run build) to skip Vercel postbuild
+  build_command: NITRO_PRESET=node-server npx vite build
+
+# ── Run ──────────────────────────────────────────────────────────────────────
+run:
+  command: node .output/server/index.mjs
+  port: 3000
+
+# ── Health check ─────────────────────────────────────────────────────────────
+health_checks:
+  - path: /
+    interval: 30
+    timeout: 5
+    retries: 3
+    initial_delay: 10
+
+# ── Scaling ──────────────────────────────────────────────────────────────────
+scaling:
+  min: 1
+  max: 1

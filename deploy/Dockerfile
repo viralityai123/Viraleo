@@ -1,0 +1,62 @@
+# =============================================================================
+# Dockerfile — Production build for Oracle Cloud ARM VM (Ampere A1)
+# =============================================================================
+# Build:  docker build -t viraleo -f deploy/Dockerfile .
+# Run:    docker run -d --name viraleo -p 3000:3000 --env-file .env viraleo
+# =============================================================================
+
+# ─── Stage 1: Install deps + Build ───────────────────────────────────────────
+FROM node:22-bookworm-slim AS builder
+
+WORKDIR /app
+
+# Copy dependency manifests first (maximizes Docker layer cache)
+COPY package.json package-lock.json bun.lock* bunfig.toml* ./
+COPY scripts/ ./scripts/
+RUN npm ci
+
+# Copy all source code
+COPY tsconfig.json vite.config.ts ./
+COPY public/ ./public/
+COPY src/ ./src/
+COPY server/ ./server/
+
+# Build with Node.js server preset (overrides Vercel preset from vite.config.ts)
+# vite build directly (not npm run build) skips the Vercel-specific postbuild
+RUN NITRO_PRESET=node-server ./node_modules/.bin/vite build
+
+# ─── Stage 2: Production runtime ─────────────────────────────────────────────
+FROM node:22-alpine AS runner
+
+# Install wget for healthcheck
+RUN apk add --no-cache wget ca-certificates tzdata
+
+WORKDIR /app
+
+# Create non-root user for security
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+
+# Copy built output from builder (Nitro bundles all deps into .output/)
+COPY --from=builder /app/.output /app/.output
+
+# Copy env template (actual values injected via --env-file at runtime)
+COPY deploy/.env.production /app/.env.example
+
+# Set correct permissions
+RUN chown -R appuser:appgroup /app
+
+USER appuser
+
+# Environment defaults
+ENV NODE_ENV=production
+ENV PORT=3000
+ENV HOST=0.0.0.0
+
+EXPOSE 3000
+
+# Health check — verifies the server is responding
+HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:3000/ || exit 1
+
+# Start the Nitro standalone Node.js server
+CMD ["node", ".output/server/index.mjs"]
