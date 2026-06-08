@@ -82,7 +82,7 @@ function ThumbnailsArticle() {
             <p className="text-sm font-semibold text-emerald-800">
               Want to test your thumbnails? Upload a variant in Viraleo and get a data-backed CTR score in seconds.
             </p>
-            <Link to="/thumbnail-test" className="inline-flex items-center gap-1.5 mt-3 text-sm font-bold text-emerald-600 hover:text-emerald-700 transition-colors">
+            <Link to="/thumbnail-test" search={{} as any} className="inline-flex items-center gap-1.5 mt-3 text-sm font-bold text-emerald-600 hover:text-emerald-700 transition-colors">
               Try Thumbnail Test <ArrowLeft size={14} className="rotate-180" />
             </Link>
           </div>

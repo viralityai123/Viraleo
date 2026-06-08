@@ -93,7 +93,7 @@ function CallbackPage() {
       return;
     }
 
-    const redirectUri = `https://viraleo.pro/auth/callback`;
+    const redirectUri = `${window.location.origin}/auth/callback`;
 
     exchangeGoogleCode({ data: { code, redirectUri } }).then((result) => {
       if (!result.ok) {

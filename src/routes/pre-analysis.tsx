@@ -271,7 +271,12 @@ export const analyzeVideoServer = createServerFn({ method: "POST" })
       channelQuery?: string;
     }) => d
   )
-  .handler(async ({ data }) => JSON.parse(JSON.stringify(await runPreAnalysis(data))));
+  .handler(async ({ data }) => {
+    const { requireAuth, requireCredits } = await import("@/lib/auth/server-auth");
+    const user = await requireAuth();
+    await requireCredits(user.email);
+    return JSON.parse(JSON.stringify(await runPreAnalysis(data)));
+  });
 
 function PreAnalysisPage() {
   const { channel: channelParam, activityId: activityIdParam } = Route.useSearch();
@@ -404,6 +409,7 @@ function PreAnalysisPage() {
     }
 
     let resultData: AIData | null = null;
+    let analysisSucceeded = false;
     try {
       const raw = await analyzeVideoServer({
         data: {
@@ -432,44 +438,58 @@ function PreAnalysisPage() {
       };
       setIntelProof({ channelDigest, dataReceipts, hasTranscript });
       resultData = rest as AIData;
+      analysisSucceeded = true;
+      // Credit deducted server-side via requireCredits; sync local for UI
+      deductCredit();
+      recordUsage("preAnalysis");
+      const entry = addActivity("pre-analysis", videoTitle.trim(), meta.name);
+      saveResult(entry.id, resultData);
+      toast.success("Analysis complete!");
     } catch (err) {
-      console.warn("Multimodal AI failed, falling back to local simulation:", err);
-      const localResult = analyseLocal(meta);
-      resultData = {
-        overallScore: toTenScale(localResult.overallScore),
-        explanation: localResult.explanation,
-        metrics: localResult.metrics.map((x) => ({
-          label: x.label,
-          score: toTenScale(x.score),
-          copy: x.explanation,
-        })),
-        flags: localResult.flags.map((x) => ({
-          level: x.type === "error" ? "critical" : x.type === "warn" ? "warning" : "ok",
-          title: x.title,
-          body: x.desc,
-        })),
-        dropoffMeta: {
-          durationSec: meta.duration,
-          cutDensity: meta.duration > 60 ? +(Math.random() * 0.3 + 0.3).toFixed(2) : +(Math.random() * 0.25 + 0.55).toFixed(2),
-          audioEnergy: meta.duration > 60 ? +(Math.random() * 0.35 + 0.3).toFixed(2) : +(Math.random() * 0.25 + 0.5).toFixed(2),
-          hookScore: localResult.metrics[0].score * 10,
-        },
-      };
+      // Check for auth/credit errors from the server
+      const message = err instanceof Error ? err.message : String(err);
+      if (message === "UNAUTHORIZED") {
+        toast.error("Session expired. Please sign in again.");
+      } else if (message === "OUT_OF_CREDITS") {
+        toast.error("You're out of credits for this month. Upgrade your plan to continue.");
+      } else {
+        console.warn("Multimodal AI failed, falling back to local simulation:", err);
+        toast.warning("AI analysis unavailable. Showing local estimate — results may not be accurate.");
+        const localResult = analyseLocal(meta);
+        resultData = {
+          overallScore: toTenScale(localResult.overallScore),
+          explanation: localResult.explanation,
+          metrics: localResult.metrics.map((x) => ({
+            label: x.label,
+            score: toTenScale(x.score),
+            copy: x.explanation,
+          })),
+          flags: localResult.flags.map((x) => ({
+            level: x.type === "error" ? "critical" : x.type === "warn" ? "warning" : "ok",
+            title: x.title,
+            body: x.desc,
+          })),
+          dropoffMeta: {
+            durationSec: meta.duration,
+            cutDensity: meta.duration > 60 ? +(Math.random() * 0.3 + 0.3).toFixed(2) : +(Math.random() * 0.25 + 0.55).toFixed(2),
+            audioEnergy: meta.duration > 60 ? +(Math.random() * 0.35 + 0.3).toFixed(2) : +(Math.random() * 0.25 + 0.5).toFixed(2),
+            hookScore: localResult.metrics[0].score * 10,
+          },
+        };
+        // No credit deducted for local fallback — only AI analysis costs
+        recordUsage("preAnalysis");
+        const entry = addActivity("pre-analysis", videoTitle.trim(), meta.name);
+        saveResult(entry.id, resultData);
+      }
     } finally {
       clearInterval(interval);
       setProgress(100);
-      deductCredit();
-      recordUsage("preAnalysis");
-      if (resultData) {
-        const entry = addActivity("pre-analysis", videoTitle.trim(), meta.name);
-        saveResult(entry.id, resultData);
-        toast.success("Analysis complete!");
-      } else {
+      if (!resultData) {
         toast.error("Analysis failed. Please try again.");
       }
       setTimeout(() => {
         setAiData(resultData);
-        setPhase("results");
+        if (resultData) setPhase("results");
       }, 400);
     }
   }, [file, meta, videoTitle, niche, compareCompetitor, competitorHandle]);
@@ -499,7 +519,7 @@ function PreAnalysisPage() {
     : [];
 
   return (
-    <div className="min-h-screen bg-surface text-ink font-text relative overflow-hidden">
+    <div className="min-h-screen bg-surface text-ink font-text relative">
       {/* Ambient backdrop */}
       {phase === "drop" && (
         <div className="pointer-events-none absolute inset-0 opacity-60">
@@ -602,7 +622,7 @@ function PreAnalysisPage() {
             <div className="text-[12px] uppercase tracking-[0.14em] text-ink-soft font-medium">
               Pre-Upload
             </div>
-            <h1 className="mt-3 font-display text-[44px] md:text-[56px] leading-[1.02] font-semibold tracking-[-0.025em] text-ink">
+            <h1 className="mt-3 font-display text-[28px] sm:text-[44px] md:text-[56px] leading-[1.02] font-semibold tracking-[-0.025em] text-ink">
               Drop your raw file.
             </h1>
             <p className="mt-3 text-[15px] text-ink-soft max-w-md mx-auto">
@@ -693,12 +713,12 @@ function PreAnalysisPage() {
 
       {/* RESULTS PHASE */}
       {phase === "results" && meta && aiData && (
-        <main className="mx-auto max-w-7xl px-6 pt-12 pb-24 relative z-10">
+        <main className="mx-auto max-w-7xl px-4 sm:px-6 pt-12 pb-24 relative z-10">
           <div className="mb-10">
             <div className="text-[12px] uppercase tracking-[0.14em] text-ink-soft font-medium">
               Raw File · Audited Report
             </div>
-            <h1 className="mt-2 font-display text-[44px] md:text-[56px] leading-[1.02] font-semibold tracking-[-0.025em] text-ink">
+            <h1 className="mt-2 font-display text-[28px] sm:text-[44px] md:text-[56px] leading-[1.02] font-semibold tracking-[-0.025em] text-ink">
               Pre-Upload Audit
             </h1>
             <p className="mt-3 text-[15px] text-ink-soft max-w-xl">
@@ -738,19 +758,24 @@ function PreAnalysisPage() {
             </div>
           </div>
 
-          <div className="mt-12 flex flex-wrap items-center gap-3">
-            <button
-              className="rounded-full bg-good text-ink px-5 py-2.5 text-[14px] font-semibold hover:opacity-90 transition cursor-pointer"
-              onClick={reset}
-            >
-              Analyse Another File
-            </button>
-            <Link
-              to="/pre-analysis" search={{ channel: undefined, activityId: undefined }}
-              className="rounded-full border border-hairline bg-surface px-5 py-2.5 text-[14px] font-medium text-ink hover:bg-surface-2 transition"
-            >
-              ← Back to Search
-            </Link>
+          <div className="mt-16 mb-6 rounded-2xl bg-gradient-to-br from-emerald-50 via-white to-emerald-50/50 border border-emerald-100/60 p-6 sm:p-8">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
+              <div className="shrink-0 size-12 rounded-xl bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center shadow-lg shadow-emerald-200/50">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-[17px] font-bold text-emerald-900">Need deeper insights?</h3>
+                <p className="text-[13px] text-emerald-700/70 mt-1">Upgrade to Creator plan for unlimited video pre-analyses, priority processing, and competitor benchmarking.</p>
+              </div>
+              <div className="flex items-center gap-3 shrink-0 flex-wrap">
+                <Link to="/select-plan" className="rounded-full bg-emerald-500 text-white px-5 py-2.5 text-[14px] font-semibold hover:bg-emerald-600 transition shadow-sm whitespace-nowrap">
+                  Upgrade →
+                </Link>
+                <button onClick={reset} className="rounded-full border border-hairline bg-white px-4 py-2.5 text-[13px] font-medium text-ink hover:bg-surface-2 transition whitespace-nowrap">
+                  Analyse Another
+                </button>
+              </div>
+            </div>
           </div>
         </main>
       )}

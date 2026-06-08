@@ -16,6 +16,16 @@ const recordReferralSignup = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+const serverSaveUserPlan = createServerFn({ method: "POST" })
+  .inputValidator((d: { email: string; tier: string }) => d)
+  .handler(async ({ data }) => {
+    const { saveUserPlan } = await import("@/lib/user-plan");
+    if (data.email && (data.tier === "creator" || data.tier === "pro")) {
+      await saveUserPlan(data.email, data.tier);
+    }
+    return { ok: true };
+  });
+
 const recordCommission = createServerFn({ method: "POST" })
   .inputValidator((d: {
     id: string;
@@ -117,6 +127,9 @@ function PaymentSuccessPage() {
         localStorage.setItem("viraleo:plan-selected", "true");
         localStorage.setItem("viraleo:plan-source", "paid");
         setStatus("success");
+        if (userEmail) {
+          serverSaveUserPlan({ data: { email: userEmail, tier: planTier } }).catch(() => {});
+        }
       } else {
         setStatus("error");
         return;

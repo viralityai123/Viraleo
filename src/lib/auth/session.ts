@@ -99,11 +99,11 @@ export function getSessionCookie(headers: Record<string, string>): string | unde
 }
 
 export function serializeSessionCookie(token: string): string {
-  return `${SESSION_COOKIE}=${token}; Path=/; Max-Age=${SESSION_TTL_SEC}; SameSite=None; Secure; Partitioned`;
+  return `${SESSION_COOKIE}=${token}; Path=/; Max-Age=${SESSION_TTL_SEC}; SameSite=Lax; Secure`;
 }
 
 export function clearSessionCookie(): string {
-  return `${SESSION_COOKIE}=; Path=/; Max-Age=0; SameSite=None; Secure`;
+  return `${SESSION_COOKIE}=; Path=/; Max-Age=0; SameSite=Lax; Secure`;
 }
 
 export function getSessionFromToken(token: string): SessionPayload | null {
@@ -118,6 +118,14 @@ export function getSessionFromToken(token: string): SessionPayload | null {
   } catch {
     return null;
   }
+}
+
+export async function getSessionFromServer(headers: Headers, secret: string): Promise<SessionPayload | null> {
+  const cookieHeader = headers.get("cookie");
+  const cookies = parseCookies(cookieHeader);
+  const token = cookies[SESSION_COOKIE];
+  if (!token) return null;
+  return verifySession(token, secret);
 }
 
 export function getSessionToken(): string | null {

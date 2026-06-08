@@ -10,6 +10,14 @@ import { trackSignup } from "@/lib/partner-store";
 import { createServerFn } from "@tanstack/react-start";
 import "@/components/landing-v2/landing-v2.css";
 
+const fetchUserPlanFromKv = createServerFn({ method: "POST" })
+  .inputValidator((d: { email: string }) => d)
+  .handler(async ({ data }) => {
+    const { getUserPlan } = await import("@/lib/user-plan");
+    const stored = await getUserPlan(data.email);
+    return stored?.tier || null;
+  });
+
 const recordReferralSignup = createServerFn({ method: "POST" })
   .inputValidator((d: { slug: string; email: string }) => d)
   .handler(async ({ data }) => {
@@ -106,18 +114,33 @@ function SelectPlanPage() {
   const [selecting, setSelecting] = useState<PlanTier | null>(null);
 
   useEffect(() => {
-    const source = localStorage.getItem("viraleo:plan-source");
-    if (source !== "paid") {
-      const planInfo = getPlanInfo();
-      if (planInfo.tier !== "free") {
-        setPlan("free");
-        localStorage.removeItem("viraleo:plan-selected");
+    async function init() {
+      const source = localStorage.getItem("viraleo:plan-source");
+      const localPlan = getPlanInfo();
+
+      if (source !== "paid") {
+        const session = getSessionFromDocument();
+        let kvTier: string | null = null;
+        if (session?.email) {
+          kvTier = await fetchUserPlanFromKv({ data: { email: session.email } });
+        }
+
+        if (kvTier === "creator" || kvTier === "pro") {
+          setPlan(kvTier);
+          localStorage.setItem("viraleo:plan-source", "paid");
+          localStorage.setItem("viraleo:plan-selected", "true");
+        } else if (localPlan.tier !== "free") {
+          setPlan("free");
+          localStorage.removeItem("viraleo:plan-selected");
+        }
+      }
+
+      const info = getPlanInfo();
+      if (info.tier !== "free" || localStorage.getItem("viraleo:plan-selected")) {
+        setCurrentTier(info.tier);
       }
     }
-    const info = getPlanInfo();
-    if (info.tier !== "free" || localStorage.getItem("viraleo:plan-selected")) {
-      setCurrentTier(info.tier);
-    }
+    init();
   }, []);
 
   async function handleSelect(tier: PlanTier) {
@@ -205,7 +228,7 @@ function SelectPlanPage() {
                   {!isLoading && !isCurrent && <ArrowRight size={15} />}
                 </button>
                 <ul className="mt-7 space-y-3">
-                  {p.feats.map(function (f) {
+                  {p.feats.map(function (f: string) {
                     if (p.tier === "free" && f === "Public benchmarks") {
                       return (
                         <li key={f} className="flex gap-2.5 text-[14px] feat opacity-60">

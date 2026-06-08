@@ -423,7 +423,7 @@ export function DropoffPredictor({ meta }: { meta: DropoffMeta }) {
             className="text-center py-3"
           >
             <div
-              className="text-[44px] font-bold font-display leading-none"
+              className="text-[28px] sm:text-[44px] font-bold font-display leading-none"
               style={{ color: gradeColor[prediction.retentionGrade] }}
             >
               {prediction.retentionGrade}

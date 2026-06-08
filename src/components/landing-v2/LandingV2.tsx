@@ -14,7 +14,6 @@ import {
   Layers,
   Zap,
   TrendingUp,
-  CheckCircle2,
   XCircle,
   Link2,
   FileText,
@@ -215,13 +214,13 @@ function Hero() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, ease: [0.2, 0.8, 0.2, 1] }}
         >
-          <span style={{ display: "block", whiteSpace: "nowrap" }}>
+          <span className="lv2-hero-line">
             Stop Uploading{" "}
             <span className={`lv2-blind ${glitching ? "lv2-blind--hit" : ""}`}>
               Blind
             </span>
           </span>
-          <span style={{ display: "block", whiteSpace: "nowrap" }}>
+          <span className="lv2-hero-line">
             Upload{" "}
             <span className="lv2-rainbow-underline">
               Strategically
@@ -272,9 +271,6 @@ function Hero() {
             Analyze Your First Video
             <ArrowRight size={16} />
           </Link>
-          <a href="#how" className="lv2-btn-ghost">
-            See What's Possible
-          </a>
         </motion.div>
 
       </div>
@@ -301,21 +297,30 @@ function ProductMock() {
         </div>
 
         <div ref={ref} className="relative max-w-[1080px] mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 60, rotateX: 8 }}
-            animate={inView ? { opacity: 1, y: 0, rotateX: 0 } : {}}
-            transition={{ duration: 1, ease: [0.2, 0.8, 0.2, 1] }}
-            className="lv2-frame"
-            style={{ transformPerspective: 1400 }}
-          >
-            <div className="bar">
-              <i /><i /><i />
-              <span className="url">viraleo.pro / mrbeast</span>
+          {/* Mobile scroll hint */}
+          <p className="md:hidden text-center text-[11px] text-[color:var(--lv2-ink-mute)] mb-3">
+            ← Swipe to explore →
+          </p>
+          {/* Horizontal scroll container on mobile so frame is never clipped */}
+          <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0 md:overflow-visible pb-2 md:pb-0">
+            <div style={{ minWidth: "min(100%, 720px)" }}>
+              <motion.div
+                initial={{ opacity: 0, y: 60, rotateX: 8 }}
+                animate={inView ? { opacity: 1, y: 0, rotateX: 0 } : {}}
+                transition={{ duration: 1, ease: [0.2, 0.8, 0.2, 1] }}
+                className="lv2-frame"
+                style={{ transformPerspective: 1400 }}
+              >
+                <div className="bar">
+                  <i /><i /><i />
+                  <span className="url">viraleo.pro / mrbeast</span>
+                </div>
+                <MockDashboard />
+              </motion.div>
             </div>
-            <MockDashboard />
-          </motion.div>
+          </div>
 
-          {/* floating chips */}
+          {/* floating chips — desktop only */}
           {[
             { x: "-8%", y: "12%", dot: "#18c964", k: "Hook score", v: "94" },
             { x: "92%", y: "20%", dot: "#7c5cff", k: "Predicted CTR", v: "12.8%" },
@@ -1265,36 +1270,6 @@ function ProofSection() {
           </a>
         </motion.div>
 
-        {/* Motivational Closer */}
-        <motion.div
-          initial={{ opacity: 0, y: 30, scale: 0.95 }}
-          whileInView={{ opacity: 1, y: 0, scale: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.7, delay: 0.2, ease: [0.2, 0.8, 0.2, 1] }}
-          className="text-center"
-        >
-          <div className="lv2-proof-closer">
-            <motion.p
-              initial={{ opacity: 0, y: 10 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-              className="lv2-proof-closer-line"
-            >
-              Your next viral video is waiting.
-            </motion.p>
-            <motion.p
-              initial={{ opacity: 0, y: 10 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.45 }}
-              className="lv2-proof-closer-cta"
-            >
-              Stop guessing.{" "}
-              <span className="dominate">Start dominating.</span>
-            </motion.p>
-          </div>
-        </motion.div>
       </div>
     </section>
   );
@@ -1302,25 +1277,24 @@ function ProofSection() {
 
 function FinalCta() {
   return (
-    <section className="lv2-section" style={{ paddingTop: 80, paddingBottom: 80 }}>
-      <div className="lv2-container max-w-3xl mx-auto text-center">
+    <section className="lv2-section" style={{ paddingTop: 100, paddingBottom: 100 }}>
+      <div className="lv2-container text-center">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.7 }}
         >
-          <h2 className="text-[clamp(32px,4.5vw,54px)] font-extrabold text-[color:var(--lv2-ink)] leading-[1.15] tracking-[-0.03em] mb-4">
-            Start creating viral videos today
+          <h2 className="text-[clamp(36px,6vw,80px)] font-extrabold text-[color:var(--lv2-ink)] leading-[1.05] tracking-[-0.04em] mb-6">
+            Stop guessing.{" "}
+            <span className="dominate">Start dominating.</span>
           </h2>
-          <p className="text-lg text-[color:var(--lv2-ink-soft)] mb-8 max-w-2xl mx-auto">
-            Know what works before you hit record. Track trends, analyze competitors, and create thumbnails that convert—all backed by real-time YouTube data.
-          </p>
           <Link
             to="/login"
-            className="inline-block px-10 py-4 rounded-full bg-white text-black text-lg font-bold shadow-xl hover:scale-105 transition-transform"
+            className="lv2-btn-primary text-[18px] px-10 py-4"
           >
-            Get Started
+            Dominate Now
+            <ArrowRight size={20} />
           </Link>
         </motion.div>
       </div>

@@ -22,7 +22,6 @@
     "SF Pro Display", -apple-system, BlinkMacSystemFont, "Inter", system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  overflow-x: hidden;
 }
 
 .lv2 .display {
@@ -413,7 +412,7 @@
 .lv2-rule { height: 1px; background: var(--lv2-hairline); width: 100%; }
 
 /* Section spacing */
-.lv2-section { position: relative; padding: 120px 24px; }
+.lv2-section { position: relative; padding: 120px 24px; overflow-x: hidden; }
 .lv2-container { max-width: 1200px; margin: 0 auto; }
 
 /* How It Works steps */
@@ -630,9 +629,29 @@
 @media (prefers-reduced-motion: reduce) {
 }
 
+.lv2-hero-line {
+  display: block;
+  white-space: nowrap;
+}
+
 /* Mobile */
 @media (max-width: 768px) {
-  .lv2-section { padding: 80px 18px; }
+  .lv2-section { padding: 60px 16px; }
   .lv2-nav { left: 12px; right: 12px; transform: none; }
   .lv2-nav .hide-m { display: none; }
+  .lv2-hero-line { white-space: normal; }
+
+  /* ProductMock: make the browser frame scrollable instead of clipped */
+  .lv2-frame {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: 14px;
+  }
+  .lv2-frame > div {
+    min-width: 720px;
+  }
+  /* Hide overflow chips on mobile (they render outside bounds) */
+  .lv2-chip {
+    display: none !important;
+  }
 }

@@ -53,7 +53,7 @@ export function ScoreRing({
           </div>
         </div>
         <div>
-          <div className="font-display text-[44px] leading-none font-semibold tracking-tight text-ink">
+          <div className="font-display text-[28px] sm:text-[44px] leading-none font-semibold tracking-tight text-ink">
             {score}
             <span className="text-ink-soft text-[22px] font-normal">/{maxScore}</span>
           </div>

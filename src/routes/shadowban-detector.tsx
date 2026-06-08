@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
@@ -36,6 +36,9 @@ export const Route = createFileRoute("/shadowban-detector")({
 export const detectShadowbanServer = createServerFn({ method: "POST" })
   .inputValidator((d: { channel: string }) => d)
   .handler(async ({ data }) => {
+    const { requireAuth, requireCredits } = await import("@/lib/auth/server-auth");
+    const user = await requireAuth();
+    await requireCredits(user.email);
     return runShadowbanDetection(data.channel);
   });
 
@@ -175,6 +178,9 @@ function ShadowbanDetectorPage() {
       } else if (msg.includes("YOUTUBE_API_NOT_ENABLED")) {
         toast.error("The YouTube Data API v3 is not enabled in your Google Cloud project.");
         setPhase("idle");
+      } else if (msg.includes("All AI generation")) {
+        toast.error("AI generation unavailable. Check your Gemini API keys in .env or try again later.");
+        setPhase("idle");
       } else {
         toast.error(`Scan failed: ${msg || "Unknown error"}. Please try again.`);
         setPhase("idle");
@@ -186,7 +192,7 @@ function ShadowbanDetectorPage() {
   const cfg = data ? STATUS_CONFIG[data.status] : null;
 
   return (
-    <div className="min-h-screen bg-surface text-ink font-text relative overflow-x-hidden">
+    <div className="min-h-screen bg-surface text-ink font-text relative">
       {/* Ambient */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden -z-0">
         <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[600px] h-[400px] rounded-full bg-red-500/5 blur-[120px]" />
@@ -303,7 +309,7 @@ function ShadowbanDetectorPage() {
         {/* RESULTS */}
         {phase === "results" && data && cfg && (
           <motion.main key="results" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-            className="relative z-10 max-w-[1200px] mx-auto px-6 pt-10 pb-24"
+            className="relative z-10 max-w-[1200px] mx-auto px-4 sm:px-6 pt-10 pb-24"
           >
             {/* Back */}
             <button onClick={reset} className="text-[12px] font-semibold text-ink-soft hover:text-ink uppercase tracking-widest mb-8 flex items-center gap-1.5 transition">
@@ -425,6 +431,23 @@ function ShadowbanDetectorPage() {
                     <div className="font-bold text-[14px] text-emerald-700 mb-1">Estimated Recovery Timeline</div>
                     <p className="text-[13px] text-emerald-700/80">{data.recoveryTimeline}</p>
                   </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-16 mb-6 rounded-2xl bg-gradient-to-br from-emerald-50 via-white to-emerald-50/50 border border-emerald-100/60 p-6 sm:p-8">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
+                <div className="shrink-0 size-12 rounded-xl bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center shadow-lg shadow-emerald-200/50">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-[17px] font-bold text-emerald-900">Monitor channels daily</h3>
+                  <p className="text-[13px] text-emerald-700/70 mt-1">Upgrade to Creator plan for unlimited shadowban scans, daily monitoring, and priority detection alerts.</p>
+                </div>
+                <div className="flex items-center gap-3 shrink-0 flex-wrap">
+                  <Link to="/select-plan" className="rounded-full bg-emerald-500 text-white px-5 py-2.5 text-[14px] font-semibold hover:bg-emerald-600 transition shadow-sm whitespace-nowrap">
+                    Upgrade →
+                  </Link>
                 </div>
               </div>
             </div>

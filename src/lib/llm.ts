@@ -24,22 +24,20 @@ async function tryGemini(
   keys: string[],
   modelNames: string[],
   userPrompt: string,
-  _imageParts: ImagePart[],
+  imageParts: ImagePart[],
   temperature: number
 ): Promise<string | null> {
   for (let i = 0; i < keys.length; i++) {
     const key = keys[i];
+
     for (const modelName of modelNames) {
       try {
+        const parts = [{ text: userPrompt }, ...imageParts];
         const body = JSON.stringify({
           systemInstruction: {
             parts: [{ text: VIRALEO_SYSTEM_PROMPT }],
           },
-          contents: [
-            {
-              parts: [{ text: userPrompt }],
-            },
-          ],
+          contents: [{ parts }],
           generationConfig: { temperature },
         });
 

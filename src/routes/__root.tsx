@@ -10,8 +10,18 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
+import { createServerFn } from "@tanstack/react-start";
 import { getSessionFromDocument, clearSessionCookie, type SessionPayload } from "@/lib/auth/session";
+import { clearPlanAndCredits, setPlan, type PlanTier } from "@/lib/credits";
 import { toast, Toaster } from "sonner";
+
+const fetchUserPlanFromKv = createServerFn({ method: "POST" })
+  .inputValidator((d: { email: string }) => d)
+  .handler(async ({ data }) => {
+    const { getUserPlan } = await import("@/lib/user-plan");
+    const stored = await getUserPlan(data.email);
+    return stored?.tier || null;
+  });
 
 import appCss from "../styles.css?url";
 
@@ -29,12 +39,12 @@ function NotFoundComponent() {
         <div className="mt-8 flex flex-col gap-2">
           <Link to="/" className="rounded-xl bg-emerald-500 text-white px-5 py-2.5 text-sm font-bold hover:bg-emerald-600 transition">Go home</Link>
           <div className="flex gap-2 justify-center mt-2">
-            <Link to="/thumbnail-test" className="text-xs text-ink-soft hover:text-ink underline underline-offset-2">Thumbnail Test</Link>
-            <Link to="/niche-ranker" className="text-xs text-ink-soft hover:text-ink underline underline-offset-2">Niche Ranker</Link>
-            <Link to="/shadowban-detector" className="text-xs text-ink-soft hover:text-ink underline underline-offset-2">Shadowban Detector</Link>
+            <Link to="/thumbnail-test" search={{} as any} className="text-xs text-ink-soft hover:text-ink underline underline-offset-2">Thumbnail Test</Link>
+            <Link to="/niche-ranker" search={{} as any} className="text-xs text-ink-soft hover:text-ink underline underline-offset-2">Niche Ranker</Link>
+            <Link to="/shadowban-detector" search={{} as any} className="text-xs text-ink-soft hover:text-ink underline underline-offset-2">Shadowban Detector</Link>
           </div>
           <div className="flex gap-2 justify-center">
-            <Link to="/pre-analysis" className="text-xs text-ink-soft hover:text-ink underline underline-offset-2">Pre-Analysis</Link>
+            <Link to="/pre-analysis" search={{} as any} className="text-xs text-ink-soft hover:text-ink underline underline-offset-2">Pre-Analysis</Link>
             <Link to="/select-plan" className="text-xs text-ink-soft hover:text-ink underline underline-offset-2">Pricing</Link>
             <Link to="/faq" className="text-xs text-ink-soft hover:text-ink underline underline-offset-2">FAQ</Link>
           </div>
@@ -157,11 +167,24 @@ function useSession() {
   useEffect(() => {
     const s = getSessionFromDocument();
     setSession(s);
+    if (s?.email) {
+      // Sync plan from KV on initial load
+      fetchUserPlanFromKv({ data: { email: s.email } }).then((tier) => {
+        if (tier === "creator" || tier === "pro") {
+          setPlan(tier as PlanTier);
+          localStorage.setItem("viraleo:plan-source", "paid");
+          localStorage.setItem("viraleo:plan-selected", "true");
+        }
+      }).catch(() => {});
+    }
     setLoaded(true);
   }, []);
   const signOut = () => {
     document.cookie = clearSessionCookie();
+    clearPlanAndCredits();
     setSession(null);
+    // Hard navigate to home so no protected page content remains in view
+    if (typeof window !== "undefined") window.location.href = "/";
   };
   return { session, loaded, signOut };
 }
@@ -327,15 +350,40 @@ function RootComponent() {
   const isFullWidth = fullWidthRoutes.includes(pathname);
   const { session, loaded, signOut } = useSession();
   const navigate = useNavigate();
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+
+  // Determine if current path is public before any rendering
+  const publicPaths = ["/", "/login", "/auth/", "/select-plan", "/partner-program", "/ref/", "/blog", "/faq", "/privacy-policy", "/terms", "/cookies", "/support"];
+  const isPublicPath = publicPaths.some((p) => pathname.startsWith(p));
 
   useEffect(() => {
     if (!loaded) return;
-    const publicPaths = ["/", "/login", "/auth/", "/select-plan", "/partner-program", "/ref/"];
-    const isPublic = publicPaths.some((p) => pathname.startsWith(p));
-    if (!isPublic && !session) {
+    if (!isPublicPath && !session) {
       navigate({ to: "/login" });
     }
-  }, [loaded, session, pathname]);
+  }, [loaded, session, pathname, isPublicPath]);
+
+  useEffect(() => {
+    setMobileSidebarOpen(false);
+  }, [pathname]);
+
+  // SECURITY: Block render entirely when user is unauthenticated on a protected route.
+  // This eliminates the "flash of dashboard" where tools show briefly before redirect.
+  if (!loaded && !isPublicPath) {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <div className="flex min-h-screen items-center justify-center bg-surface">
+          <div className="text-center">
+            <div className="mx-auto size-10 rounded-full border-2 border-ink/10 border-t-ink animate-spin" />
+          </div>
+        </div>
+      </QueryClientProvider>
+    );
+  }
+
+  if (loaded && !isPublicPath && !session) {
+    return null;
+  }
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -343,8 +391,27 @@ function RootComponent() {
         <Outlet />
       ) : (
         <div className="flex w-full min-h-screen">
-          <RootSidebar session={session} signOut={signOut} />
-          <div className="flex-1 ml-[68px]">
+          {mobileSidebarOpen && (
+            <div
+              className="fixed inset-0 bg-black/30 z-40 lg:hidden animate-[fadeIn_.2s_ease]"
+              onClick={() => setMobileSidebarOpen(false)}
+            />
+          )}
+          <div className={`${mobileSidebarOpen ? 'open' : ''} beautiful-sidebar lg:!translate-x-0`}>
+            <RootSidebar session={session} signOut={signOut} />
+          </div>
+          <div className="flex-1 max-lg:ml-0 ml-[68px] relative">
+            <button
+              onClick={() => setMobileSidebarOpen(!mobileSidebarOpen)}
+              className="fixed top-3 left-3 z-30 lg:hidden size-9 flex items-center justify-center rounded-xl bg-white/80 backdrop-blur-md border border-hairline shadow-sm hover:bg-white transition"
+              aria-label="Toggle navigation"
+            >
+              {mobileSidebarOpen ? (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              ) : (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+              )}
+            </button>
             <Outlet />
           </div>
         </div>

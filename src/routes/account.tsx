@@ -50,8 +50,12 @@ function AccountPage() {
   }
 
   function handlePlanChange(tier: PlanTier) {
-    setPlan(tier);
-    refresh();
+    if (tier === "free") {
+      setPlan(tier);
+      refresh();
+    } else {
+      navigate({ to: "/select-plan" });
+    }
   }
 
   function handleLogout() {
@@ -244,7 +248,7 @@ function AccountPage() {
                         <span className="font-bold text-[15px] text-ink">{p.label}</span>
                         <span className="font-bold text-[15px] text-ink">{p.price}</span>
                       </div>
-                      <p className="text-[12px] text-ink-soft mt-0.5">{p.creditsPerDay} credits / day</p>
+                      <p className="text-[12px] text-ink-soft mt-0.5">{p.creditsPerMonth} credits / month</p>
                     </div>
                   </button>
                 );

@@ -18,7 +18,7 @@ import { ViraleoLogo } from "@/components/ViraleoLogo";
 import { Header } from "@/components/pre-analysis/Header";
 import { ScoreRing } from "@/components/pre-analysis/ScoreRing";
 import { MetricBars } from "@/components/pre-analysis/MetricBars";
-import { Play, Menu, Search as SearchIcon, Sun, Moon, LayoutGrid, ListMinus, Smartphone, ThumbsUp, ThumbsDown } from "lucide-react";
+import { Play, Menu, Search as SearchIcon, Sun, Moon, LayoutGrid, ListMinus, Smartphone, ThumbsUp, ThumbsDown, Zap } from "lucide-react";
 import { ChannelDigestCard, DataReceiptsStrip } from "@/components/intel/ChannelDigestCard";
 
 export const Route = createFileRoute("/thumbnail-test")({
@@ -57,7 +57,12 @@ export const analyzeThumbnailServer = createServerFn({ method: "POST" })
       variantLabel?: "A" | "B";
     }) => d
   )
-  .handler(async ({ data }) => runThumbnailTest(data));
+  .handler(async ({ data }) => {
+    const { requireAuth, requireCredits } = await import("@/lib/auth/server-auth");
+    const user = await requireAuth();
+    await requireCredits(user.email);
+    return runThumbnailTest(data);
+  });
 
 // ─── High-fidelity Mock Data for Feed Preview ─────────────────────────────────
 const MOCK_LONG = [
@@ -300,6 +305,7 @@ function ThumbnailTestPage() {
       recordUsage("thumbnailTest");
       const entry = addActivity("thumbnail-test", title, channelName || undefined);
       saveResult(entry.id, result);
+      toast.success("Analysis complete!");
     } catch (err: any) {
       console.error(err);
       const msg = err?.message || String(err);
@@ -313,9 +319,16 @@ function ThumbnailTestPage() {
         toast.error("The YouTube Data API returned an 'API key not valid' error.");
       } else if (msg.includes("YOUTUBE_API_NOT_ENABLED")) {
         toast.error("The YouTube Data API v3 is not enabled in your Google Cloud project.");
+      } else if (msg.includes("All AI generation")) {
+        toast.error("AI generation unavailable. Check your Gemini API keys in .env or try again later.");
       } else {
         toast.error(`AI analysis failed: ${msg || "Unknown error"}.`);
       }
+      // Stay on setup phase so user can retry — don't advance to blank results
+      clearInterval(interval);
+      setProgress(0);
+      setPhase("setup");
+      return;
     } finally {
       clearInterval(interval);
       setProgress(100);
@@ -473,7 +486,7 @@ function ThumbnailTestPage() {
   const longMocksSequence: any[] = [MOCK_LONG[0], {isUser: true}, MOCK_LONG[1], MOCK_LONG[2], MOCK_LONG[3], MOCK_LONG[4]];
 
   return (
-    <div className="min-h-screen bg-surface text-ink font-text relative overflow-x-hidden">
+    <div className="min-h-screen bg-surface text-ink font-text relative">
       
       {phase === "drop" && (
         <div className="pointer-events-none absolute inset-0 opacity-60">
@@ -492,7 +505,7 @@ function ThumbnailTestPage() {
               <ViraleoLogo linkTo="/pre-analysis" size="xl" showText={false} />
             </div>
             <div className="text-[12px] uppercase tracking-[0.14em] text-ink-soft font-medium">Visual Intelligence</div>
-            <h1 className="mt-3 font-display text-[44px] md:text-[56px] leading-[1.02] font-semibold tracking-[-0.025em] text-ink">
+            <h1 className="mt-3 font-display text-[28px] sm:text-[44px] md:text-[56px] leading-[1.02] font-semibold tracking-[-0.025em] text-ink">
               Test your thumbnail.
             </h1>
             <p className="mt-3 text-[15px] text-ink-soft max-w-md mx-auto">
@@ -602,7 +615,7 @@ function ThumbnailTestPage() {
 
       {/* PHASE 4: RESULTS */}
       {phase === "results" && aiData && (
-        <main className="mx-auto max-w-[1400px] px-6 pt-8 pb-24 relative z-10">
+        <main className="mx-auto max-w-[1400px] px-4 sm:px-6 pt-8 pb-24 relative z-10">
           <ChannelDigestCard
             digest={aiData.channelDigest}
             hasTranscript={aiData.hasTranscript}
@@ -872,6 +885,23 @@ function ThumbnailTestPage() {
               </div>
             </div>
 
+          </div>
+
+          <div className="mt-16 mb-6 rounded-2xl bg-gradient-to-br from-emerald-50 via-white to-emerald-50/50 border border-emerald-100/60 p-6 sm:p-8">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
+              <div className="shrink-0 size-12 rounded-xl bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center shadow-lg shadow-emerald-200/50">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-[17px] font-bold text-emerald-900">Get more thumbnail audits</h3>
+                <p className="text-[13px] text-emerald-700/70 mt-1">Upgrade to Creator plan for unlimited thumbnail tests, A/B comparison, and priority AI vision processing.</p>
+              </div>
+              <div className="flex items-center gap-3 shrink-0 flex-wrap">
+                <Link to="/select-plan" className="rounded-full bg-emerald-500 text-white px-5 py-2.5 text-[14px] font-semibold hover:bg-emerald-600 transition shadow-sm whitespace-nowrap">
+                  Upgrade →
+                </Link>
+              </div>
+            </div>
           </div>
         </main>
       )}

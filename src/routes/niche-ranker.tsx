@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
@@ -38,7 +38,12 @@ export const Route = createFileRoute("/niche-ranker")({
 
 export const rankNicheServer = createServerFn({ method: "POST" })
   .inputValidator((d: { niche: string, format: "long" | "short" }) => d)
-  .handler(async ({ data }) => JSON.parse(JSON.stringify(await runNicheRanker(data.niche, data.format))));
+  .handler(async ({ data }) => {
+    const { requireAuth, requireCredits } = await import("@/lib/auth/server-auth");
+    const user = await requireAuth();
+    await requireCredits(user.email);
+    return JSON.parse(JSON.stringify(await runNicheRanker(data.niche, data.format)));
+  });
 
 const GRADE_COLORS: Record<string, string> = {
   "A+": "text-emerald-500", "A": "text-emerald-400", "B": "text-blue-500",
@@ -185,6 +190,8 @@ function NicheRankerPage() {
         toast.error("The YouTube Data API returned an 'API key not valid' error.");
       } else if (msg.includes("YOUTUBE_API_NOT_ENABLED")) {
         toast.error("The YouTube Data API v3 is not enabled in your Google Cloud project.");
+      } else if (msg.includes("All AI generation")) {
+        toast.error("AI generation unavailable. Check your Gemini API keys in .env or try again later.");
       } else {
         toast.error(`Analysis failed: ${msg || "Unknown error"}. Please try again.`);
       }
@@ -223,7 +230,7 @@ function NicheRankerPage() {
   const reset = () => { setPhase("idle"); setData(null); setQuery(""); setNicheFeatures(null); setFeedback(null); };
 
   return (
-    <div className="min-h-screen bg-surface text-ink font-text relative overflow-x-hidden">
+    <div className="min-h-screen bg-surface text-ink font-text relative">
       {/* Ambient glows */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden -z-0">
         <div className="absolute -top-60 left-1/2 -translate-x-1/2 w-[700px] h-[400px] rounded-full bg-good/8 blur-[120px]" />
@@ -382,7 +389,7 @@ function NicheRankerPage() {
             key="results"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="relative z-10 max-w-[1300px] mx-auto px-6 pt-10 pb-24"
+            className="relative z-10 max-w-[1300px] mx-auto px-4 sm:px-6 pt-10 pb-24"
           >
             <ChannelDigestCard
               digest={data.channelDigest}
@@ -547,6 +554,23 @@ function NicheRankerPage() {
                   </div>
                 </div>
 
+              </div>
+            </div>
+
+            <div className="mt-16 mb-6 rounded-2xl bg-gradient-to-br from-emerald-50 via-white to-emerald-50/50 border border-emerald-100/60 p-6 sm:p-8">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
+                <div className="shrink-0 size-12 rounded-xl bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center shadow-lg shadow-emerald-200/50">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-[17px] font-bold text-emerald-900">Rank more niches</h3>
+                  <p className="text-[13px] text-emerald-700/70 mt-1">Upgrade to Creator plan for unlimited niche analyses, competitor intel, and revenue potential data.</p>
+                </div>
+                <div className="flex items-center gap-3 shrink-0 flex-wrap">
+                  <Link to="/select-plan" className="rounded-full bg-emerald-500 text-white px-5 py-2.5 text-[14px] font-semibold hover:bg-emerald-600 transition shadow-sm whitespace-nowrap">
+                    Upgrade →
+                  </Link>
+                </div>
               </div>
             </div>
           </motion.main>

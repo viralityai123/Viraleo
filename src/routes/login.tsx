@@ -19,7 +19,7 @@ export const Route = createFileRoute("/login")({
 });
 
 function googleAuthUrl(fromPartner: boolean) {
-  const redirectUri = encodeURIComponent(`https://viraleo.pro/auth/callback`);
+  const redirectUri = encodeURIComponent(`${window.location.origin}/auth/callback`);
   const base = `https://accounts.google.com/o/oauth2/v2/auth?client_id=945597493055-boitht424pc7g0qtd6i8f4a5qn5td440.apps.googleusercontent.com&redirect_uri=${redirectUri}&response_type=code&scope=openid%20email%20profile&access_type=offline`;
   return fromPartner ? `${base}&state=partner` : base;
 }

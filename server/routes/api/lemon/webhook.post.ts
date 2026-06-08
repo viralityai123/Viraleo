@@ -1,6 +1,7 @@
 import { defineEventHandler, readRawBody, getHeader, createError } from 'h3';
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import { addCommissionEvent } from '../../../../src/lib/partner-store';
+import { saveUserPlan } from '../../../../src/lib/user-plan';
 
 function verifySignature(rawBody: string, signature: string, secret: string): boolean {
   const hmac = createHmac('sha256', secret);
@@ -77,6 +78,11 @@ export default defineEventHandler(async (event) => {
     });
 
     console.log('[Webhook] Commission recorded');
+
+    if (userEmail && tier !== 'free') {
+      await saveUserPlan(userEmail, tier as any);
+      console.log(`[Webhook] Plan saved: ${userEmail} → ${tier}`);
+    }
   } else {
     console.log(`[Webhook] Ignored event: ${eventName}`);
   }

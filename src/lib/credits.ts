@@ -6,13 +6,14 @@ export type PlanTier = "free" | "creator" | "pro";
 interface PlanConfig {
   label: string;
   creditsPerMonth: number;
+  creditsPerDay: number;
   price: string;
 }
 
 export const PLANS: Record<PlanTier, PlanConfig> = {
-  free: { label: "Free", creditsPerMonth: 1, price: "Free" },
-  creator: { label: "Creator", creditsPerMonth: 10, price: "$20/mo" },
-  pro: { label: "Pro", creditsPerMonth: 25, price: "$50/mo" },
+  free: { label: "Free", creditsPerMonth: 1, creditsPerDay: 1, price: "Free" },
+  creator: { label: "Creator", creditsPerMonth: 10, creditsPerDay: 10, price: "$20/mo" },
+  pro: { label: "Pro", creditsPerMonth: 25, creditsPerDay: 25, price: "$50/mo" },
 };
 
 interface CreditState {
@@ -115,4 +116,18 @@ export function getNextResetDate(): string {
   const d = new Date();
   d.setMonth(d.getMonth() + 1);
   return d.toLocaleDateString("en-US", { month: "long" });
+}
+
+/** Call on sign-out to wipe all plan/credit state from localStorage */
+export function clearPlanAndCredits(): void {
+  if (typeof localStorage === "undefined") return;
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(SETTINGS_KEY);
+    localStorage.removeItem("viraleo:plan-selected");
+    localStorage.removeItem("viraleo:plan-source");
+    localStorage.removeItem("viraleo:usage");
+  } catch (e) {
+    console.warn("Failed to clear plan/credits:", e);
+  }
 }

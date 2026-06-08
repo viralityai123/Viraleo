@@ -33,8 +33,13 @@ export function AccountPanel({ open, onClose }: AccountPanelProps) {
   }
 
   function handlePlanChange(tier: PlanTier) {
-    setPlan(tier);
-    refresh();
+    if (tier === "free") {
+      setPlan(tier);
+      refresh();
+    } else {
+      navigate({ to: "/select-plan" });
+      onClose();
+    }
   }
 
   function handleLogout() {
@@ -157,7 +162,7 @@ export function AccountPanel({ open, onClose }: AccountPanelProps) {
 
               {tab === "plan" && (
                 <div className="space-y-3">
-                  <p className="text-[12px] text-ink-soft">Choose a plan. Credits reset daily.</p>
+                  <p className="text-[12px] text-ink-soft">Choose a plan. Credits reset on the 1st of each month.</p>
                   {(["free", "creator", "pro"] as PlanTier[]).map((tier) => {
                     const p = PLANS[tier];
                     const selected = planInfo.tier === tier;
@@ -181,7 +186,7 @@ export function AccountPanel({ open, onClose }: AccountPanelProps) {
                             <span className="font-bold text-[14px] text-ink">{p.label}</span>
                             <span className="font-bold text-[14px] text-ink">{p.price}</span>
                           </div>
-                          <p className="text-[12px] text-ink-soft mt-0.5">{p.creditsPerDay} credits / day</p>
+                          <p className="text-[12px] text-ink-soft mt-0.5">{p.creditsPerMonth} credits / month</p>
                         </div>
                       </button>
                     );

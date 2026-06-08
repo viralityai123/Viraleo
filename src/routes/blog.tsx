@@ -55,7 +55,7 @@ function BlogIndex() {
           {ARTICLES.map((article) => (
             <Link
               key={article.slug}
-              to={`/blog/${article.slug}`}
+              to={`/blog/${article.slug}` as any}
               className="block group rounded-2xl border border-hairline bg-white p-6 hover:shadow-lg hover:border-emerald-200 transition-all"
             >
               <div className="flex items-center gap-3 text-xs text-ink-soft mb-3">

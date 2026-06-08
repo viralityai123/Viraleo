@@ -5,7 +5,8 @@ import { MessageCircle, Send, Bot, User, Sparkles, CreditCard, ShieldAlert, Circ
 import { generateLLMContent } from "@/lib/llm";
 
 const getAiSupportResponse = createServerFn({ method: "POST" })
-  .handler(async ({ data }: { data: { message: string } }) => {
+  .inputValidator((d: { message: string }) => d)
+  .handler(async ({ data }) => {
     const prompt = `You are Viraleo AI Support. Answer the user's question concisely and helpfully.
 
 About Viraleo:

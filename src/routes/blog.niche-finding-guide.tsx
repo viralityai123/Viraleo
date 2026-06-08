@@ -92,7 +92,7 @@ function NicheArticle() {
             <p className="text-sm font-semibold text-emerald-800">
               Ready to find your niche? Run a Niche Ranker analysis in Viraleo and get real RPM data, competition scores, and outlier potential — not guesses.
             </p>
-            <Link to="/niche-ranker" className="inline-flex items-center gap-1.5 mt-3 text-sm font-bold text-emerald-600 hover:text-emerald-700 transition-colors">
+            <Link to="/niche-ranker" search={{} as any} className="inline-flex items-center gap-1.5 mt-3 text-sm font-bold text-emerald-600 hover:text-emerald-700 transition-colors">
               Try Niche Ranker <ArrowLeft size={14} className="rotate-180" />
             </Link>
           </div>
