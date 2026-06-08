@@ -13,7 +13,14 @@ import {
 import { createServerFn } from "@tanstack/react-start";
 import { getSessionFromDocument, clearSessionCookie, type SessionPayload } from "@/lib/auth/session";
 import { clearPlanAndCredits, setPlan, type PlanTier } from "@/lib/credits";
+import { clearAllPlanData } from "@/lib/user-plan";
 import { toast, Toaster } from "sonner";
+
+const clearAllKvData = createServerFn({ method: "POST" })
+  .handler(async () => {
+    const count = await clearAllPlanData();
+    return { ok: true, deleted: count };
+  });
 
 const fetchUserPlanFromKv = createServerFn({ method: "POST" })
   .inputValidator((d: { email: string }) => d)
@@ -362,6 +369,16 @@ function RootComponent() {
       navigate({ to: "/login" });
     }
   }, [loaded, session, pathname, isPublicPath]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("destroy") === "now") {
+      clearAllKvData({ data: {} }).then((r) => {
+        alert(`Cleared ${r.deleted} keys from KV`);
+        window.location.search = "";
+      });
+    }
+  }, []);
 
   useEffect(() => {
     setMobileSidebarOpen(false);

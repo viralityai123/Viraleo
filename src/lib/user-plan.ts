@@ -25,3 +25,21 @@ export async function getUserPlan(email: string): Promise<StoredPlan | null> {
   const key = planKey(email);
   return client.get<StoredPlan>(key);
 }
+
+export async function clearAllPlanData(): Promise<number> {
+  const client = getKv();
+  if (!client) return 0;
+  let deleted = 0;
+  for (const pattern of ["userPlan:*", "usage:*"]) {
+    let cursor = 0;
+    do {
+      const [next, keys] = await client.scan(cursor, { match: pattern, count: 100 });
+      cursor = Number(next);
+      if (keys.length > 0) {
+        await client.del(...keys);
+        deleted += keys.length;
+      }
+    } while (cursor !== 0);
+  }
+  return deleted;
+}
