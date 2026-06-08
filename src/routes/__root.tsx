@@ -346,7 +346,7 @@ function RootSidebar({ session, signOut }: { session: SessionPayload | null; sig
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const fullWidthRoutes = ["/", "/partner-program", "/partner/dashboard", "/admin/payouts"];
+  const fullWidthRoutes = ["/", "/login", "/auth/", "/partner-program", "/partner/dashboard", "/admin/payouts"];
   const isFullWidth = fullWidthRoutes.includes(pathname);
   const { session, loaded, signOut } = useSession();
   const navigate = useNavigate();
