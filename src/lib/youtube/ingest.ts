@@ -26,7 +26,9 @@ interface VideosListResponse {
   }[];
 }
 
-export async function ingestChannelVideos(uploadsPlaylistId: string): Promise<ChannelVideoRecord[]> {
+export async function ingestChannelVideos(
+  uploadsPlaylistId: string,
+): Promise<ChannelVideoRecord[]> {
   const videoIds: string[] = [];
   let pageToken: string | undefined;
 

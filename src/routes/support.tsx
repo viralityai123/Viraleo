@@ -1,7 +1,17 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { useState, useRef, useEffect } from "react";
-import { MessageCircle, Send, Bot, User, Sparkles, CreditCard, ShieldAlert, CircleHelp, ExternalLink } from "lucide-react";
+import {
+  MessageCircle,
+  Send,
+  Bot,
+  User,
+  Sparkles,
+  CreditCard,
+  ShieldAlert,
+  CircleHelp,
+  ExternalLink,
+} from "lucide-react";
 import { generateLLMContent } from "@/lib/llm";
 
 const getAiSupportResponse = createServerFn({ method: "POST" })
@@ -16,7 +26,7 @@ About Viraleo:
 - No refunds once credits are used
 - Payments via LemonSqueezy (credit cards, PayPal, Apple Pay)
 - Google OAuth only — no email/password login
-- Contact: virality.support@gmail.com (24hr response)
+- Contact: viraleo.support@gmail.com (24hr response)
 
 User question: ${data.message}
 
@@ -25,7 +35,7 @@ Keep responses under 3 paragraphs. Use markdown for formatting. Be friendly but 
     try {
       return await generateLLMContent(prompt);
     } catch {
-      return "Sorry, I'm having trouble connecting. Please email **virality.support@gmail.com** and we'll get back to you within 24 hours.";
+      return "Sorry, I'm having trouble connecting. Please email **viraleo.support@gmail.com** and we'll get back to you within 24 hours.";
     }
   });
 
@@ -33,7 +43,11 @@ export const Route = createFileRoute("/support")({
   head: () => ({
     meta: [
       { title: "AI Support — Viraleo" },
-      { name: "description", content: "Get help with Viraleo's AI-powered YouTube tools. Chat with our AI assistant for instant answers to billing, credits, tools, and account questions." },
+      {
+        name: "description",
+        content:
+          "Get help with Viraleo's AI-powered YouTube tools. Chat with our AI assistant for instant answers to billing, credits, tools, and account questions.",
+      },
       { property: "og:title", content: "AI Support — Viraleo" },
       { property: "og:description", content: "AI-powered support for Viraleo YouTube tools." },
       { property: "og:image", content: "https://viraleo.pro/og-image.png" },
@@ -58,7 +72,10 @@ type Message = { role: "user" | "ai"; text: string };
 function SupportPage() {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
-    { role: "ai", text: "Hey! I'm Viraleo AI Support. Ask me anything about your account, billing, credits, or tools. Or pick a quick action below." },
+    {
+      role: "ai",
+      text: "Hey! I'm Viraleo AI Support. Ask me anything about your account, billing, credits, or tools. Or pick a quick action below.",
+    },
   ]);
   const [input, setInput] = useState("");
   const [typing, setTyping] = useState(false);
@@ -79,7 +96,13 @@ function SupportPage() {
       const reply = await getAiSupportResponse({ data: { message: text } });
       setMessages((prev) => [...prev, { role: "ai", text: reply }]);
     } catch {
-      setMessages((prev) => [...prev, { role: "ai", text: "Sorry, something went wrong. Please email **virality.support@gmail.com** and we'll get back to you within 24 hours." }]);
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "ai",
+          text: "Sorry, something went wrong. Please email **viraleo.support@gmail.com** and we'll get back to you within 24 hours.",
+        },
+      ]);
     } finally {
       setTyping(false);
     }
@@ -93,7 +116,9 @@ function SupportPage() {
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-100 text-emerald-700 text-xs font-bold tracking-widest uppercase mb-4">
             <Bot size={14} /> AI Support
           </div>
-          <h1 className="text-3xl md:text-5xl font-black text-ink tracking-tight">How can we help?</h1>
+          <h1 className="text-3xl md:text-5xl font-black text-ink tracking-tight">
+            How can we help?
+          </h1>
           <p className="mt-3 text-ink-soft text-base max-w-lg mx-auto">
             AI-powered answers in seconds. No wait times, no tickets — just type your question.
           </p>
@@ -103,7 +128,9 @@ function SupportPage() {
           {/* Left: KB links */}
           <div className="md:col-span-2 space-y-6">
             <div>
-              <h2 className="text-sm font-bold text-ink tracking-wider uppercase mb-3">Quick Resources</h2>
+              <h2 className="text-sm font-bold text-ink tracking-wider uppercase mb-3">
+                Quick Resources
+              </h2>
               <div className="space-y-2">
                 {[
                   { icon: CircleHelp, label: "FAQ", to: "/faq" },
@@ -126,10 +153,15 @@ function SupportPage() {
             </div>
 
             <div className="rounded-2xl bg-amber-50 border border-amber-100 p-5">
-              <p className="text-sm font-semibold text-amber-800">No refunds once credits have been used.</p>
+              <p className="text-sm font-semibold text-amber-800">
+                No refunds once credits have been used.
+              </p>
               <p className="text-xs text-amber-700 mt-1">
                 If you have a billing concern, email{" "}
-                <a href="mailto:virality.support@gmail.com" className="underline font-medium">virality.support@gmail.com</a>.
+                <a href="mailto:viraleo.support@gmail.com" className="underline font-medium">
+                  viraleo.support@gmail.com
+                </a>
+                .
               </p>
             </div>
 
@@ -137,7 +169,9 @@ function SupportPage() {
               <p className="text-sm font-semibold text-emerald-800">Still stuck?</p>
               <p className="text-xs text-emerald-700 mt-1">
                 Email us at{" "}
-                <a href="mailto:virality.support@gmail.com" className="underline font-medium">virality.support@gmail.com</a>{" "}
+                <a href="mailto:viraleo.support@gmail.com" className="underline font-medium">
+                  viraleo.support@gmail.com
+                </a>{" "}
                 and we'll get back to you within 24 hours.
               </p>
             </div>
@@ -189,9 +223,18 @@ function SupportPage() {
                     </div>
                     <div className="bg-white border border-hairline rounded-2xl rounded-bl-md px-4 py-3 shadow-sm">
                       <div className="flex gap-1">
-                        <span className="size-2 rounded-full bg-emerald-400 animate-bounce" style={{ animationDelay: "0ms" }} />
-                        <span className="size-2 rounded-full bg-emerald-400 animate-bounce" style={{ animationDelay: "150ms" }} />
-                        <span className="size-2 rounded-full bg-emerald-400 animate-bounce" style={{ animationDelay: "300ms" }} />
+                        <span
+                          className="size-2 rounded-full bg-emerald-400 animate-bounce"
+                          style={{ animationDelay: "0ms" }}
+                        />
+                        <span
+                          className="size-2 rounded-full bg-emerald-400 animate-bounce"
+                          style={{ animationDelay: "150ms" }}
+                        />
+                        <span
+                          className="size-2 rounded-full bg-emerald-400 animate-bounce"
+                          style={{ animationDelay: "300ms" }}
+                        />
                       </div>
                     </div>
                   </div>
@@ -207,7 +250,10 @@ function SupportPage() {
                     return (
                       <button
                         key={q.label}
-                        onClick={() => { setOpen(true); send(q.msg); }}
+                        onClick={() => {
+                          setOpen(true);
+                          send(q.msg);
+                        }}
                         disabled={typing}
                         className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-100 text-emerald-700 text-[11px] font-semibold hover:bg-emerald-100 transition-colors disabled:opacity-50"
                       >
@@ -224,7 +270,9 @@ function SupportPage() {
                     ref={inputRef}
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === "Enter") send(); }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") send();
+                    }}
                     placeholder="Type your question..."
                     disabled={typing}
                     className="flex-1 px-4 py-2.5 rounded-xl border border-hairline bg-surface text-sm text-ink placeholder:text-ink-soft outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 transition-all disabled:opacity-50"

@@ -8,12 +8,13 @@ export function Header({ onReset }: { onReset?: () => void }) {
         <ViraleoLogo linkTo="/pre-analysis" size="md" showText className="text-ink" />
         <nav className="flex items-center gap-1 text-[13px]">
           <Link
-            to="/pre-analysis" search={{ channel: undefined, activityId: undefined }}
+            to="/pre-analysis"
+            search={{ channel: undefined, activityId: undefined }}
             className="px-3 py-1.5 rounded-full text-ink-soft hover:text-ink hover:bg-surface-2 transition"
           >
             ← Back to Search
           </Link>
-          <button 
+          <button
             onClick={onReset}
             className="px-3 py-1.5 rounded-full bg-ink text-surface font-medium hover:opacity-90 transition"
           >

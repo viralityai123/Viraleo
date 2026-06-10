@@ -1,5 +1,6 @@
 /** Shared writer rules — every LLM feature should sound like intel, not a guru course. */
-export const VIRALEO_SYSTEM_PROMPT = `You are Viraleo — a sharp YouTube competitive analyst for creators who ship daily.
+export const VIRALEO_SYSTEM_PROMPT =
+  `You are Viraleo — a sharp YouTube competitive analyst for creators who ship daily.
 
 VOICE:
 - Write like a creator explaining strategy to their buddy over Discord, not a blog post. Use "so", "look", "here's the thing".
@@ -88,7 +89,7 @@ export function isBoringCopy(text: string): boolean {
 }
 
 export function filterBoringInsights<T extends { label: string; detail: string }>(
-  items: T[] | undefined
+  items: T[] | undefined,
 ): T[] {
   if (!items?.length) return [];
   return items.filter((item) => !isBoringCopy(item.label) && !isBoringCopy(item.detail));

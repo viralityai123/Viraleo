@@ -1,4 +1,5 @@
 import { filterBoringInsights, isBoringCopy } from "@/lib/ai/viraleo-voice";
+import { estimateNicheRpm, normalizeRpmRange } from "@/lib/niche-rpm";
 import { generateLLMJson, parseLLMJson } from "@/lib/llm";
 import { attachIntelProof, buildFeatureAiContext } from "./ai-context";
 import { extractVideoId, getYoutubeApiKey, isLikelyChannelInput, ytFetch } from "./client";
@@ -9,7 +10,7 @@ function buildNichePrompt(
   niche: string,
   format: "long" | "short",
   intelBlock: string,
-  digestHeadline: string
+  digestHeadline: string,
 ): string {
   return `Niche viability audit for: "${niche}"
 Format: ${format === "short" ? "Shorts" : "Long-form"}
@@ -32,7 +33,7 @@ Return JSON:
   "metrics": {
     "saturation": { "score": number (0-100), "label": "Low"|"Medium"|"High"|"Extreme", "insight": "2 sentence critique" },
     "trendVelocity": { "score": number (0-100), "direction": "Rising"|"Stable"|"Declining", "insight": "2 sentence critique" },
-    "cpmRange": { "min": number, "max": number, "insight": "2 sentence critique about revenue potential" },
+    "rpmRange": { "min": number, "max": number, "insight": "2 sentence critique about creator RPM ($ per 1000 views) for this niche" },
     "breakthroughDifficulty": { "score": number (0-100), "label": "Easy"|"Moderate"|"Hard"|"Brutal", "insight": "2 sentence critique" }
   },
   "strengths": ["strength 1", "strength 2", "strength 3"],
@@ -74,7 +75,10 @@ export async function runNicheRanker(niche: string, format: "long" | "short") {
         const vItem = vData.items?.[0];
         if (vItem) {
           detectedNiche = `Niche centered around: ${vItem.snippet.title}`;
-          bundle = await fetchChannelIntelByChannelId(vItem.snippet.channelId, vItem.snippet.channelTitle);
+          bundle = await fetchChannelIntelByChannelId(
+            vItem.snippet.channelId,
+            vItem.snippet.channelTitle,
+          );
           ctx = await buildFeatureAiContext(bundle, {
             mode,
             referenceVideoId: videoId,
@@ -90,7 +94,7 @@ export async function runNicheRanker(niche: string, format: "long" | "short") {
 
   const text = await generateLLMJson(
     buildNichePrompt(detectedNiche, format, intelBlock, digestHeadline),
-    { quality: "quality" }
+    { quality: "quality" },
   );
   const parsed = parseLLMJson<Record<string, unknown>>(text);
 
@@ -99,9 +103,30 @@ export async function runNicheRanker(niche: string, format: "long" | "short") {
   }
   if (Array.isArray(parsed.strengths)) {
     parsed.strengths = filterBoringInsights(
-      (parsed.strengths as string[]).map((s) => ({ label: "Strength", detail: s }))
+      (parsed.strengths as string[]).map((s) => ({ label: "Strength", detail: s })),
     ).map((s) => s.detail);
   }
+
+  const metrics = (parsed.metrics || {}) as Record<string, unknown>;
+  const legacyCpm = metrics.cpmRange as { min?: number; max?: number; insight?: string } | undefined;
+  const llmRpm = metrics.rpmRange as { min?: number; max?: number; insight?: string } | undefined;
+  const baseline = estimateNicheRpm(detectedNiche, format);
+  const rpm = normalizeRpmRange(
+    detectedNiche,
+    format,
+    llmRpm?.min ?? legacyCpm?.min,
+    llmRpm?.max ?? legacyCpm?.max,
+  );
+  metrics.rpmRange = {
+    min: rpm.min,
+    max: rpm.max,
+    insight:
+      llmRpm?.insight ||
+      legacyCpm?.insight ||
+      `Typical ${baseline.category} ${format === "short" ? "Shorts" : "long-form"} RPM runs $${rpm.min}–$${rpm.max} per 1K views.`,
+  };
+  delete metrics.cpmRange;
+  parsed.metrics = metrics;
 
   if (ctx && bundle) {
     return { ...attachIntelProof(parsed, ctx), _intelBundle: bundle };

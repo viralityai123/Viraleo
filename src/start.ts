@@ -22,7 +22,8 @@ const csrfMiddleware = createCsrfMiddleware({
 });
 
 const rateLimitMiddleware = createMiddleware().server(async ({ next, request }) => {
-  const ip = request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip") || "unknown";
+  const ip =
+    request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip") || "unknown";
   const url = new URL(request.url);
   const key = `${ip}:${url.pathname}`;
   const now = Date.now();
@@ -32,8 +33,8 @@ const rateLimitMiddleware = createMiddleware().server(async ({ next, request }) 
   try {
     const { Redis } = await import("@upstash/redis");
     const redis = new Redis({
-      url: process.env.UPSTASH_REDIS_REST_URL || "",
-      token: process.env.UPSTASH_REDIS_REST_TOKEN || "",
+      url: process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL || "",
+      token: process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN || "",
     });
     const raw = await redis.get<{ ts: number; count: number }>(`rl:${key}`);
     const entry = raw || { ts: now, count: 0 };

@@ -59,7 +59,7 @@ export async function fetchChannelIntel(input: string): Promise<ChannelIntelBund
 
 export async function fetchChannelIntelByChannelId(
   channelId: string,
-  fallbackInput?: string
+  fallbackInput?: string,
 ): Promise<ChannelIntelBundle> {
   if (!getYoutubeApiKey()) {
     throw new Error("YOUTUBE_API_KEY_REQUIRED");
@@ -72,7 +72,11 @@ export async function fetchChannelIntelByChannelId(
         title: string;
         description: string;
         customUrl?: string;
-        thumbnails?: { high?: { url: string }; medium?: { url: string }; default?: { url: string } };
+        thumbnails?: {
+          high?: { url: string };
+          medium?: { url: string };
+          default?: { url: string };
+        };
       };
       brandingSettings?: { image?: { bannerExternalUrl?: string } };
       statistics: { subscriberCount?: string };

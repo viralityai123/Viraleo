@@ -7,7 +7,7 @@ import { buildTranscriptPromptBlock, type TranscriptLine } from "./transcript";
 
 export function buildIntelPromptBlock(
   bundle: ChannelIntelBundle,
-  mode?: "shorts" | "long"
+  mode?: "shorts" | "long",
 ): string {
   const topVideo = mode ? pickTopVideo(bundle.videos, mode) : pickTopVideo(bundle.videos, "shorts");
   const m = bundle.metrics;
@@ -16,21 +16,24 @@ export function buildIntelPromptBlock(
     .slice(0, 15)
     .map(
       (v) =>
-        `- "${v.title}" | ${formatCount(v.views)} views | ${v.viewsPerDay.toFixed(0)} views/day | ${v.durationSec}s | likes ${(v.likeRate * 100).toFixed(2)}% | comments ${(v.commentRate * 100).toFixed(2)}% | published ${v.publishedAt.slice(0, 10)}`
+        `- "${v.title}" | ${formatCount(v.views)} views | ${v.viewsPerDay.toFixed(0)} views/day | ${v.durationSec}s | likes ${(v.likeRate * 100).toFixed(2)}% | comments ${(v.commentRate * 100).toFixed(2)}% | published ${v.publishedAt.slice(0, 10)}`,
     )
     .join("\n");
 
   const commentBlock = bundle.commentSamples
     .map(
       (s) =>
-        `Video "${s.videoTitle}" top comments:\n${s.comments.slice(0, 8).map((c) => `  • ${c.slice(0, 120)}`).join("\n")}`
+        `Video "${s.videoTitle}" top comments:\n${s.comments
+          .slice(0, 8)
+          .map((c) => `  • ${c.slice(0, 120)}`)
+          .join("\n")}`,
     )
     .join("\n\n");
 
   const captionBlock = bundle.captionSnippets
     .map(
       (s) =>
-        `Video "${s.videoTitle}" description/caption timeline:\n${s.lines.map((l) => `  [${l.startSec}s] ${l.text}`).join("\n")}`
+        `Video "${s.videoTitle}" description/caption timeline:\n${s.lines.map((l) => `  [${l.startSec}s] ${l.text}`).join("\n")}`,
     )
     .join("\n\n");
 
@@ -72,7 +75,7 @@ export function buildFullIntelPrompt(
   mode?: "shorts" | "long",
   hookIntel?: HookIntelligence,
   transcript?: TranscriptLine[] | null,
-  refTitle?: string
+  refTitle?: string,
 ): string {
   const blocks = [buildIntelPromptBlock(bundle, mode)];
   if (hookIntel) blocks.push(buildHookPromptBlock(hookIntel));

@@ -1,7 +1,13 @@
 import { getKv, isKvConfigured } from "./kv";
 
 export function getPartnerRef(name: string): string {
-  return name.toLowerCase().replace(/[^a-z]/g, "").replace(/\s+/g, "-").slice(0, 20) || "creator";
+  return (
+    name
+      .toLowerCase()
+      .replace(/[^a-z]/g, "")
+      .replace(/\s+/g, "-")
+      .slice(0, 20) || "creator"
+  );
 }
 
 const ALIAS_CHARS = "abcdefghijklmnopqrstuvwxyz0123456789";

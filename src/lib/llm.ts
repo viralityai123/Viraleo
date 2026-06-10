@@ -15,7 +15,10 @@ const QUALITY_MODELS = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.5-pro"
 function cleanJsonResponse(text: string): string {
   let cleaned = text.trim();
   if (cleaned.startsWith("```")) {
-    cleaned = cleaned.replace(/^```json\s*/i, "").replace(/```$/, "").trim();
+    cleaned = cleaned
+      .replace(/^```json\s*/i, "")
+      .replace(/```$/, "")
+      .trim();
   }
   return cleaned;
 }
@@ -25,7 +28,7 @@ async function tryGemini(
   modelNames: string[],
   userPrompt: string,
   imageParts: ImagePart[],
-  temperature: number
+  temperature: number,
 ): Promise<string | null> {
   for (let i = 0; i < keys.length; i++) {
     const key = keys[i];
@@ -47,12 +50,14 @@ async function tryGemini(
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body,
-          }
+          },
         );
 
         if (!res.ok) {
           const errText = await res.text().catch(() => "");
-          console.warn(`Gemini ${modelName} failed (key ${i}): ${res.status} ${errText.slice(0, 200)}`);
+          console.warn(
+            `Gemini ${modelName} failed (key ${i}): ${res.status} ${errText.slice(0, 200)}`,
+          );
           if (res.status === 429 || errText.includes("quota")) break;
           continue;
         }
@@ -116,7 +121,7 @@ async function tryGroq(userPrompt: string, imageParts: ImagePart[]): Promise<str
 export async function generateLLMContent(
   prompt: string,
   imageParts: ImagePart[] = [],
-  quality: LLMQuality = "fast"
+  quality: LLMQuality = "fast",
 ): Promise<string> {
   const keysStr = process.env.GEMINI_KEYS || "";
   const keys = keysStr
@@ -139,7 +144,7 @@ export async function generateLLMContent(
 /** JSON tasks with Viraleo voice + slightly lower temperature on quality tier. */
 export async function generateLLMJson(
   userPrompt: string,
-  options: { imageParts?: ImagePart[]; quality?: LLMQuality } = {}
+  options: { imageParts?: ImagePart[]; quality?: LLMQuality } = {},
 ): Promise<string> {
   const full = `${userPrompt.trim()}\n\n${VIRALEO_WRITER_APPEND}\n\nReturn ONLY valid JSON. No markdown.`;
   return generateLLMContent(full, options.imageParts || [], options.quality ?? "fast");

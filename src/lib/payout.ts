@@ -2,7 +2,15 @@ import { getPartnerAnalytics, markCommissionsAsPaid, type PartnerData } from "./
 import { getAllPartnersSlugs } from "./partner-store";
 import { createPayout, updatePayout, type PayoutRecord } from "./payout-store";
 import { getRecipient, setRecipient, type RecipientData } from "./recipient-store";
-import { getProfileId, createRecipient, createQuote, createTransfer, fundTransfer, getTransferStatus, isWiseConfigured } from "./wise";
+import {
+  getProfileId,
+  createRecipient,
+  createQuote,
+  createTransfer,
+  fundTransfer,
+  getTransferStatus,
+  isWiseConfigured,
+} from "./wise";
 
 export const COMMISSION_AMOUNTS = { creator: 10, pro: 25 } as const;
 const PAYOUT_CURRENCY = "USD";
@@ -26,10 +34,7 @@ export async function processPartnerPayout(slug: string): Promise<PayoutResult> 
     return { success: false, error: "Wise API not configured" };
   }
 
-  const [data, recipient] = await Promise.all([
-    getPartnerAnalytics(slug),
-    getRecipient(slug),
-  ]);
+  const [data, recipient] = await Promise.all([getPartnerAnalytics(slug), getRecipient(slug)]);
 
   if (!data) return { success: false, error: "Partner not found" };
   if (!recipient) return { success: false, error: "No bank details set up" };
@@ -104,7 +109,9 @@ export async function processPartnerPayout(slug: string): Promise<PayoutResult> 
   }
 }
 
-export async function processAllPartnerPayouts(): Promise<{ slug: string; result: PayoutResult }[]> {
+export async function processAllPartnerPayouts(): Promise<
+  { slug: string; result: PayoutResult }[]
+> {
   const slugs = await getAllPartnersSlugs();
   const results: { slug: string; result: PayoutResult }[] = [];
   for (const slug of slugs) {

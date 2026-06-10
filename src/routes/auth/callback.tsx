@@ -1,7 +1,12 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { createServerFn } from "@tanstack/react-start";
-import { signSession, serializeSessionCookie, clearSessionCookie, SESSION_COOKIE } from "@/lib/auth/session";
+import {
+  signSession,
+  serializeSessionCookie,
+  clearSessionCookie,
+  SESSION_COOKIE,
+} from "@/lib/auth/session";
 import { sendWelcomeEmail } from "@/lib/email";
 
 const sendWelcome = createServerFn({ method: "POST" })
@@ -38,7 +43,7 @@ const exchangeGoogleCode = createServerFn({ method: "POST" })
       if (!tokenRes.ok) {
         return { ok: false, error: "Failed to exchange code" } as const;
       }
-      const tokens = await tokenRes.json() as { access_token: string; id_token?: string };
+      const tokens = (await tokenRes.json()) as { access_token: string; id_token?: string };
 
       const userRes = await fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
         headers: { Authorization: `Bearer ${tokens.access_token}` },
@@ -46,7 +51,7 @@ const exchangeGoogleCode = createServerFn({ method: "POST" })
       if (!userRes.ok) {
         return { ok: false, error: "Failed to fetch user info" } as const;
       }
-      const user = await userRes.json() as {
+      const user = (await userRes.json()) as {
         id: string;
         email: string;
         name: string;
@@ -58,7 +63,11 @@ const exchangeGoogleCode = createServerFn({ method: "POST" })
         jwtSecret,
       );
 
-      return { ok: true, token, user: { id: user.id, email: user.email, name: user.name, picture: user.picture } } as const;
+      return {
+        ok: true,
+        token,
+        user: { id: user.id, email: user.email, name: user.name, picture: user.picture },
+      } as const;
     } catch {
       return { ok: false, error: "Server error during authentication" } as const;
     }
@@ -95,25 +104,27 @@ function CallbackPage() {
 
     const redirectUri = `${window.location.origin}/auth/callback`;
 
-    exchangeGoogleCode({ data: { code, redirectUri } }).then((result) => {
-      if (!result.ok) {
-        setStatus("error");
-        setError(result.error || "Authentication failed");
-        return;
-      }
+    exchangeGoogleCode({ data: { code, redirectUri } })
+      .then((result) => {
+        if (!result.ok) {
+          setStatus("error");
+          setError(result.error || "Authentication failed");
+          return;
+        }
 
-      document.cookie = serializeSessionCookie(result.token);
-      sendWelcome({ data: { email: result.user.email, name: result.user.name } }).catch(() => {});
-      if (state === "partner") {
-        localStorage.setItem("viraleo:partner", "true");
-        window.location.href = "/partner/dashboard";
-      } else {
-        window.location.href = "/select-plan";
-      }
-    }).catch(() => {
-      setStatus("error");
-      setError("Network error during authentication");
-    });
+        document.cookie = serializeSessionCookie(result.token);
+        sendWelcome({ data: { email: result.user.email, name: result.user.name } }).catch(() => {});
+        if (state === "partner") {
+          localStorage.setItem("viraleo:partner", "true");
+          window.location.href = "/partner/dashboard";
+        } else {
+          window.location.href = "/select-plan";
+        }
+      })
+      .catch(() => {
+        setStatus("error");
+        setError("Network error during authentication");
+      });
   }, []);
 
   if (status === "error") {
@@ -140,8 +151,20 @@ function CallbackPage() {
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="text-center">
         <svg className="animate-spin h-10 w-10 mx-auto text-emerald-500 mb-4" viewBox="0 0 24 24">
-          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+          <circle
+            className="opacity-25"
+            cx="12"
+            cy="12"
+            r="10"
+            stroke="currentColor"
+            strokeWidth="4"
+            fill="none"
+          />
+          <path
+            className="opacity-75"
+            fill="currentColor"
+            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+          />
         </svg>
         <p className="text-sm text-muted-foreground">Signing you in...</p>
       </div>

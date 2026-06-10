@@ -25,7 +25,7 @@ export function sanitizeInsightText(text: string): string {
 }
 
 export function sanitizeInsights<T extends { label: string; detail: string }>(
-  items: T[] | undefined
+  items: T[] | undefined,
 ): T[] {
   if (!items?.length) return [];
   return items.map((item) => ({

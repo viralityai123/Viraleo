@@ -1,7 +1,7 @@
 import os
 import sys
 import config
-from channel_finder import search_channels, get_channel_details
+from channel_finder import search_channels, get_channel_details, filter_channels
 from flop_finder import find_flop_videos
 from email_sender import send_emails
 from utils import export_to_csv, save_html_previews, save_checkpoint, load_checkpoint
@@ -10,7 +10,7 @@ from utils import export_to_csv, save_html_previews, save_checkpoint, load_check
 def banner():
     print("=" * 55)
     print("  YouTube Creator Outreach Tool")
-    print("  Finds 3000+ channels → extracts emails → finds flop videos → sends outreach")
+    print("  Finds 3000+ channels -> extracts emails -> finds flop videos -> sends outreach")
     print("=" * 55)
 
 
@@ -55,7 +55,7 @@ def main():
                 config.YOUTUBE_API_KEY,
                 keywords,
                 config.CHANNELS_PER_NICHE,
-                config.MAX_SEARCH_PAGES_PER_KEYWORD,
+                1,
             )
             for c in channels:
                 c["niche"] = niche
@@ -82,8 +82,15 @@ def main():
     if step_complete < 2:
         step("2. Getting channel details (description, email, subscribers)")
         unique = get_channel_details(config.YOUTUBE_API_KEY, unique)
+
+        # Save ALL channels with emails before filtering
+        all_with_emails = [c for c in unique if c.get("email")]
+        print(f"  Total with emails (all channels): {len(all_with_emails)}")
+        save_checkpoint(all_with_emails, "all_with_emails.json")
+
+        unique = filter_channels(unique)
         with_email = sum(1 for c in unique if c.get("email"))
-        print(f"  Emails found: {with_email} / {len(unique)}")
+        print(f"  Emails found (filtered): {with_email} / {len(unique)}")
         save_checkpoint(unique, "step2_details.json")
         step_complete = 2
 
@@ -119,13 +126,7 @@ def main():
 
     print(f"\n  Output files in: {config.OUTPUT_DIR}/")
 
-    choice = input(f"\n  Send emails now? (y = send, d = dry-run, n = skip): ").strip().lower()
-    if choice == "y":
-        send_emails(unique, dry_run=False)
-    elif choice == "d":
-        send_emails(unique, dry_run=True)
-    else:
-        print("  Skipped. Run again later or use: python -c \"from email_sender import send_emails; from utils import load_checkpoint; send_emails(load_checkpoint('step3_flops.json'))\"")
+    print(f"\n  To send emails: python -c \"from email_sender import send_emails; from utils import load_checkpoint; send_emails(load_checkpoint('step3_flops.json'))\"")
 
 
 if __name__ == "__main__":

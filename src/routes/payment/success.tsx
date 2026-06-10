@@ -1,7 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { createServerFn } from "@tanstack/react-start";
-import { setPlan } from "@/lib/credits";
 import { getSessionFromDocument, getSessionToken, verifySession } from "@/lib/auth/session";
 import { trackSignup, addCommissionEvent } from "@/lib/partner-store";
 import { sendPaymentReceiptEmail, sendWelcomeEmail } from "@/lib/email";
@@ -27,25 +26,32 @@ const serverSaveUserPlan = createServerFn({ method: "POST" })
   });
 
 const recordCommission = createServerFn({ method: "POST" })
-  .inputValidator((d: {
-    id: string;
-    userEmail: string;
-    tier: string;
-    variantId: string;
-    subId: string;
-    eventName: string;
-    timestamp: number;
-    referralSlug: string;
-    amount: number;
-    token: string;
-  }) => d)
+  .inputValidator(
+    (d: {
+      id: string;
+      userEmail: string;
+      tier: string;
+      variantId: string;
+      subId: string;
+      eventName: string;
+      timestamp: number;
+      referralSlug: string;
+      amount: number;
+      token: string;
+    }) => d,
+  )
   .handler(async ({ data }) => {
     const jwtSecret = process.env.JWT_SECRET || "";
     const session = await verifySession(data.token, jwtSecret);
     if (!session) throw new Error("Unauthorized");
     await addCommissionEvent(data as any);
     if (session.email) {
-      sendPaymentReceiptEmail(session.email, session.name || "Creator", data.tier, data.tier === "pro" ? "$50" : "$20").catch(() => {});
+      sendPaymentReceiptEmail(
+        session.email,
+        session.name || "Creator",
+        data.tier,
+        data.tier === "pro" ? "$50" : "$20",
+      ).catch(() => {});
     }
     return { ok: true };
   });
@@ -70,7 +76,8 @@ const verifyCheckout = createServerFn({ method: "POST" })
       const checkoutId = json.data?.id?.toString() || data.checkoutId;
       const creatorVariant = process.env.LEMONSQUEEZY_VARIANT_CREATOR || "";
       const proVariant = process.env.LEMONSQUEEZY_VARIANT_PRO || "";
-      const actualTier = variantId === creatorVariant ? "creator" : variantId === proVariant ? "pro" : "free";
+      const actualTier =
+        variantId === creatorVariant ? "creator" : variantId === proVariant ? "pro" : "free";
       const tier = actualTier !== "free" ? actualTier : data.expectedTier;
       return { ok: status === "paid", tier, variantId, userEmail, checkoutId };
     } catch {
@@ -82,7 +89,11 @@ export const Route = createFileRoute("/payment/success")({
   head: () => ({
     meta: [
       { title: "Payment confirmed — Viraleo" },
-      { name: "description", content: "Your Viraleo payment was confirmed. You now have access to premium YouTube channel intelligence features." },
+      {
+        name: "description",
+        content:
+          "Your Viraleo payment was confirmed. You now have access to premium YouTube channel intelligence features.",
+      },
       { property: "og:title", content: "Payment confirmed — Viraleo" },
       { property: "og:description", content: "Payment confirmed. Welcome to Viraleo premium." },
       { name: "twitter:title", content: "Payment confirmed — Viraleo" },
@@ -112,7 +123,9 @@ function PaymentSuccessPage() {
       let lsCheckoutId = checkoutId;
 
       if (checkoutId) {
-        const result = await verifyCheckout({ data: { checkoutId, expectedTier: tier } }).catch(() => null);
+        const result = await verifyCheckout({ data: { checkoutId, expectedTier: tier } }).catch(
+          () => null,
+        );
         if (result?.ok && result.tier) {
           planTier = result.tier;
           variantId = result.variantId || "";
@@ -122,17 +135,15 @@ function PaymentSuccessPage() {
         }
       }
 
-      if (verified || checkoutId) {
-        setPlan(planTier as any);
-        localStorage.setItem("viraleo:plan-selected", "true");
-        localStorage.setItem("viraleo:plan-source", "paid");
-        setStatus("success");
-        if (userEmail) {
-          serverSaveUserPlan({ data: { email: userEmail, tier: planTier } }).catch(() => {});
-        }
-      } else {
+      if (!verified) {
         setStatus("error");
         return;
+      }
+
+      setStatus("success");
+      const sessionEmail = userEmail || getSessionFromDocument()?.email || "";
+      if (sessionEmail) {
+        serverSaveUserPlan({ data: { email: sessionEmail, tier: planTier } }).catch(() => {});
       }
 
       const ref = localStorage.getItem("viraleo:referrer");
@@ -164,7 +175,11 @@ function PaymentSuccessPage() {
     init();
 
     const timer = setInterval(() => setCountdown((c) => c - 1), 1000);
-    const timeout = setTimeout(() => navigate({ to: "/pre-analysis", search: { channel: undefined, activityId: undefined } }), 5000);
+    const timeout = setTimeout(
+      () =>
+        navigate({ to: "/pre-analysis", search: { channel: undefined, activityId: undefined } }),
+      5000,
+    );
 
     return () => {
       clearTimeout(timeout);
@@ -177,17 +192,42 @@ function PaymentSuccessPage() {
       <div className="max-w-sm text-center">
         {status === "verifying" ? (
           <>
-            <svg className="animate-spin h-10 w-10 mx-auto text-emerald-500 mb-4" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            <svg
+              className="animate-spin h-10 w-10 mx-auto text-emerald-500 mb-4"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+                fill="none"
+              />
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+              />
             </svg>
             <p className="text-sm text-muted-foreground">Confirming payment...</p>
           </>
         ) : status === "error" ? (
           <>
             <div className="w-16 h-16 mx-auto mb-5 rounded-full bg-amber-100 flex items-center justify-center">
-              <svg className="w-8 h-8 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <svg
+                className="w-8 h-8 text-amber-600"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2.5}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
               </svg>
             </div>
             <h1 className="text-2xl font-bold text-foreground">Payment received!</h1>
@@ -201,7 +241,13 @@ function PaymentSuccessPage() {
         ) : (
           <>
             <div className="w-16 h-16 mx-auto mb-5 rounded-full bg-emerald-100 flex items-center justify-center">
-              <svg className="w-8 h-8 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <svg
+                className="w-8 h-8 text-emerald-600"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2.5}
+              >
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
               </svg>
             </div>

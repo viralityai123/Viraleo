@@ -13,10 +13,12 @@ export function letterGradeTen(n: number): string {
   return "D";
 }
 
-export function normalizeThumbnailScores<T extends {
-  overallScore: number;
-  metrics?: { label: string; score: number; copy: string }[];
-}>(data: T): T {
+export function normalizeThumbnailScores<
+  T extends {
+    overallScore: number;
+    metrics?: { label: string; score: number; copy: string }[];
+  },
+>(data: T): T {
   return {
     ...data,
     overallScore: toTenScale(data.overallScore),

@@ -7,7 +7,8 @@ import { normalizeChannelInput } from "@/lib/channel-session";
 import { letterGradeTen, toTenScale } from "@/lib/score-scale";
 import { runPreAnalysis } from "@/lib/youtube/pre-analysis-server";
 import { addActivity, saveResult, loadResult } from "@/lib/activity";
-import { hasCredits, deductCredit } from "@/lib/credits";
+import { useUserState } from "@/lib/user-state";
+import { UpgradeBanner } from "@/components/UpgradeBanner";
 import { recordUsage } from "@/lib/usage";
 
 import { ViraleoLogo } from "@/components/ViraleoLogo";
@@ -22,16 +23,22 @@ import { ChannelDigestCard, DataReceiptsStrip } from "@/components/intel/Channel
 
 export const Route = createFileRoute("/pre-analysis")({
   validateSearch: (s: Record<string, unknown>) => ({
-    channel:
-      typeof s.channel === "string" ? normalizeChannelInput(s.channel) : undefined,
+    channel: typeof s.channel === "string" ? normalizeChannelInput(s.channel) : undefined,
     activityId: typeof s.activityId === "string" ? s.activityId : undefined,
   }),
   head: () => ({
     meta: [
       { title: "Pre-Upload Audit — Viraleo" },
-      { name: "description", content: "AI-powered pre-upload audit for YouTube videos. Analyze hook strength, editing quality, file issues, and get optimization recommendations." },
+      {
+        name: "description",
+        content:
+          "AI-powered pre-upload audit for YouTube videos. Analyze hook strength, editing quality, file issues, and get optimization recommendations.",
+      },
       { property: "og:title", content: "Pre-Upload Audit — Viraleo" },
-      { property: "og:description", content: "AI pre-upload audit for YouTube. Hook strength, editing, file optimization." },
+      {
+        property: "og:description",
+        content: "AI pre-upload audit for YouTube. Hook strength, editing, file optimization.",
+      },
       { property: "og:image", content: "https://viraleo.pro/vi-logo.png" },
       { property: "og:url", content: "https://viraleo.pro/pre-analysis" },
       { name: "twitter:title", content: "Pre-Upload Audit — Viraleo" },
@@ -54,13 +61,16 @@ interface VideoMeta {
   type: string;
 }
 
-
 interface AIData {
   overallScore: number;
   explanation: string;
   metrics: { label: string; score: number; copy: string }[];
   flags: { level: "critical" | "warning" | "ok"; title: string; body: string }[];
   dropoffMeta: { durationSec: number; cutDensity: number; audioEnergy: number; hookScore: number };
+}
+
+function clip(v: number, lo: number, hi: number): number {
+  return Math.max(lo, Math.min(hi, v));
 }
 
 function fmtSize(b: number) {
@@ -136,7 +146,7 @@ async function extractAudioEnergy(file: File): Promise<number[]> {
     const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
     if (!AudioContextClass) throw new Error("AudioContext unsupported");
     const audioCtx = new AudioContextClass();
-    
+
     // Slice a lightweight 12MB chunk to keep loading screen fast and prevent heap crash
     const slice = file.slice(0, 12 * 1024 * 1024);
     const arrayBuffer = await slice.arrayBuffer();
@@ -160,7 +170,10 @@ async function extractAudioEnergy(file: File): Promise<number[]> {
     const max = Math.max(...energy) || 1;
     return energy.map((e) => e / max);
   } catch (e) {
-    console.warn("Audio extraction failed (expected on some video slice containers), using simulated fallback:", e);
+    console.warn(
+      "Audio extraction failed (expected on some video slice containers), using simulated fallback:",
+      e,
+    );
     return Array.from({ length: 50 }, () => Math.random() * 0.7 + 0.3);
   }
 }
@@ -176,69 +189,118 @@ function analyseLocal(meta: VideoMeta) {
   const clamp = (v: number) => Math.max(1, Math.min(10, Math.round(v * 10) / 10));
 
   const hookScore = clamp(dur > 60 ? (dur < 300 ? score(7, 9) : score(5.5, 7.5)) : score(7.5, 9.5));
-  const pacingScore = clamp(dur > 60 ? (dur < 600 ? score(6.5, 8.5) : score(4.5, 6.5)) : score(7, 9));
+  const pacingScore = clamp(
+    dur > 60 ? (dur < 600 ? score(6.5, 8.5) : score(4.5, 6.5)) : score(7, 9),
+  );
   const ideaScore = clamp(score(4.5, 9));
-  const editingScore = clamp(meta.size < 500e6 ? score(6.5, 9) : meta.size < 1e9 ? score(5.5, 7.5) : score(3.5, 5.5));
+  const editingScore = clamp(
+    meta.size < 500e6 ? score(6.5, 9) : meta.size < 1e9 ? score(5.5, 7.5) : score(3.5, 5.5),
+  );
   const thumbScore = clamp(isShort ? score(5, 8) : score(6, 9));
   const rawRetention = (hookScore + pacingScore + editingScore) / 3 + (Math.random() - 0.5) * 1.5;
   const retentionScore = clamp(rawRetention);
-  const overallScore = clamp(+(hookScore + pacingScore + ideaScore + editingScore + thumbScore + retentionScore) / 6);
+  const overallScore = clamp(
+    +(hookScore + pacingScore + ideaScore + editingScore + thumbScore + retentionScore) / 6,
+  );
 
   const flags: { type: "error" | "warn" | "ok"; title: string; desc: string }[] = [];
 
-  if (dur > 0 && dur < 3) flags.push({ type: "error", title: "Too Short", desc: `"${name}" is under 3 seconds — YouTube may reject it.` });
-  if (meta.size > 1e9) flags.push({ type: "warn", title: "Large File Size", desc: `${fmtSize(meta.size)} is large for "${name}". Compress to under 1 GB.` });
-  if (dur > 600) flags.push({ type: "warn", title: "Long Duration", desc: `At ${fmtDur(dur)}, "${name}" may exceed average viewer attention span. Consider tighter pacing or chapter markers.` });
-  if (dur >= 15 && dur <= 120) flags.push({ type: "ok", title: "Ideal Duration", desc: `"${name}" sits in the sweet spot for ${isShort ? "Shorts" : "mid-form"} retention.` });
-  if (hookScore >= 8) flags.push({ type: "ok", title: "Strong Hook Window", desc: `First 3s of "${name}" should grab attention — your file length supports a rapid front-load.` });
-  if (editingScore >= 7) flags.push({ type: "ok", title: "Editing Quality", desc: `Clean cuts and good pacing detected in "${name}". Minimal friction expected.` });
-  else if (editingScore < 5) flags.push({ type: "warn", title: "Editing Needs Work", desc: `Cut density is low for "${name}". Insert B-roll or quick transitions every 4-5s.` });
+  if (dur > 0 && dur < 3)
+    flags.push({
+      type: "error",
+      title: "Too Short",
+      desc: `"${name}" is under 3 seconds — YouTube may reject it.`,
+    });
+  if (meta.size > 1e9)
+    flags.push({
+      type: "warn",
+      title: "Large File Size",
+      desc: `${fmtSize(meta.size)} is large for "${name}". Compress to under 1 GB.`,
+    });
+  if (dur > 600)
+    flags.push({
+      type: "warn",
+      title: "Long Duration",
+      desc: `At ${fmtDur(dur)}, "${name}" may exceed average viewer attention span. Consider tighter pacing or chapter markers.`,
+    });
+  if (dur >= 15 && dur <= 120)
+    flags.push({
+      type: "ok",
+      title: "Ideal Duration",
+      desc: `"${name}" sits in the sweet spot for ${isShort ? "Shorts" : "mid-form"} retention.`,
+    });
+  if (hookScore >= 8)
+    flags.push({
+      type: "ok",
+      title: "Strong Hook Window",
+      desc: `First 3s of "${name}" should grab attention — your file length supports a rapid front-load.`,
+    });
+  if (editingScore >= 7)
+    flags.push({
+      type: "ok",
+      title: "Editing Quality",
+      desc: `Clean cuts and good pacing detected in "${name}". Minimal friction expected.`,
+    });
+  else if (editingScore < 5)
+    flags.push({
+      type: "warn",
+      title: "Editing Needs Work",
+      desc: `Cut density is low for "${name}". Insert B-roll or quick transitions every 4-5s.`,
+    });
 
   const hasKeywords = /how|why|best|top|vs|tutorial|review|react|challenge/i.test(name);
-  const ideaNote = hasKeywords ? `"${name}" targets a searchable niche with clear intent keywords.` : `"${name}" needs stronger keyword presence — add "how", "why", or "review" to the title.`;
+  const ideaNote = hasKeywords
+    ? `"${name}" targets a searchable niche with clear intent keywords.`
+    : `"${name}" needs stronger keyword presence — add "how", "why", or "review" to the title.`;
 
   const metrics = [
     {
       label: "Hook Strength",
       score: hookScore,
-      explanation: hookScore >= 8
-        ? `First 3s of "${name}" have strong retention potential — quick visual context and immediate framing keep early drop-off below 20%.`
-        : `The intro of "${name}" risks losing 35-40% of viewers in the first 5 seconds. Add a face, bold text, or pattern interrupt at 0:00.`,
+      explanation:
+        hookScore >= 8
+          ? `First 3s of "${name}" have strong retention potential — quick visual context and immediate framing keep early drop-off below 20%.`
+          : `The intro of "${name}" risks losing 35-40% of viewers in the first 5 seconds. Add a face, bold text, or pattern interrupt at 0:00.`,
     },
     {
       label: "Pacing Score",
       score: pacingScore,
-      explanation: pacingScore >= 7
-        ? `Cut density in "${name}" keeps momentum steady. Viewers get a visual refresh every 3-4s, ideal for ${isShort ? "Shorts" : "long-form"} retention.`
-        : `Pacing drags in "${name}" — prolonged shots without B-roll or transitions will cause mid-video drop-off.`,
+      explanation:
+        pacingScore >= 7
+          ? `Cut density in "${name}" keeps momentum steady. Viewers get a visual refresh every 3-4s, ideal for ${isShort ? "Shorts" : "long-form"} retention.`
+          : `Pacing drags in "${name}" — prolonged shots without B-roll or transitions will cause mid-video drop-off.`,
     },
     {
       label: "Content Idea",
       score: ideaScore,
-      explanation: ideaScore >= 7
-        ? ideaNote
-        : `"${name}" covers a broad angle. Tighten the hook premise — compare against top-performing titles in ${isShort ? "Shorts" : "your niche"} for a sharper spin.`,
+      explanation:
+        ideaScore >= 7
+          ? ideaNote
+          : `"${name}" covers a broad angle. Tighten the hook premise — compare against top-performing titles in ${isShort ? "Shorts" : "your niche"} for a sharper spin.`,
     },
     {
       label: "Editing",
       score: editingScore,
-      explanation: editingScore >= 7
-        ? `Clean transitions and balanced audio in "${name}". The editing supports the narrative flow without distraction.`
-        : `Editing in "${name}" feels rushed or sparse. Tighten cuts and layer ambient audio to bridge quiet gaps.`,
+      explanation:
+        editingScore >= 7
+          ? `Clean transitions and balanced audio in "${name}". The editing supports the narrative flow without distraction.`
+          : `Editing in "${name}" feels rushed or sparse. Tighten cuts and layer ambient audio to bridge quiet gaps.`,
     },
     {
       label: "Thumbnail Potential",
       score: thumbScore,
-      explanation: thumbScore >= 7
-        ? `${meta.width}×${meta.height} gives "${name}" good canvas for a bold thumbnail with high contrast and readable text overlay.`
-        : `The resolution of "${name}" limits thumbnail cropping. Film a dedicated thumbnail frame with a single focal point and bright background.`,
+      explanation:
+        thumbScore >= 7
+          ? `${meta.width}×${meta.height} gives "${name}" good canvas for a bold thumbnail with high contrast and readable text overlay.`
+          : `The resolution of "${name}" limits thumbnail cropping. Film a dedicated thumbnail frame with a single focal point and bright background.`,
     },
     {
       label: "Retention Forecast",
       score: retentionScore,
-      explanation: retentionScore >= 7
-        ? `Composite signals for "${name}" project above-average retention. Hook + pacing synergy should keep 60%+ through the first half.`
-        : `Retention risk is elevated for "${name}". The hook-to-pacing gap suggests viewers will drop before the main payoff.`,
+      explanation:
+        retentionScore >= 7
+          ? `Composite signals for "${name}" project above-average retention. Hook + pacing synergy should keep 60%+ through the first half.`
+          : `Retention risk is elevated for "${name}". The hook-to-pacing gap suggests viewers will drop before the main payoff.`,
     },
   ];
 
@@ -269,7 +331,7 @@ export const analyzeVideoServer = createServerFn({ method: "POST" })
       niche?: string;
       compareToCompetitor?: boolean;
       channelQuery?: string;
-    }) => d
+    }) => d,
   )
   .handler(async ({ data }) => {
     const { requireAuth, requireCredits } = await import("@/lib/auth/server-auth");
@@ -279,6 +341,7 @@ export const analyzeVideoServer = createServerFn({ method: "POST" })
   });
 
 function PreAnalysisPage() {
+  const { hasCredits, refresh, loading: creditsLoading } = useUserState();
   const { channel: channelParam, activityId: activityIdParam } = Route.useSearch();
   const [phase, setPhase] = useState<"drop" | "setup" | "analyzing" | "results">("drop");
   const [dragging, setDragging] = useState(false);
@@ -291,7 +354,7 @@ function PreAnalysisPage() {
   const analysisSteps = [
     "Extracting video frames...",
     "Analyzing audio waveform...",
-    "Calling Gemini AI...",
+    "Analyzing content...",
     "Computing metrics...",
     "Generating report...",
   ];
@@ -338,38 +401,41 @@ function PreAnalysisPage() {
     setCompetitorHandle("");
   };
 
-  const accept = useCallback((f: File) => {
-    const isVideoType = f.type && f.type.startsWith("video/");
-    const ext = f.name.split(".").pop()?.toLowerCase() || "";
-    const isVideoExt = ["mp4", "mov", "mkv", "webm", "avi", "3gp", "flv", "m4v"].includes(ext);
+  const accept = useCallback(
+    (f: File) => {
+      const isVideoType = f.type && f.type.startsWith("video/");
+      const ext = f.name.split(".").pop()?.toLowerCase() || "";
+      const isVideoExt = ["mp4", "mov", "mkv", "webm", "avi", "3gp", "flv", "m4v"].includes(ext);
 
-    if (!isVideoType && !isVideoExt) {
-      toast.error("Unsupported file type. Please upload a video file.");
-      return;
-    }
+      if (!isVideoType && !isVideoExt) {
+        toast.error("Unsupported file type. Please upload a video file.");
+        return;
+      }
 
-    setFile(f);
+      setFile(f);
 
-    const url = URL.createObjectURL(f);
-    const vid = document.createElement("video");
-    vid.preload = "metadata";
-    vid.src = url;
+      const url = URL.createObjectURL(f);
+      const vid = document.createElement("video");
+      vid.preload = "metadata";
+      vid.src = url;
 
-    vid.onloadedmetadata = () => {
-      const m: VideoMeta = {
-        name: f.name,
-        size: f.size,
-        duration: vid.duration,
-        width: vid.videoWidth,
-        height: vid.videoHeight,
-        url,
-        type: f.type || `video/${ext}`,
+      vid.onloadedmetadata = () => {
+        const m: VideoMeta = {
+          name: f.name,
+          size: f.size,
+          duration: vid.duration,
+          width: vid.videoWidth,
+          height: vid.videoHeight,
+          url,
+          type: f.type || `video/${ext}`,
+        };
+        setMeta(m);
+        if (!videoTitle) setVideoTitle(f.name.replace(/\.[^.]+$/, "").replace(/[-_]/g, " "));
+        setPhase("setup");
       };
-      setMeta(m);
-      if (!videoTitle) setVideoTitle(f.name.replace(/\.[^.]+$/, "").replace(/[-_]/g, " "));
-      setPhase("setup");
-    };
-  }, [videoTitle]);
+    },
+    [videoTitle],
+  );
 
   const runAnalysis = useCallback(async () => {
     if (!file || !meta) return;
@@ -378,7 +444,7 @@ function PreAnalysisPage() {
       return;
     }
 
-    if (!hasCredits()) {
+    if (!creditsLoading && !hasCredits) {
       toast.error("You're out of credits for this month. Upgrade your plan to continue.");
       return;
     }
@@ -426,12 +492,7 @@ function PreAnalysisPage() {
           channelQuery: compareCompetitor ? competitorHandle : undefined,
         },
       });
-      const {
-        channelDigest,
-        dataReceipts,
-        hasTranscript,
-        ...rest
-      } = raw as AIData & {
+      const { channelDigest, dataReceipts, hasTranscript, ...rest } = raw as AIData & {
         channelDigest?: { headline: string; bullets: string[] };
         dataReceipts?: string[];
         hasTranscript?: boolean;
@@ -439,8 +500,7 @@ function PreAnalysisPage() {
       setIntelProof({ channelDigest, dataReceipts, hasTranscript });
       resultData = rest as AIData;
       analysisSucceeded = true;
-      // Credit deducted server-side via requireCredits; sync local for UI
-      deductCredit();
+      await refresh();
       recordUsage("preAnalysis");
       const entry = addActivity("pre-analysis", videoTitle.trim(), meta.name);
       saveResult(entry.id, resultData);
@@ -454,7 +514,9 @@ function PreAnalysisPage() {
         toast.error("You're out of credits for this month. Upgrade your plan to continue.");
       } else {
         console.warn("Multimodal AI failed, falling back to local simulation:", err);
-        toast.warning("AI analysis unavailable. Showing local estimate — results may not be accurate.");
+        toast.warning(
+          "AI analysis unavailable. Showing local estimate — results may not be accurate.",
+        );
         const localResult = analyseLocal(meta);
         resultData = {
           overallScore: toTenScale(localResult.overallScore),
@@ -471,8 +533,12 @@ function PreAnalysisPage() {
           })),
           dropoffMeta: {
             durationSec: meta.duration,
-            cutDensity: meta.duration > 60 ? +(Math.random() * 0.3 + 0.3).toFixed(2) : +(Math.random() * 0.25 + 0.55).toFixed(2),
-            audioEnergy: meta.duration > 60 ? +(Math.random() * 0.35 + 0.3).toFixed(2) : +(Math.random() * 0.25 + 0.5).toFixed(2),
+            cutDensity: extractedFramesList.length > 0
+              ? +clip(extractedFramesList.length / meta.duration * 2, 0.1, 0.95).toFixed(2)
+              : +(meta.duration > 60 ? 0.45 : 0.65).toFixed(2),
+            audioEnergy: extractedAudioData.length > 0
+              ? +clip(extractedAudioData.reduce((a, b) => a + b, 0) / extractedAudioData.length, 0.1, 0.95).toFixed(2)
+              : +(meta.duration > 60 ? 0.5 : 0.65).toFixed(2),
             hookScore: localResult.metrics[0].score * 10,
           },
         };
@@ -496,7 +562,11 @@ function PreAnalysisPage() {
 
   const fileInfoStats = meta
     ? [
-        { label: "Duration", value: fmtDur(meta.duration), caption: meta.duration > 60 ? "Long-form" : "Short-form" },
+        {
+          label: "Duration",
+          value: fmtDur(meta.duration),
+          caption: meta.duration > 60 ? "Long-form" : "Short-form",
+        },
         {
           label: "File Size",
           value: fmtSize(meta.size),
@@ -529,20 +599,30 @@ function PreAnalysisPage() {
       )}
 
       {/* Navigation Header when in Results mode */}
-      {(phase === "results" || phase === "setup" || phase === "analyzing") && <Header onReset={reset} />}
+      {(phase === "results" || phase === "setup" || phase === "analyzing") && (
+        <Header onReset={reset} />
+      )}
 
       {phase === "setup" && meta && (
         <main className="relative mx-auto max-w-3xl px-6 pt-12 pb-24 z-10">
-          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-8">
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-center mb-8"
+          >
             <h1 className="font-display text-[36px] font-bold text-ink">Your upload is ready</h1>
             <p className="text-[15px] text-ink-soft mt-2">
               Add title and niche, then run analysis when you are ready.
             </p>
           </motion.div>
           <div className="rounded-2xl border border-hairline bg-surface p-6 shadow-lg space-y-4">
-            <div className="text-[13px] text-ink-soft truncate">{meta.name} · {fmtDur(meta.duration)} · {meta.width}×{meta.height}</div>
+            <div className="text-[13px] text-ink-soft truncate">
+              {meta.name} · {fmtDur(meta.duration)} · {meta.width}×{meta.height}
+            </div>
             <div>
-              <label className="block text-[12px] font-medium text-ink-soft mb-1.5">Planned video title</label>
+              <label className="block text-[12px] font-medium text-ink-soft mb-1.5">
+                Planned video title
+              </label>
               <input
                 type="text"
                 value={videoTitle}
@@ -552,7 +632,9 @@ function PreAnalysisPage() {
               />
             </div>
             <div>
-              <label className="block text-[12px] font-medium text-ink-soft mb-1.5">Niche / topic</label>
+              <label className="block text-[12px] font-medium text-ink-soft mb-1.5">
+                Niche / topic
+              </label>
               <input
                 type="text"
                 value={niche}
@@ -599,10 +681,17 @@ function PreAnalysisPage() {
               className="size-6 rounded-full border-2 border-good/30 border-t-good"
             />
           </div>
-          <div className="font-display text-[18px] font-semibold text-ink truncate">{file.name}</div>
-          <div className="mt-3 text-[13px] text-ink-soft font-medium">{analysisSteps[currentStep]}</div>
+          <div className="font-display text-[18px] font-semibold text-ink truncate">
+            {file.name}
+          </div>
+          <div className="mt-3 text-[13px] text-ink-soft font-medium">
+            {analysisSteps[currentStep]}
+          </div>
           <div className="mt-4 mx-auto max-w-xs h-1 rounded-full bg-surface-2 overflow-hidden">
-            <div className="h-full bg-good transition-[width] duration-200" style={{ width: `${progress}%` }} />
+            <div
+              className="h-full bg-good transition-[width] duration-200"
+              style={{ width: `${progress}%` }}
+            />
           </div>
         </main>
       )}
@@ -626,8 +715,8 @@ function PreAnalysisPage() {
               Drop your raw file.
             </h1>
             <p className="mt-3 text-[15px] text-ink-soft max-w-md mx-auto">
-              We score every metric, predict drop-off timestamps, and surface fixes
-              before the algorithm sees it.
+              We score every metric, predict drop-off timestamps, and surface fixes before the
+              algorithm sees it.
             </p>
           </motion.div>
 
@@ -673,8 +762,18 @@ function PreAnalysisPage() {
                   transition={{ type: "spring", stiffness: 260, damping: 18 }}
                   className="mx-auto size-16 rounded-2xl bg-surface-2 border border-hairline flex items-center justify-center"
                 >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="size-7 text-ink">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 16V4m0 0l-4 4m4-4l4 4M4 20h16" />
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    className="size-7 text-ink"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M12 16V4m0 0l-4 4m4-4l4 4M4 20h16"
+                    />
                   </svg>
                 </motion.div>
                 <div className="mt-5 font-display text-[20px] font-semibold tracking-tight text-ink">
@@ -722,8 +821,8 @@ function PreAnalysisPage() {
               Pre-Upload Audit
             </h1>
             <p className="mt-3 text-[15px] text-ink-soft max-w-xl">
-              AI diagnostic analysis complete. Below is your optimized feed preview, predicted retention curve,
-              and actionable title and formatting fixes.
+              AI diagnostic analysis complete. Below is your optimized feed preview, predicted
+              retention curve, and actionable title and formatting fixes.
             </p>
           </div>
 
@@ -746,8 +845,8 @@ function PreAnalysisPage() {
                   aiData.overallScore >= 8
                     ? "Strong — ready to upload with minor tweaks."
                     : aiData.overallScore >= 5.5
-                    ? "Fix the flagged issues before publishing."
-                    : "Needs significant work before going live."
+                      ? "Fix the flagged issues before publishing."
+                      : "Needs significant work before going live."
                 }
                 summary={aiData.explanation}
                 maxScore={10}
@@ -758,24 +857,17 @@ function PreAnalysisPage() {
             </div>
           </div>
 
-          <div className="mt-16 mb-6 rounded-2xl bg-gradient-to-br from-emerald-50 via-white to-emerald-50/50 border border-emerald-100/60 p-6 sm:p-8">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
-              <div className="shrink-0 size-12 rounded-xl bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center shadow-lg shadow-emerald-200/50">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-              </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="text-[17px] font-bold text-emerald-900">Need deeper insights?</h3>
-                <p className="text-[13px] text-emerald-700/70 mt-1">Upgrade to Creator plan for unlimited video pre-analyses, priority processing, and competitor benchmarking.</p>
-              </div>
-              <div className="flex items-center gap-3 shrink-0 flex-wrap">
-                <Link to="/select-plan" className="rounded-full bg-emerald-500 text-white px-5 py-2.5 text-[14px] font-semibold hover:bg-emerald-600 transition shadow-sm whitespace-nowrap">
-                  Upgrade →
-                </Link>
-                <button onClick={reset} className="rounded-full border border-hairline bg-white px-4 py-2.5 text-[13px] font-medium text-ink hover:bg-surface-2 transition whitespace-nowrap">
-                  Analyse Another
-                </button>
-              </div>
-            </div>
+          <UpgradeBanner
+            title="Need deeper insights?"
+            description="Upgrade for more monthly pre-analyses, priority processing, and competitor benchmarking."
+          />
+          <div className="mb-6 flex justify-center">
+            <button
+              onClick={reset}
+              className="rounded-full border border-hairline bg-white px-4 py-2.5 text-[13px] font-medium text-ink hover:bg-surface-2 transition whitespace-nowrap"
+            >
+              Analyse Another
+            </button>
           </div>
         </main>
       )}

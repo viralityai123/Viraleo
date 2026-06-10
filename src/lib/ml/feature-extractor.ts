@@ -20,7 +20,8 @@ export function extractFeatures(opts: {
   const textPresent = frames.filter((f) => hasTextRegion(f)).length / Math.max(frames.length, 1);
 
   const silenceThreshold = 0.05;
-  const silenceRatio = audioEnergy.filter((e) => e < silenceThreshold).length / Math.max(audioEnergy.length, 1);
+  const silenceRatio =
+    audioEnergy.filter((e) => e < silenceThreshold).length / Math.max(audioEnergy.length, 1);
 
   const avg = audioEnergy.reduce((a, b) => a + b, 0) / audioEnergy.length;
   const audioVariance = audioEnergy.reduce((a, b) => a + (b - avg) ** 2, 0) / audioEnergy.length;

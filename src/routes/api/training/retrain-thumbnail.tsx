@@ -16,101 +16,107 @@ interface AggregatedWeights {
   trainedAt: number;
 }
 
-export const retrainThumbnailMl = createServerFn({ method: "POST" })
-  .handler(async () => {
-    // This handler requires Cloudflare R2 bindings, which are not available on Vercel.
-    if (!process.env.TRAINING_BUCKET) {
+export const retrainThumbnailMl = createServerFn({ method: "POST" }).handler(async () => {
+  // This handler requires Cloudflare R2 bindings, which are not available on Vercel.
+  if (!process.env.TRAINING_BUCKET) {
+    return {
+      trained: false,
+      reason: "Training bucket not available on this platform",
+      recordCount: 0,
+      timestamp: Date.now(),
+    };
+  }
+
+  const PREFIX = "thumbnail-feedback/";
+
+  let records: any[] = [];
+  let cursor: string | undefined;
+
+  try {
+    // List and collect all training records
+    do {
+      const listResult = await (process.env as any).TRAINING_BUCKET?.list({
+        prefix: PREFIX,
+        cursor,
+      });
+      if (!listResult) break;
+      cursor = listResult.cursor;
+
+      for (const obj of listResult.objects) {
+        const data = await (process.env as any).TRAINING_BUCKET?.get(obj.key);
+        if (data) {
+          const text = await data.text();
+          records.push(JSON.parse(text));
+        }
+      }
+    } while (cursor);
+
+    if (records.length === 0) {
       return {
         trained: false,
-        reason: "Training bucket not available on this platform",
+        reason: "No training records found",
         recordCount: 0,
         timestamp: Date.now(),
       };
     }
 
-    const PREFIX = "thumbnail-feedback/";
+    // Aggregate features
+    const positive = records.filter((r) => r.feedback === "positive");
+    const negative = records.filter((r) => r.feedback === "negative");
 
-    let records: any[] = [];
-    let cursor: string | undefined;
+    const aggregated: AggregatedWeights = {
+      faceBonus: average(positive, "thumbnailFeatures", "faceCount", 1, 0),
+      expressionBonuses: {
+        happy: average(positive, "thumbnailFeatures", "dominantExpression", "happy", 1.5, 0),
+        surprised: average(
+          positive,
+          "thumbnailFeatures",
+          "dominantExpression",
+          "surprised",
+          2.0,
+          0,
+        ),
+        neutral: average(positive, "thumbnailFeatures", "dominantExpression", "neutral", 0.5, 0),
+      },
+      sceneBonuses: {
+        closeUpFace: average(positive, "thumbnailFeatures", "sceneType", "close-up face", 2.7, 0),
+        screenshot: average(positive, "thumbnailFeatures", "sceneType", "screenshot", -1.3, 0),
+      },
+      textOverlayBonus: average(positive, "thumbnailFeatures", "textAreaRatio", 0.3, 0.5),
+      contrastBonus: average(positive, "thumbnailFeatures", "contrast", 0.6, 0.3),
+      brightnessBonus: average(positive, "thumbnailFeatures", "brightness", 0.5, 0.3),
+      saturationBonus: average(positive, "thumbnailFeatures", "saturation", 0.4, 0.3),
+      synergyBonus: average(positive, "thumbnailFeatures", "titleOcrSynergy", 1, 0.5),
+      sampleCount: records.length,
+      positiveCount: positive.length,
+      negativeCount: negative.length,
+      trainedAt: Date.now(),
+    };
 
-    try {
-      // List and collect all training records
-      do {
-        const listResult = await (process.env as any).TRAINING_BUCKET?.list({
-          prefix: PREFIX,
-          cursor,
-        });
-        if (!listResult) break;
-        cursor = listResult.cursor;
+    // Store aggregated weights
+    await (process.env as any).MODEL_BUCKET?.put(
+      "thumbnail-weights.json",
+      JSON.stringify(aggregated, null, 2),
+      { contentType: "application/json" },
+    );
 
-        for (const obj of listResult.objects) {
-          const data = await (process.env as any).TRAINING_BUCKET?.get(obj.key);
-          if (data) {
-            const text = await data.text();
-            records.push(JSON.parse(text));
-          }
-        }
-      } while (cursor);
-
-      if (records.length === 0) {
-        return {
-          trained: false,
-          reason: "No training records found",
-          recordCount: 0,
-          timestamp: Date.now(),
-        };
-      }
-
-      // Aggregate features
-      const positive = records.filter((r) => r.feedback === "positive");
-      const negative = records.filter((r) => r.feedback === "negative");
-
-      const aggregated: AggregatedWeights = {
-        faceBonus: average(positive, "thumbnailFeatures", "faceCount", 1, 0),
-        expressionBonuses: {
-          happy: average(positive, "thumbnailFeatures", "dominantExpression", "happy", 1.5, 0),
-          surprised: average(positive, "thumbnailFeatures", "dominantExpression", "surprised", 2.0, 0),
-          neutral: average(positive, "thumbnailFeatures", "dominantExpression", "neutral", 0.5, 0),
-        },
-        sceneBonuses: {
-          closeUpFace: average(positive, "thumbnailFeatures", "sceneType", "close-up face", 2.7, 0),
-          screenshot: average(positive, "thumbnailFeatures", "sceneType", "screenshot", -1.3, 0),
-        },
-        textOverlayBonus: average(positive, "thumbnailFeatures", "textAreaRatio", 0.3, 0.5),
-        contrastBonus: average(positive, "thumbnailFeatures", "contrast", 0.6, 0.3),
-        brightnessBonus: average(positive, "thumbnailFeatures", "brightness", 0.5, 0.3),
-        saturationBonus: average(positive, "thumbnailFeatures", "saturation", 0.4, 0.3),
-        synergyBonus: average(positive, "thumbnailFeatures", "titleOcrSynergy", 1, 0.5),
-        sampleCount: records.length,
-        positiveCount: positive.length,
-        negativeCount: negative.length,
-        trainedAt: Date.now(),
-      };
-
-      // Store aggregated weights
-      await (process.env as any).MODEL_BUCKET?.put(
-        "thumbnail-weights.json",
-        JSON.stringify(aggregated, null, 2),
-        { contentType: "application/json" },
-      );
-
-      return {
-        trained: true,
-        recordCount: records.length,
-        positiveCount: positive.length,
-        negativeCount: negative.length,
-        timestamp: Date.now(),
-      };
-    } catch (err: any) {
-      console.error("Retrain failed:", err);
-      return {
-        trained: false,
-        error: err.message,
-        recordCount: records.length,
-        timestamp: Date.now(),
-      };
-    }
-  });
+    return {
+      trained: true,
+      recordCount: records.length,
+      positiveCount: positive.length,
+      negativeCount: negative.length,
+      timestamp: Date.now(),
+    };
+  } catch (err: any) {
+    console.error("Retrain failed:", err);
+    return {
+      trained: false,
+      error: err.message,
+      recordCount: records.length,
+      timestamp: Date.now(),
+    };
+  }
+});
 
 function average(
   records: any[],

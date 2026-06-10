@@ -40,9 +40,12 @@ export const Route = createFileRoute("/api/commissions")({
     }
     const all = await getAllCommissions();
     const totalEarned = await getTotalEarned();
-    return new Response(JSON.stringify({ ok: true, count: all.length, totalEarned, commissions: all.slice(0, 100) }), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    });
+    return new Response(
+      JSON.stringify({ ok: true, count: all.length, totalEarned, commissions: all.slice(0, 100) }),
+      {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      },
+    );
   },
 });

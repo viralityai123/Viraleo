@@ -72,28 +72,32 @@ const METRICS = [
 
 const TESTIMONIALS = [
   {
-    quote: "Viraleo caught a hook pacing issue that was costing me 40% of my retention. Fixed it in one upload — views jumped 3x.",
+    quote:
+      "Viraleo caught a hook pacing issue that was costing me 40% of my retention. Fixed it in one upload — views jumped 3x.",
     name: "Alex Chen",
     handle: "@alexcreates",
     avatar: "",
     role: "Gaming creator, 240K subs",
   },
   {
-    quote: "I was about to launch in a saturated niche. The Niche Ranker showed me a sub-niche with 4x less competition and higher RPM. Best decision I made.",
+    quote:
+      "I was about to launch in a saturated niche. The Niche Ranker showed me a sub-niche with 4x less competition and higher RPM. Best decision I made.",
     name: "Sarah Mitchell",
     handle: "@sarahmitchell",
     avatar: "",
     role: "Tech reviewer, 180K subs",
   },
   {
-    quote: "The Thumbnail Test is insane. Uploaded 3 variants, got a clear winner with 12.4% predicted CTR. Real result? 11.8%. Scarily accurate.",
+    quote:
+      "The Thumbnail Test is insane. Uploaded 3 variants, got a clear winner with 12.4% predicted CTR. Real result? 11.8%. Scarily accurate.",
     name: "Marcus Johnson",
     handle: "@marcusj",
     avatar: "",
     role: "Finance creator, 520K subs",
   },
   {
-    quote: "Shadowban Detector saved my channel. I was being suppressed and had no idea. Followed the escape protocol and my impressions recovered in 2 weeks.",
+    quote:
+      "Shadowban Detector saved my channel. I was being suppressed and had no idea. Followed the escape protocol and my impressions recovered in 2 weeks.",
     name: "Priya Sharma",
     handle: "@priyasharma",
     avatar: "",
@@ -102,14 +106,70 @@ const TESTIMONIALS = [
 ];
 
 const MARQUEE_SHORTS = [
-  { id: "se50viFJ0AQ", name: "MrBeast", views: "1.4B", title: "I Spent 50 Hours In Solitary Confinement", logo: "/logo-mrbeast.png", verified: true },
-  { id: "BoJOtCo3n80", name: "Slam Dunk", views: "89M", title: "SICKEST DUNK YOU'LL SEE TODAY 🔥", logo: "/logo-slamdunk.png", verified: true },
-  { id: "ApgkbVU9Wz0", name: "Flexy", views: "45M", title: "30 Day Transformation ⚡️", logo: "/logo-flexy.png", verified: true },
-  { id: "obZcEJj5jf8", name: "Discovery Dose", views: "67M", title: "Ocean's Deepest Secret 🐙", logo: "/logo-discoverydose.png", verified: true },
-  { id: "YlvcFJOE-OE", name: "MrBeast", views: "1.7B", title: "Last To Leave Circle Wins $500K", logo: "/logo-mrbeast.png", verified: true },
-  { id: "XDw7eX3Dl9U", name: "Slam Dunk", views: "72M", title: "BEST ALLEY-OOP OF THE YEAR 🏀", logo: "/logo-slamdunk.png", verified: true },
-  { id: "Loi9S0InnZ4", name: "Flexy", views: "38M", title: "IMPOSIBLE FLEX 😱", logo: "/logo-flexy.png", verified: true },
-  { id: "wor61NPXVyk", name: "Discovery Dose", views: "54M", title: "How Sharks See The World 🌊", logo: "/logo-discoverydose.png", verified: true },
+  {
+    id: "se50viFJ0AQ",
+    name: "MrBeast",
+    views: "1.4B",
+    title: "I Spent 50 Hours In Solitary Confinement",
+    logo: "/logo-mrbeast.png",
+    verified: true,
+  },
+  {
+    id: "BoJOtCo3n80",
+    name: "Slam Dunk",
+    views: "89M",
+    title: "SICKEST DUNK YOU'LL SEE TODAY 🔥",
+    logo: "/logo-slamdunk.png",
+    verified: true,
+  },
+  {
+    id: "ApgkbVU9Wz0",
+    name: "Flexy",
+    views: "45M",
+    title: "30 Day Transformation ⚡️",
+    logo: "/logo-flexy.png",
+    verified: true,
+  },
+  {
+    id: "obZcEJj5jf8",
+    name: "Discovery Dose",
+    views: "67M",
+    title: "Ocean's Deepest Secret 🐙",
+    logo: "/logo-discoverydose.png",
+    verified: true,
+  },
+  {
+    id: "YlvcFJOE-OE",
+    name: "MrBeast",
+    views: "1.7B",
+    title: "Last To Leave Circle Wins $500K",
+    logo: "/logo-mrbeast.png",
+    verified: true,
+  },
+  {
+    id: "XDw7eX3Dl9U",
+    name: "Slam Dunk",
+    views: "72M",
+    title: "BEST ALLEY-OOP OF THE YEAR 🏀",
+    logo: "/logo-slamdunk.png",
+    verified: true,
+  },
+  {
+    id: "Loi9S0InnZ4",
+    name: "Flexy",
+    views: "38M",
+    title: "IMPOSIBLE FLEX 😱",
+    logo: "/logo-flexy.png",
+    verified: true,
+  },
+  {
+    id: "wor61NPXVyk",
+    name: "Discovery Dose",
+    views: "54M",
+    title: "How Sharks See The World 🌊",
+    logo: "/logo-discoverydose.png",
+    verified: true,
+  },
 ];
 
 const FAQS = [
@@ -177,7 +237,6 @@ function Hero() {
 
   return (
     <section className="lv2-section relative" style={{ paddingTop: 180, paddingBottom: 100 }}>
-
       <div className="lv2-container relative z-10 text-center">
         {/* Trust badge — 5 stars + count (crayo style) */}
         <motion.div
@@ -195,7 +254,14 @@ function Hero() {
                 transition={{ duration: 0.6, delay: 0.2 + i * 0.15, ease: "backOut" }}
                 style={{ display: "inline-flex" }}
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="#f59e0b" stroke="#f59e0b" strokeWidth="1.5">
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="#f59e0b"
+                  stroke="#f59e0b"
+                  strokeWidth="1.5"
+                >
                   <polygon points="12,2 15,9 22,9 16,14 18,22 12,17 6,22 8,14 2,9 9,9" />
                 </svg>
               </motion.span>
@@ -216,9 +282,7 @@ function Hero() {
         >
           <span className="lv2-hero-line">
             Stop Uploading{" "}
-            <span className={`lv2-blind ${glitching ? "lv2-blind--hit" : ""}`}>
-              Blind
-            </span>
+            <span className={`lv2-blind ${glitching ? "lv2-blind--hit" : ""}`}>Blind</span>
           </span>
           <span className="lv2-hero-line">
             Upload{" "}
@@ -256,8 +320,8 @@ function Hero() {
           className="mx-auto mt-7 text-[color:var(--lv2-ink-soft)]"
           style={{ fontSize: "clamp(16px, 1.6vw, 20px)", maxWidth: 620, lineHeight: 1.45 }}
         >
-          Viraleo decodes the hooks, retention, thumbnails, and niche patterns
-          behind every viral video — so you stop guessing and start shipping.
+          Viraleo decodes the hooks, retention, thumbnails, and niche patterns behind every viral
+          video — so you stop guessing and start shipping.
         </motion.p>
 
         {/* CTAs */}
@@ -272,7 +336,6 @@ function Hero() {
             <ArrowRight size={16} />
           </Link>
         </motion.div>
-
       </div>
     </section>
   );
@@ -290,7 +353,9 @@ function ProductMock() {
     <section className="lv2-section" id="how" style={{ paddingTop: 40 }}>
       <div className="lv2-container">
         <div className="text-center mb-14">
-          <div className="text-[12px] font-semibold tracking-[0.18em] uppercase text-[color:var(--lv2-accent-deep)]">The dashboard</div>
+          <div className="text-[12px] font-semibold tracking-[0.18em] uppercase text-[color:var(--lv2-accent-deep)]">
+            The dashboard
+          </div>
           <h2 className="display mt-3" style={{ fontSize: "clamp(34px, 5vw, 64px)" }}>
             Every signal, on one screen.
           </h2>
@@ -312,7 +377,9 @@ function ProductMock() {
                 style={{ transformPerspective: 1400 }}
               >
                 <div className="bar">
-                  <i /><i /><i />
+                  <i />
+                  <i />
+                  <i />
                   <span className="url">viraleo.pro / mrbeast</span>
                 </div>
                 <MockDashboard />
@@ -352,25 +419,45 @@ function MockDashboard() {
       <div className="grid md:grid-cols-12 gap-5">
         {/* Score ring */}
         <div className="md:col-span-4 rounded-2xl border border-[color:var(--lv2-hairline)] p-5">
-          <div className="text-[11px] uppercase tracking-widest text-[color:var(--lv2-ink-mute)] font-semibold">Overall score</div>
+          <div className="text-[11px] uppercase tracking-widest text-[color:var(--lv2-ink-mute)] font-semibold">
+            Overall score
+          </div>
           <div className="mt-4 flex items-center gap-5">
             <div className="relative w-24 h-24">
               <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
                 <circle cx="50" cy="50" r="42" stroke="#eee" strokeWidth="8" fill="none" />
-                <circle cx="50" cy="50" r="42" stroke="#18c964" strokeWidth="8" fill="none" strokeDasharray={`${(94 / 100) * 264} 264`} strokeLinecap="round" />
+                <circle
+                  cx="50"
+                  cy="50"
+                  r="42"
+                  stroke="#18c964"
+                  strokeWidth="8"
+                  fill="none"
+                  strokeDasharray={`${(94 / 100) * 264} 264`}
+                  strokeLinecap="round"
+                />
               </svg>
-              <div className="absolute inset-0 flex items-center justify-center display" style={{ fontSize: 28 }}>94</div>
+              <div
+                className="absolute inset-0 flex items-center justify-center display"
+                style={{ fontSize: 28 }}
+              >
+                94
+              </div>
             </div>
             <div>
               <div className="text-sm font-semibold">Top 3% in niche</div>
-              <div className="text-[12.5px] text-[color:var(--lv2-ink-soft)] mt-1">Hook, structure, thumbnail all firing.</div>
+              <div className="text-[12.5px] text-[color:var(--lv2-ink-soft)] mt-1">
+                Hook, structure, thumbnail all firing.
+              </div>
             </div>
           </div>
         </div>
 
         {/* Metric bars */}
         <div className="md:col-span-8 rounded-2xl border border-[color:var(--lv2-hairline)] p-5">
-          <div className="text-[11px] uppercase tracking-widest text-[color:var(--lv2-ink-mute)] font-semibold">Vs. niche top 10</div>
+          <div className="text-[11px] uppercase tracking-widest text-[color:var(--lv2-ink-mute)] font-semibold">
+            Vs. niche top 10
+          </div>
           <div className="mt-4 space-y-3">
             {[
               { l: "Hook (0–3s)", v: 96, c: "#18c964" },
@@ -402,7 +489,9 @@ function MockDashboard() {
         {/* Retention chart */}
         <div className="md:col-span-7 rounded-2xl border border-[color:var(--lv2-hairline)] p-5">
           <div className="flex items-baseline justify-between">
-            <div className="text-[11px] uppercase tracking-widest text-[color:var(--lv2-ink-mute)] font-semibold">Retention curve</div>
+            <div className="text-[11px] uppercase tracking-widest text-[color:var(--lv2-ink-mute)] font-semibold">
+              Retention curve
+            </div>
             <div className="text-[12px] text-[color:var(--lv2-ink-soft)]">vs. niche median</div>
           </div>
           <svg viewBox="0 0 400 140" className="w-full h-36 mt-3">
@@ -412,15 +501,31 @@ function MockDashboard() {
                 <stop offset="100%" stopColor="#18c964" stopOpacity="0" />
               </linearGradient>
             </defs>
-            <path d="M0,100 C40,30 80,40 120,55 C160,70 200,30 240,42 C280,52 320,28 360,38 L400,42 L400,140 L0,140 Z" fill="url(#lv2grad)" />
-            <path d="M0,100 C40,30 80,40 120,55 C160,70 200,30 240,42 C280,52 320,28 360,38 L400,42" fill="none" stroke="#18c964" strokeWidth="2.5" />
-            <path d="M0,115 C50,90 100,95 150,100 C200,105 250,98 300,102 C350,106 400,100 400,100" fill="none" stroke="#9a9aa6" strokeWidth="1.5" strokeDasharray="4 4" />
+            <path
+              d="M0,100 C40,30 80,40 120,55 C160,70 200,30 240,42 C280,52 320,28 360,38 L400,42 L400,140 L0,140 Z"
+              fill="url(#lv2grad)"
+            />
+            <path
+              d="M0,100 C40,30 80,40 120,55 C160,70 200,30 240,42 C280,52 320,28 360,38 L400,42"
+              fill="none"
+              stroke="#18c964"
+              strokeWidth="2.5"
+            />
+            <path
+              d="M0,115 C50,90 100,95 150,100 C200,105 250,98 300,102 C350,106 400,100 400,100"
+              fill="none"
+              stroke="#9a9aa6"
+              strokeWidth="1.5"
+              strokeDasharray="4 4"
+            />
           </svg>
         </div>
 
         {/* Insights */}
         <div className="md:col-span-5 rounded-2xl border border-[color:var(--lv2-hairline)] p-5">
-          <div className="text-[11px] uppercase tracking-widest text-[color:var(--lv2-ink-mute)] font-semibold">AI insights</div>
+          <div className="text-[11px] uppercase tracking-widest text-[color:var(--lv2-ink-mute)] font-semibold">
+            AI insights
+          </div>
           <ul className="mt-3 space-y-2.5 text-[13px]">
             {[
               "Hook lands 1.4s too late — cut intro bumper.",
@@ -428,7 +533,10 @@ function MockDashboard() {
               "Sustain pacing through 0:30–0:50 dip.",
             ].map((s) => (
               <li key={s} className="flex gap-2.5">
-                <CheckCircle2 size={16} className="text-[color:var(--lv2-accent)] mt-0.5 shrink-0" />
+                <CheckCircle2
+                  size={16}
+                  className="text-[color:var(--lv2-accent)] mt-0.5 shrink-0"
+                />
                 <span>{s}</span>
               </li>
             ))}
@@ -498,10 +606,19 @@ function FeatureReel() {
                 style={{ background: `${f.color}1a`, color: f.color }}
               >
                 <f.icon size={14} />
-                <span className="text-[12px] font-semibold uppercase tracking-wider">{f.eyebrow}</span>
+                <span className="text-[12px] font-semibold uppercase tracking-wider">
+                  {f.eyebrow}
+                </span>
               </div>
-              <h3 className="display" style={{ fontSize: "clamp(28px, 3.8vw, 52px)" }}>{f.title}</h3>
-              <p className="mt-5 text-[color:var(--lv2-ink-soft)]" style={{ fontSize: 17, lineHeight: 1.55, maxWidth: 460 }}>{f.body}</p>
+              <h3 className="display" style={{ fontSize: "clamp(28px, 3.8vw, 52px)" }}>
+                {f.title}
+              </h3>
+              <p
+                className="mt-5 text-[color:var(--lv2-ink-soft)]"
+                style={{ fontSize: 17, lineHeight: 1.55, maxWidth: 460 }}
+              >
+                {f.body}
+              </p>
               {/* Progress dots */}
               <div className="flex gap-2 mt-8">
                 {FEATURES.map((feat, i) => (
@@ -509,7 +626,10 @@ function FeatureReel() {
                     key={i}
                     onClick={() => setActive(i)}
                     className="h-1 rounded-full transition-all duration-300"
-                    style={{ width: i === active ? 32 : 12, background: i === active ? f.color : "#d4d4d0" }}
+                    style={{
+                      width: i === active ? 32 : 12,
+                      background: i === active ? f.color : "#d4d4d0",
+                    }}
                   />
                 ))}
               </div>
@@ -537,11 +657,7 @@ const FEATURE_IMAGES = ["/preanalysis.png", "/tx.png", "/niche.png", "/shadow.pn
 function FeatureVisual({ idx, color }: { idx: number; color: string }) {
   return (
     <div className="absolute inset-0 p-0 flex items-center justify-center">
-      <img
-        src={FEATURE_IMAGES[idx]}
-        alt=""
-        className="w-full h-full object-cover rounded-3xl"
-      />
+      <img src={FEATURE_IMAGES[idx]} alt="" className="w-full h-full object-cover rounded-3xl" />
     </div>
   );
 }
@@ -568,7 +684,12 @@ function Counter({ to, suffix }: { to: number; suffix: string }) {
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
   }, [inView, to]);
-  return <span ref={ref}>{n}{suffix}</span>;
+  return (
+    <span ref={ref}>
+      {n}
+      {suffix}
+    </span>
+  );
 }
 
 function Metrics() {
@@ -581,7 +702,9 @@ function Metrics() {
               <div className="display" style={{ fontSize: "clamp(40px, 5vw, 64px)" }}>
                 <Counter to={m.v} suffix={m.suffix} />
               </div>
-              <div className="mt-2 text-[13px] text-[color:var(--lv2-ink-soft)] uppercase tracking-wider font-medium">{m.label}</div>
+              <div className="mt-2 text-[13px] text-[color:var(--lv2-ink-soft)] uppercase tracking-wider font-medium">
+                {m.label}
+              </div>
             </div>
           ))}
         </div>
@@ -601,7 +724,8 @@ function ChannelMarquee() {
   useGSAP(() => {
     if (!row.current) return;
     const halfWidth = row.current.scrollWidth / 2;
-    gsap.fromTo(row.current,
+    gsap.fromTo(
+      row.current,
       { x: 0 },
       {
         x: -halfWidth,
@@ -612,18 +736,21 @@ function ChannelMarquee() {
           x: (x) => {
             const val = parseFloat(x);
             return (val % halfWidth) + "px";
-          }
-        }
-      }
+          },
+        },
+      },
     );
   }, []);
 
   return (
     <section className="lv2-section" style={{ paddingTop: 40, paddingBottom: 80 }}>
       <div className="text-center mb-12">
-        <div className="text-[12px] font-semibold tracking-[0.18em] uppercase text-[color:var(--lv2-accent-deep)]">In the wild</div>
+        <div className="text-[12px] font-semibold tracking-[0.18em] uppercase text-[color:var(--lv2-accent-deep)]">
+          In the wild
+        </div>
         <h2 className="display mt-3 lv2-glitch-text" style={{ fontSize: "clamp(30px, 4vw, 52px)" }}>
-          They did it by trial and errors,<br />
+          They did it by trial and errors,
+          <br />
           <span className="lv2-rainbow-shift">You do it in one click.</span>
         </h2>
       </div>
@@ -640,7 +767,10 @@ function ChannelMarquee() {
               onMouseEnter={() => setHoveredId(s.id)}
               onMouseLeave={() => setHoveredId(null)}
             >
-              <div className="relative w-full overflow-hidden bg-black" style={{ aspectRatio: "9/16" }}>
+              <div
+                className="relative w-full overflow-hidden bg-black"
+                style={{ aspectRatio: "9/16" }}
+              >
                 {hoveredId === s.id ? (
                   <iframe
                     src={`https://www.youtube.com/embed/${s.id}?autoplay=1&mute=1&loop=1&playlist=${s.id}&controls=0&modestbranding=1&rel=0`}
@@ -663,7 +793,13 @@ function ChannelMarquee() {
                   <span className="text-[11px] font-bold text-ink truncate flex items-center gap-1">
                     {s.name}
                     {s.verified && (
-                      <svg viewBox="0 0 24 24" width="12" height="12" fill="#606060" className="flex-shrink-0">
+                      <svg
+                        viewBox="0 0 24 24"
+                        width="12"
+                        height="12"
+                        fill="#606060"
+                        className="flex-shrink-0"
+                      >
                         <circle cx="12" cy="12" r="10" />
                         <path d="M9.5 15.5l-4-4L7 10l2.5 2.5L17 6l1.5 1.5z" fill="white" />
                       </svg>
@@ -705,7 +841,9 @@ function CompareSection() {
     <section className="lv2-section" style={{ paddingTop: 80, paddingBottom: 80 }}>
       <div className="lv2-container">
         <div className="text-center mb-14">
-          <div className="text-[12px] font-semibold tracking-[0.18em] uppercase text-[color:var(--lv2-accent-deep)]">The difference</div>
+          <div className="text-[12px] font-semibold tracking-[0.18em] uppercase text-[color:var(--lv2-accent-deep)]">
+            The difference
+          </div>
           <h2 className="display mt-3" style={{ fontSize: "clamp(34px, 5vw, 64px)" }}>
             Guesswork vs. Strategy.
           </h2>
@@ -714,8 +852,12 @@ function CompareSection() {
         <div ref={ref} className="max-w-4xl mx-auto">
           {/* Header row */}
           <div className="grid grid-cols-2 gap-4 mb-4 px-1">
-            <div className="text-[11px] font-bold uppercase tracking-widest text-red-500/60">Without Viraleo</div>
-            <div className="text-[11px] font-bold uppercase tracking-widest text-[color:var(--lv2-accent)]">With Viraleo</div>
+            <div className="text-[11px] font-bold uppercase tracking-widest text-red-500/60">
+              Without Viraleo
+            </div>
+            <div className="text-[11px] font-bold uppercase tracking-widest text-[color:var(--lv2-accent)]">
+              With Viraleo
+            </div>
           </div>
 
           {/* Rows */}
@@ -737,7 +879,9 @@ function CompareSection() {
                 </div>
                 <div className="flex items-center gap-2.5">
                   <CheckCircle2 size={16} className="text-[color:var(--lv2-accent)] shrink-0" />
-                  <span className="text-[14px] font-medium text-[color:var(--lv2-ink)]">{row.good}</span>
+                  <span className="text-[14px] font-medium text-[color:var(--lv2-ink)]">
+                    {row.good}
+                  </span>
                 </div>
               </motion.div>
             ))}
@@ -757,17 +901,28 @@ function WhySplit() {
     <section className="lv2-section">
       <div className="lv2-container grid md:grid-cols-2 gap-16 items-center">
         <div>
-          <div className="text-[12px] font-semibold tracking-[0.18em] uppercase text-[color:var(--lv2-accent-deep)]">Why Viraleo</div>
+          <div className="text-[12px] font-semibold tracking-[0.18em] uppercase text-[color:var(--lv2-accent-deep)]">
+            Why Viraleo
+          </div>
           <h2 className="display mt-3" style={{ fontSize: "clamp(34px, 5vw, 64px)" }}>
             Stop guessing. <br />
             <span style={{ color: "var(--lv2-accent-deep)" }}>Start shipping</span> what works.
           </h2>
-          <p className="mt-6 text-[color:var(--lv2-ink-soft)]" style={{ fontSize: 17, lineHeight: 1.55, maxWidth: 480 }}>
-            Every viral video has fingerprints — pacing, framing, hook patterns. Viraleo reads those fingerprints across thousands of channels and tells you exactly which ones to copy.
+          <p
+            className="mt-6 text-[color:var(--lv2-ink-soft)]"
+            style={{ fontSize: 17, lineHeight: 1.55, maxWidth: 480 }}
+          >
+            Every viral video has fingerprints — pacing, framing, hook patterns. Viraleo reads those
+            fingerprints across thousands of channels and tells you exactly which ones to copy.
           </p>
           <div className="mt-8 flex gap-3 flex-wrap">
-            <Link to="/login" className="lv2-btn-primary">Try it free<ArrowRight size={16} /></Link>
-            <Link to="/login" className="lv2-btn-ghost">Explore niches</Link>
+            <Link to="/login" className="lv2-btn-primary">
+              Try it free
+              <ArrowRight size={16} />
+            </Link>
+            <Link to="/login" className="lv2-btn-ghost">
+              Explore niches
+            </Link>
           </div>
         </div>
 
@@ -830,7 +985,13 @@ const PRICING = [
     price: "$50",
     original: "$100",
     sub: "per month",
-    feats: ["25 analyses / day", "Everything in Creator", "Niche deep-dives", "Competitor tracking", "Priority support"],
+    feats: [
+      "25 analyses / day",
+      "Everything in Creator",
+      "Niche deep-dives",
+      "Competitor tracking",
+      "Priority support",
+    ],
     cta: "Go Pro",
     popular: false,
     discount: null,
@@ -847,60 +1008,87 @@ function Pricing() {
   return (
     <section className="lv2-section" id="pricing">
       <div className="text-center mb-14">
-        <div className="text-[12px] font-semibold tracking-[0.18em] uppercase text-[color:var(--lv2-accent-deep)]">Pricing</div>
-        <h2 className="display mt-3" style={{ fontSize: "clamp(34px, 5vw, 64px)" }}>One price. Every tool.</h2>
+        <div className="text-[12px] font-semibold tracking-[0.18em] uppercase text-[color:var(--lv2-accent-deep)]">
+          Pricing
+        </div>
+        <h2 className="display mt-3" style={{ fontSize: "clamp(34px, 5vw, 64px)" }}>
+          One price. Every tool.
+        </h2>
         <p className="mt-4 text-[color:var(--lv2-ink-soft)] text-[16px] max-w-md mx-auto">
           No seats, no add-ons, no upsells. Just channel intelligence.
         </p>
       </div>
       <div className="lv2-container grid md:grid-cols-3 gap-5 max-w-5xl mx-auto">
         {PRICING.map((p) => {
-          const lockedFeats = new Set(p.feats.filter(f => p.name === "Free" && f === PRICING_FEAT_LOCKED));
+          const lockedFeats = new Set(
+            p.feats.filter((f) => p.name === "Free" && f === PRICING_FEAT_LOCKED),
+          );
           return (
-          <div key={p.name} className={`lv2-price ${p.popular ? "popular" : ""}`}>
-            <div className="flex items-center justify-between">
-              <div className="text-[13px] font-semibold tracking-wider uppercase label">{p.name}</div>
-              {p.popular && <span className="text-[10.5px] font-bold px-2 py-1 rounded-full bg-[color:var(--lv2-accent)] text-black">POPULAR</span>}
-            </div>
-            <div className="mt-5">
-              <div className="flex items-baseline gap-2">
-                <span className="display" style={{ fontSize: 54 }}>{p.price}</span>
-                <span className="label text-[13px]">{p.sub}</span>
-              </div>
-              {p.original && (
-                <div className="flex items-center gap-2 mt-1">
-                  <span className="lv2-original-price text-[15px]">{p.original}</span>
-                  {p.discount && <span className="lv2-discount-badge">{p.discount}</span>}
+            <div key={p.name} className={`lv2-price ${p.popular ? "popular" : ""}`}>
+              <div className="flex items-center justify-between">
+                <div className="text-[13px] font-semibold tracking-wider uppercase label">
+                  {p.name}
                 </div>
-              )}
+                {p.popular && (
+                  <span className="text-[10.5px] font-bold px-2 py-1 rounded-full bg-[color:var(--lv2-accent)] text-black">
+                    POPULAR
+                  </span>
+                )}
+              </div>
+              <div className="mt-5">
+                <div className="flex items-baseline gap-2">
+                  <span className="display" style={{ fontSize: 54 }}>
+                    {p.price}
+                  </span>
+                  <span className="label text-[13px]">{p.sub}</span>
+                </div>
+                {p.original && (
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="lv2-original-price text-[15px]">{p.original}</span>
+                    {p.discount && <span className="lv2-discount-badge">{p.discount}</span>}
+                  </div>
+                )}
+              </div>
+              <Link
+                to="/login"
+                className={`mt-6 w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-full font-semibold text-[14px] transition-all lv2-plan-btn ${p.popular ? "bg-[color:var(--lv2-accent)] text-black hover:bg-[#1de077]" : "bg-[color:var(--lv2-ink)] text-white hover:bg-[#1a1a22]"}`}
+              >
+                {p.cta}
+                <ArrowRight size={15} />
+              </Link>
+              <ul className="mt-7 space-y-3">
+                {p.feats.map(function (f) {
+                  const isLocked = p.name === "Free" && f === PRICING_FEAT_LOCKED;
+                  return (
+                    <li
+                      key={f}
+                      className={"flex gap-2.5 text-[14px] feat" + (isLocked ? " opacity-60" : "")}
+                    >
+                      {isLocked ? (
+                        <span className="flex gap-2.5 items-center">
+                          <Lock size={17} className="text-blue-400 shrink-0" />
+                          <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+                            {f}
+                          </span>
+                        </span>
+                      ) : (
+                        <span className="flex gap-2.5 items-center">
+                          <CheckCircle2
+                            size={17}
+                            className={
+                              p.popular
+                                ? "text-[color:var(--lv2-accent)] shrink-0"
+                                : "text-[color:var(--lv2-accent-deep)] shrink-0"
+                            }
+                          />
+                          <span>{f}</span>
+                        </span>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
             </div>
-            <Link
-              to="/login"
-              className={`mt-6 w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-full font-semibold text-[14px] transition-all lv2-plan-btn ${p.popular ? "bg-[color:var(--lv2-accent)] text-black hover:bg-[#1de077]" : "bg-[color:var(--lv2-ink)] text-white hover:bg-[#1a1a22]"}`}
-            >
-              {p.cta}<ArrowRight size={15} />
-            </Link>
-            <ul className="mt-7 space-y-3">
-              {p.feats.map(function(f) {
-                const isLocked = p.name === "Free" && f === PRICING_FEAT_LOCKED;
-                return (
-                  <li key={f} className={"flex gap-2.5 text-[14px] feat" + (isLocked ? " opacity-60" : "")}>
-                    {isLocked ? (
-                      <span className="flex gap-2.5 items-center">
-                        <Lock size={17} className="text-blue-400 shrink-0" />
-                        <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">{f}</span>
-                      </span>
-                    ) : (
-                      <span className="flex gap-2.5 items-center">
-                        <CheckCircle2 size={17} className={p.popular ? "text-[color:var(--lv2-accent)] shrink-0" : "text-[color:var(--lv2-accent-deep)] shrink-0"} />
-                        <span>{f}</span>
-                      </span>
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
           );
         })}
       </div>
@@ -917,14 +1105,26 @@ function Faq() {
     <section className="lv2-section" id="faq">
       <div className="lv2-container max-w-3xl">
         <div className="text-center mb-12">
-          <div className="text-[12px] font-semibold tracking-[0.18em] uppercase text-[color:var(--lv2-accent-deep)]">FAQ</div>
-          <h2 className="display mt-3" style={{ fontSize: "clamp(34px, 5vw, 56px)" }}>Questions, answered.</h2>
+          <div className="text-[12px] font-semibold tracking-[0.18em] uppercase text-[color:var(--lv2-accent-deep)]">
+            FAQ
+          </div>
+          <h2 className="display mt-3" style={{ fontSize: "clamp(34px, 5vw, 56px)" }}>
+            Questions, answered.
+          </h2>
         </div>
         <Accordion type="single" collapsible className="w-full">
           {FAQS.map((f, i) => (
-            <AccordionItem key={i} value={`q-${i}`} className="border-b border-[color:var(--lv2-hairline)]">
-              <AccordionTrigger className="py-6 text-left text-[17px] font-semibold hover:no-underline">{f.q}</AccordionTrigger>
-              <AccordionContent className="text-[15px] text-[color:var(--lv2-ink-soft)] leading-relaxed pb-6">{f.a}</AccordionContent>
+            <AccordionItem
+              key={i}
+              value={`q-${i}`}
+              className="border-b border-[color:var(--lv2-hairline)]"
+            >
+              <AccordionTrigger className="py-6 text-left text-[17px] font-semibold hover:no-underline">
+                {f.q}
+              </AccordionTrigger>
+              <AccordionContent className="text-[15px] text-[color:var(--lv2-ink-soft)] leading-relaxed pb-6">
+                {f.a}
+              </AccordionContent>
             </AccordionItem>
           ))}
         </Accordion>
@@ -966,7 +1166,9 @@ function HowItWorks() {
   return (
     <section className="lv2-section" id="how">
       <div className="text-center mb-16">
-        <div className="text-[12px] font-semibold tracking-[0.18em] uppercase text-[color:var(--lv2-accent-deep)]">How It Works</div>
+        <div className="text-[12px] font-semibold tracking-[0.18em] uppercase text-[color:var(--lv2-accent-deep)]">
+          How It Works
+        </div>
         <h2 className="display mt-3" style={{ fontSize: "clamp(34px, 5vw, 64px)" }}>
           From channel to insight in 3 steps.
         </h2>
@@ -1004,7 +1206,9 @@ function Testimonials() {
     <section className="lv2-section" style={{ paddingTop: 60, paddingBottom: 80 }}>
       <div className="lv2-container">
         <div className="text-center mb-14">
-          <div className="text-[12px] font-semibold tracking-[0.18em] uppercase text-[color:var(--lv2-accent-deep)]">Social Proof</div>
+          <div className="text-[12px] font-semibold tracking-[0.18em] uppercase text-[color:var(--lv2-accent-deep)]">
+            Social Proof
+          </div>
           <h2 className="display mt-3" style={{ fontSize: "clamp(34px, 5vw, 64px)" }}>
             Loved by creators.
           </h2>
@@ -1025,10 +1229,15 @@ function Testimonials() {
               </p>
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[color:var(--lv2-accent)] to-[color:var(--lv2-violet)] flex items-center justify-center text-white font-bold text-sm">
-                  {t.name.split(" ").map((n) => n[0]).join("")}
+                  {t.name
+                    .split(" ")
+                    .map((n) => n[0])
+                    .join("")}
                 </div>
                 <div>
-                  <div className="font-semibold text-[14px] text-[color:var(--lv2-ink)]">{t.name}</div>
+                  <div className="font-semibold text-[14px] text-[color:var(--lv2-ink)]">
+                    {t.name}
+                  </div>
                   <div className="text-[12px] text-[color:var(--lv2-ink-soft)]">{t.role}</div>
                 </div>
               </div>
@@ -1075,18 +1284,28 @@ function TiltCard({ children }: { children: ReactNode }) {
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       className="lv2-tilt-card"
-      style={{
-        transform: `perspective(1000px) rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)`,
-        "--mx": `${mousePos.x}%`,
-        "--my": `${mousePos.y}%`,
-      } as React.CSSProperties}
+      style={
+        {
+          transform: `perspective(1000px) rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)`,
+          "--mx": `${mousePos.x}%`,
+          "--my": `${mousePos.y}%`,
+        } as React.CSSProperties
+      }
     >
       {children}
     </div>
   );
 }
 
-function AnimatedCountUp({ value, suffix = "", decimals = 1 }: { value: number; suffix?: string; decimals?: number }) {
+function AnimatedCountUp({
+  value,
+  suffix = "",
+  decimals = 1,
+}: {
+  value: number;
+  suffix?: string;
+  decimals?: number;
+}) {
   const [count, setCount] = useState(0);
   const ref = useRef(null);
   const inView = useInView(ref, { once: true });
@@ -1107,7 +1326,12 @@ function AnimatedCountUp({ value, suffix = "", decimals = 1 }: { value: number; 
     requestAnimationFrame(tick);
   }, [inView, value]);
 
-  return <span ref={ref}>{count.toFixed(decimals)}{suffix}</span>;
+  return (
+    <span ref={ref}>
+      {count.toFixed(decimals)}
+      {suffix}
+    </span>
+  );
 }
 
 function ProofSection() {
@@ -1156,7 +1380,12 @@ function ProofSection() {
                 top: `${p.y}%`,
                 width: p.size,
                 height: p.size,
-                background: p.id % 3 === 0 ? "var(--lv2-accent)" : p.id % 3 === 1 ? "var(--lv2-violet)" : "var(--lv2-amber)",
+                background:
+                  p.id % 3 === 0
+                    ? "var(--lv2-accent)"
+                    : p.id % 3 === 1
+                      ? "var(--lv2-violet)"
+                      : "var(--lv2-amber)",
               }}
               initial={{ opacity: 0, scale: 0 }}
               whileInView={{
@@ -1269,7 +1498,6 @@ function ProofSection() {
             </TiltCard>
           </a>
         </motion.div>
-
       </div>
     </section>
   );
@@ -1286,13 +1514,9 @@ function FinalCta() {
           transition={{ duration: 0.7 }}
         >
           <h2 className="text-[clamp(36px,6vw,80px)] font-extrabold text-[color:var(--lv2-ink)] leading-[1.05] tracking-[-0.04em] mb-6">
-            Stop guessing.{" "}
-            <span className="dominate">Start dominating.</span>
+            Stop guessing. <span className="dominate">Start dominating.</span>
           </h2>
-          <Link
-            to="/login"
-            className="lv2-btn-primary text-[18px] px-10 py-4"
-          >
+          <Link to="/login" className="lv2-btn-primary text-[18px] px-10 py-4">
             Dominate Now
             <ArrowRight size={20} />
           </Link>
@@ -1319,9 +1543,15 @@ export function Nav() {
     <nav className={`lv2-nav ${!scrolled ? "lv2-nav--expanded" : ""}`}>
       <ViraleoLogo size={scrolled ? "sm" : "md"} linkTo="/" />
       <div className="hide-m flex items-center gap-1 ml-3">
-        <a href="#how" className="l">Product</a>
-        <a href="#pricing" className="l">Pricing</a>
-        <a href="#faq" className="l">FAQ</a>
+        <a href="#how" className="l">
+          Product
+        </a>
+        <a href="#pricing" className="l">
+          Pricing
+        </a>
+        <a href="#faq" className="l">
+          FAQ
+        </a>
       </div>
       <Link to="/login" className="cta ml-1">
         Decode <ArrowRight size={scrolled ? 14 : 16} />
@@ -1342,10 +1572,18 @@ export function Footer() {
           © {new Date().getFullYear()} Viraleo. Built for creators who ship.
         </div>
         <div className="flex items-center gap-5 text-[13px] text-[color:var(--lv2-ink-soft)]">
-          <Link to="/support" className="hover:text-[color:var(--lv2-ink)]">Support</Link>
-          <Link to="/privacy-policy" className="hover:text-[color:var(--lv2-ink)]">Privacy Policy</Link>
-          <Link to="/terms" className="hover:text-[color:var(--lv2-ink)]">Terms of Service</Link>
-          <Link to="/cookies" className="hover:text-[color:var(--lv2-ink)]">Cookies</Link>
+          <Link to="/support" className="hover:text-[color:var(--lv2-ink)]">
+            Support
+          </Link>
+          <Link to="/privacy-policy" className="hover:text-[color:var(--lv2-ink)]">
+            Privacy Policy
+          </Link>
+          <Link to="/terms" className="hover:text-[color:var(--lv2-ink)]">
+            Terms of Service
+          </Link>
+          <Link to="/cookies" className="hover:text-[color:var(--lv2-ink)]">
+            Cookies
+          </Link>
         </div>
       </div>
     </footer>

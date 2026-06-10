@@ -29,7 +29,7 @@ module.exports = {
       // Max consecutive restarts before PM2 gives up
       max_restarts: 10,
       // Consider process "stable" after 10s uptime
-      min_uptime: 10000,  // 10 seconds in ms
+      min_uptime: 10000, // 10 seconds in ms
       // Wait 5s before restarting after a crash
       restart_delay: 5000,
 

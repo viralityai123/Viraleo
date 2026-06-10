@@ -7,7 +7,11 @@ const trackReferralClick = createServerFn({ method: "POST" })
   .inputValidator((d: { slug: string; ip: string; userAgent: string; referrerPage: string }) => d)
   .handler(async ({ data }) => {
     const realSlug = (await resolveAlias(data.slug)) || data.slug;
-    await trackClick(realSlug, { ip: data.ip, userAgent: data.userAgent, referrerPage: data.referrerPage });
+    await trackClick(realSlug, {
+      ip: data.ip,
+      userAgent: data.userAgent,
+      referrerPage: data.referrerPage,
+    });
     return { ok: true, slug: realSlug };
   });
 
@@ -28,13 +32,15 @@ function ReferralRedirect() {
           userAgent: navigator.userAgent || "",
           referrerPage: document.referrer || "",
         },
-      }).then((res) => {
-        const realSlug = res.slug;
-        localStorage.setItem("viraleo:referrer", realSlug);
-        document.cookie = `viraleo_ref=${encodeURIComponent(realSlug)}; Path=/; Max-Age=2592000; SameSite=Lax`;
-      }).finally(() => {
-        navigate({ to: "/" });
-      });
+      })
+        .then((res) => {
+          const realSlug = res.slug;
+          localStorage.setItem("viraleo:referrer", realSlug);
+          document.cookie = `viraleo_ref=${encodeURIComponent(realSlug)}; Path=/; Max-Age=2592000; SameSite=Lax`;
+        })
+        .finally(() => {
+          navigate({ to: "/" });
+        });
     } else {
       navigate({ to: "/" });
     }

@@ -21,24 +21,16 @@ export function Diagnostics({ items }: { items: Diagnostic[] }) {
       <ul className="space-y-4">
         {items.map((d) => {
           const dot =
-            d.level === "critical"
-              ? "bg-critical"
-              : d.level === "warning"
-                ? "bg-watch"
-                : "bg-good";
+            d.level === "critical" ? "bg-critical" : d.level === "warning" ? "bg-watch" : "bg-good";
           return (
             <li key={d.title} className="flex gap-3">
               <span className={`mt-1.5 size-2 rounded-full shrink-0 ${dot}`} />
               <div>
                 <div className="text-[13.5px] font-medium text-ink">
                   {d.title}
-                  {d.level === "ok" && (
-                    <span className="ml-1 text-good">✓</span>
-                  )}
+                  {d.level === "ok" && <span className="ml-1 text-good">✓</span>}
                 </div>
-                <p className="mt-0.5 text-[12.5px] leading-relaxed text-ink-soft">
-                  {d.body}
-                </p>
+                <p className="mt-0.5 text-[12.5px] leading-relaxed text-ink-soft">{d.body}</p>
               </div>
             </li>
           );

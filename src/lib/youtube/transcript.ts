@@ -10,7 +10,10 @@ function parseJson3Captions(body: string): TranscriptLine[] {
     };
     const lines: TranscriptLine[] = [];
     for (const ev of data.events || []) {
-      const text = (ev.segs || []).map((s) => s.utf8 || "").join("").trim();
+      const text = (ev.segs || [])
+        .map((s) => s.utf8 || "")
+        .join("")
+        .trim();
       if (!text) continue;
       lines.push({
         startSec: Math.round((ev.tStartMs || 0) / 1000),
@@ -92,7 +95,7 @@ export async function fetchVideoTranscript(videoId: string): Promise<TranscriptL
 
 export function buildTranscriptPromptBlock(
   lines: TranscriptLine[] | null,
-  videoTitle: string
+  videoTitle: string,
 ): string {
   if (!lines?.length) {
     return `TRANSCRIPT: unavailable for "${videoTitle}" — do NOT invent spoken lines or frame-accurate cuts.`;

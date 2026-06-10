@@ -5,7 +5,10 @@ export const Route = createFileRoute("/cookies")({
   head: () => ({
     meta: [
       { title: "Cookies — Viraleo" },
-      { name: "description", content: "Viraleo Cookie Policy. Learn how we use cookies and similar technologies." },
+      {
+        name: "description",
+        content: "Viraleo Cookie Policy. Learn how we use cookies and similar technologies.",
+      },
       { property: "og:title", content: "Cookies — Viraleo" },
       { property: "og:description", content: "Viraleo Cookie Policy." },
       { name: "twitter:title", content: "Cookies — Viraleo" },
@@ -34,24 +37,24 @@ function Cookies() {
           <h2 className="text-lg font-semibold text-[#07070a] mb-2">2. How we use cookies</h2>
           <p>
             We use essential cookies for authentication and session management. We also use
-            analytics cookies (anonymized) to understand feature usage and improve the product.
-            No tracking cookies are used for advertising.
+            analytics cookies (anonymized) to understand feature usage and improve the product. No
+            tracking cookies are used for advertising.
           </p>
         </section>
 
         <section>
           <h2 className="text-lg font-semibold text-[#07070a] mb-2">3. Third-party cookies</h2>
           <p>
-            YouTube embeds on the platform may set their own cookies. We have no control over
-            these. Please refer to Google's cookie policy for more information.
+            YouTube embeds on the platform may set their own cookies. We have no control over these.
+            Please refer to Google's cookie policy for more information.
           </p>
         </section>
 
         <section>
           <h2 className="text-lg font-semibold text-[#07070a] mb-2">4. Managing cookies</h2>
           <p>
-            You can disable cookies in your browser settings. Note that doing so may break
-            core functionality like login and analysis reports.
+            You can disable cookies in your browser settings. Note that doing so may break core
+            functionality like login and analysis reports.
           </p>
         </section>
 

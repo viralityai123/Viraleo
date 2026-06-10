@@ -10,6 +10,7 @@ CSV_FIELDS = [
     "subscribers",
     "total_views",
     "video_count",
+    "country",
     "email",
     "niche",
     "flop_video_title",

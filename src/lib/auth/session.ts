@@ -55,10 +55,15 @@ async function hmacVerify(data: string, secret: string, signature: string): Prom
   return crypto.subtle.verify("HMAC", key, sigBytes.buffer as ArrayBuffer, enc.encode(data));
 }
 
-export async function signSession(payload: Omit<SessionPayload, "iat" | "exp">, secret: string): Promise<string> {
+export async function signSession(
+  payload: Omit<SessionPayload, "iat" | "exp">,
+  secret: string,
+): Promise<string> {
   const now = Math.floor(Date.now() / 1000);
   const full: SessionPayload = { ...payload, iat: now, exp: now + SESSION_TTL_SEC };
-  const header = bytesToBase64(new TextEncoder().encode(JSON.stringify({ alg: "HS256", typ: "JWT" })));
+  const header = bytesToBase64(
+    new TextEncoder().encode(JSON.stringify({ alg: "HS256", typ: "JWT" })),
+  );
   const body = bytesToBase64(new TextEncoder().encode(JSON.stringify(full)));
   const data = `${header}.${body}`;
   const sig = await hmacSign(data, secret);
@@ -120,7 +125,10 @@ export function getSessionFromToken(token: string): SessionPayload | null {
   }
 }
 
-export async function getSessionFromServer(headers: Headers, secret: string): Promise<SessionPayload | null> {
+export async function getSessionFromServer(
+  headers: Headers,
+  secret: string,
+): Promise<SessionPayload | null> {
   const cookieHeader = headers.get("cookie");
   const cookies = parseCookies(cookieHeader);
   const token = cookies[SESSION_COOKIE];

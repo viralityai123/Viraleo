@@ -1,7 +1,17 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { ArrowLeft, Zap, Settings, LogOut, ChevronRight, Clock, User, BarChart3 } from "lucide-react";
-import { getCredits, getMaxCredits, getPlanInfo, setPlan, getNextResetDate, type PlanTier, PLANS } from "@/lib/credits";
+import {
+  ArrowLeft,
+  Zap,
+  Settings,
+  LogOut,
+  ChevronRight,
+  Clock,
+  User,
+  BarChart3,
+} from "lucide-react";
+import { PLANS, type PlanTier } from "@/lib/plans";
+import { usePlanDisplay, useUserState, assignPlan } from "@/lib/user-state";
 import { getRecentActivities, formatTimestamp, getFeatureRoute } from "@/lib/activity";
 import { getSettings, updateSettings, clearAllData, type UserSettings } from "@/lib/settings";
 import { getUsageWeek, getFeatureBreakdown } from "@/lib/usage";
@@ -10,7 +20,10 @@ export const Route = createFileRoute("/account")({
   head: () => ({
     meta: [
       { title: "Account — Viraleo" },
-      { name: "description", content: "Manage your Viraleo account, subscription plan, credits, and settings." },
+      {
+        name: "description",
+        content: "Manage your Viraleo account, subscription plan, credits, and settings.",
+      },
       { property: "og:title", content: "Account — Viraleo" },
       { property: "og:description", content: "Manage your Viraleo account and subscription." },
       { name: "twitter:title", content: "Account — Viraleo" },
@@ -32,26 +45,23 @@ const tabs: { key: Tab; icon: typeof User; label: string }[] = [
 
 function AccountPage() {
   const navigate = useNavigate();
+  const { refresh: refreshUserState } = useUserState();
+  const { tier, label, credits, maxCredits, nextReset } = usePlanDisplay();
   const [tab, setTab] = useState<Tab>("account");
-  const [credits, setCredits] = useState(getCredits());
-  const [planInfo, setPlanInfo] = useState(getPlanInfo());
   const [settings, setSettingsState] = useState(getSettings());
   const [activities, setActivities] = useState(getRecentActivities(5));
 
-  const maxCredits = getMaxCredits();
-  const nextReset = getNextResetDate();
   const pct = maxCredits > 0 ? Math.round((credits / maxCredits) * 100) : 0;
 
   function refresh() {
-    setCredits(getCredits());
-    setPlanInfo(getPlanInfo());
+    refreshUserState();
     setSettingsState(getSettings());
     setActivities(getRecentActivities(5));
   }
 
-  function handlePlanChange(tier: PlanTier) {
-    if (tier === "free") {
-      setPlan(tier);
+  async function handlePlanChange(planTier: PlanTier) {
+    if (planTier === "free") {
+      await assignPlan({ data: { tier: planTier } });
       refresh();
     } else {
       navigate({ to: "/select-plan" });
@@ -73,7 +83,9 @@ function AccountPage() {
           </Link>
           <div>
             <h1 className="font-display text-[26px] font-black text-ink">Account</h1>
-            <p className="text-[13px] text-ink-soft mt-0.5">Manage your plan, credits, and settings</p>
+            <p className="text-[13px] text-ink-soft mt-0.5">
+              Manage your plan, credits, and settings
+            </p>
           </div>
         </div>
 
@@ -106,12 +118,16 @@ function AccountPage() {
                   <span className="text-[11px] font-bold uppercase tracking-widest text-ink-soft">
                     Current Plan
                   </span>
-                  <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider ${
-                    planInfo.tier === "free" ? "bg-amber-100 text-amber-700" :
-                    planInfo.tier === "creator" ? "bg-emerald-100 text-emerald-700" :
-                    "bg-violet-100 text-violet-700"
-                  }`}>
-                    {planInfo.label}
+                  <span
+                    className={`text-[11px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider ${
+                      tier === "free"
+                        ? "bg-amber-100 text-amber-700"
+                        : tier === "creator"
+                          ? "bg-emerald-100 text-emerald-700"
+                          : "bg-violet-100 text-violet-700"
+                    }`}
+                  >
+                    {label}
                   </span>
                 </div>
                 <div className="flex items-baseline gap-1 mb-1">
@@ -120,7 +136,10 @@ function AccountPage() {
                   <span className="text-[13px] text-ink-soft ml-1">credits</span>
                 </div>
                 <div className="w-full h-2.5 bg-emerald-100 rounded-full overflow-hidden mb-2">
-                  <div className="h-full bg-emerald-500 rounded-full transition-all" style={{ width: `${pct}%` }} />
+                  <div
+                    className="h-full bg-emerald-500 rounded-full transition-all"
+                    style={{ width: `${pct}%` }}
+                  />
                 </div>
                 <p className="text-[12px] text-ink-soft">Resets {nextReset}</p>
               </div>
@@ -128,31 +147,45 @@ function AccountPage() {
               {/* Recent Activity */}
               <div>
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-[11px] font-bold uppercase tracking-widest text-ink-soft">Recent Activity</h3>
-                  <Link to="/history" className="text-[11px] font-bold text-emerald-600 hover:text-emerald-700 flex items-center gap-0.5">
+                  <h3 className="text-[11px] font-bold uppercase tracking-widest text-ink-soft">
+                    Recent Activity
+                  </h3>
+                  <Link
+                    to="/history"
+                    className="text-[11px] font-bold text-emerald-600 hover:text-emerald-700 flex items-center gap-0.5"
+                  >
                     View all <ChevronRight size={12} />
                   </Link>
                 </div>
                 <div className="space-y-1">
                   {activities.length === 0 ? (
                     <p className="text-[13px] text-ink-soft py-6 text-center">No activity yet</p>
-                  ) : activities.map((a) => (
-                    <Link
-                      key={a.id}
-                      to={getFeatureRoute(a.feature)}
-                      className="flex items-center gap-3 p-3 rounded-2xl hover:bg-surface-2 transition group"
-                    >
-                      <div className="w-8 h-8 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center shrink-0">
-                        <Clock size={14} className="text-emerald-600" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[13px] font-semibold text-ink truncate">{a.label}</p>
-                        {a.target && <p className="text-[11px] text-ink-soft truncate">{a.target}</p>}
-                      </div>
-                      <span className="text-[10px] text-ink-soft shrink-0">{formatTimestamp(a.timestamp)}</span>
-                      <ChevronRight size={13} className="text-ink-soft opacity-0 group-hover:opacity-100 transition shrink-0" />
-                    </Link>
-                  ))}
+                  ) : (
+                    activities.map((a) => (
+                      <Link
+                        key={a.id}
+                        to={getFeatureRoute(a.feature)}
+                        className="flex items-center gap-3 p-3 rounded-2xl hover:bg-surface-2 transition group"
+                      >
+                        <div className="w-8 h-8 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center shrink-0">
+                          <Clock size={14} className="text-emerald-600" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[13px] font-semibold text-ink truncate">{a.label}</p>
+                          {a.target && (
+                            <p className="text-[11px] text-ink-soft truncate">{a.target}</p>
+                          )}
+                        </div>
+                        <span className="text-[10px] text-ink-soft shrink-0">
+                          {formatTimestamp(a.timestamp)}
+                        </span>
+                        <ChevronRight
+                          size={13}
+                          className="text-ink-soft opacity-0 group-hover:opacity-100 transition shrink-0"
+                        />
+                      </Link>
+                    ))
+                  )}
                 </div>
               </div>
             </>
@@ -163,25 +196,36 @@ function AccountPage() {
             <>
               {/* 7-day bar chart */}
               <div className="bg-white border border-hairline rounded-2xl p-5">
-                <h3 className="text-[11px] font-bold uppercase tracking-widest text-ink-soft mb-4">Last 7 Days</h3>
+                <h3 className="text-[11px] font-bold uppercase tracking-widest text-ink-soft mb-4">
+                  Last 7 Days
+                </h3>
                 <div className="flex items-end gap-1.5 h-28">
                   {(() => {
                     const week = getUsageWeek();
                     const maxVal = Math.max(...week.map((d) => d.total), 1);
                     return week.map((day, i) => {
                       const pct = (day.total / maxVal) * 100;
-                      const label = new Date(day.date).toLocaleDateString("en-US", { weekday: "short" });
+                      const label = new Date(day.date).toLocaleDateString("en-US", {
+                        weekday: "short",
+                      });
                       const isToday = i === 6;
                       return (
                         <div key={day.date} className="flex-1 flex flex-col items-center gap-1">
                           <span className="text-[10px] text-ink-soft font-medium">{day.total}</span>
-                          <div className="w-full rounded-md bg-surface-2 relative overflow-hidden" style={{ height: "80px" }}>
+                          <div
+                            className="w-full rounded-md bg-surface-2 relative overflow-hidden"
+                            style={{ height: "80px" }}
+                          >
                             <div
                               className="absolute bottom-0 left-0 right-0 rounded-md bg-emerald-400 transition-all"
                               style={{ height: `${pct}%` }}
                             />
                           </div>
-                          <span className={`text-[10px] ${isToday ? "text-emerald-600 font-bold" : "text-ink-soft"}`}>{label}</span>
+                          <span
+                            className={`text-[10px] ${isToday ? "text-emerald-600 font-bold" : "text-ink-soft"}`}
+                          >
+                            {label}
+                          </span>
                         </div>
                       );
                     });
@@ -191,7 +235,9 @@ function AccountPage() {
 
               {/* Feature breakdown */}
               <div className="bg-white border border-hairline rounded-2xl p-5">
-                <h3 className="text-[11px] font-bold uppercase tracking-widest text-ink-soft mb-4">By Feature (7 days)</h3>
+                <h3 className="text-[11px] font-bold uppercase tracking-widest text-ink-soft mb-4">
+                  By Feature (7 days)
+                </h3>
                 <div className="space-y-3">
                   {getFeatureBreakdown().map((f) => (
                     <div key={f.label}>
@@ -200,8 +246,11 @@ function AccountPage() {
                         <span className="text-[13px] font-bold text-ink">{f.value}</span>
                       </div>
                       <div className="w-full h-2 bg-surface-2 rounded-full overflow-hidden">
-                        <div className={`h-full rounded-full ${f.color} transition-all`}
-                          style={{ width: `${Math.min(100, (f.value / Math.max(...getFeatureBreakdown().map((x) => x.value), 1)) * 100)}%` }}
+                        <div
+                          className={`h-full rounded-full ${f.color} transition-all`}
+                          style={{
+                            width: `${Math.min(100, (f.value / Math.max(...getFeatureBreakdown().map((x) => x.value), 1)) * 100)}%`,
+                          }}
                         />
                       </div>
                     </div>
@@ -211,10 +260,14 @@ function AccountPage() {
 
               {/* Credits usage this month */}
               <div className="bg-white border border-hairline rounded-2xl p-5">
-                <h3 className="text-[11px] font-bold uppercase tracking-widest text-ink-soft mb-2">Credits This Month</h3>
+                <h3 className="text-[11px] font-bold uppercase tracking-widest text-ink-soft mb-2">
+                  Credits This Month
+                </h3>
                 <div className="flex items-baseline gap-2">
                   <span className="text-[32px] font-black text-ink">{credits}</span>
-                  <span className="text-[16px] font-bold text-ink-soft">/ {maxCredits} used today</span>
+                  <span className="text-[16px] font-bold text-ink-soft">
+                    / {maxCredits} used today
+                  </span>
                 </div>
                 <p className="text-[12px] text-ink-soft mt-1">Resets {nextReset}</p>
               </div>
@@ -224,10 +277,12 @@ function AccountPage() {
           {/* ==================== PLAN TAB ==================== */}
           {tab === "plan" && (
             <div className="space-y-3">
-              <p className="text-[13px] text-ink-soft">Choose a plan. Credits reset on the 1st of each month.</p>
+              <p className="text-[13px] text-ink-soft">
+                Choose a plan. Credits reset on the 1st of each month.
+              </p>
               {(["free", "creator", "pro"] as PlanTier[]).map((tier) => {
                 const p = PLANS[tier];
-                const selected = planInfo.tier === tier;
+                const selected = tier === tier;
                 return (
                   <button
                     key={tier}
@@ -238,9 +293,11 @@ function AccountPage() {
                         : "border-hairline bg-white hover:border-emerald-200"
                     }`}
                   >
-                    <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 ${
-                      selected ? "border-emerald-500" : "border-ink-soft"
-                    }`}>
+                    <div
+                      className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 ${
+                        selected ? "border-emerald-500" : "border-ink-soft"
+                      }`}
+                    >
                       {selected && <div className="w-3 h-3 rounded-full bg-emerald-500" />}
                     </div>
                     <div className="flex-1">
@@ -248,7 +305,9 @@ function AccountPage() {
                         <span className="font-bold text-[15px] text-ink">{p.label}</span>
                         <span className="font-bold text-[15px] text-ink">{p.price}</span>
                       </div>
-                      <p className="text-[12px] text-ink-soft mt-0.5">{p.creditsPerMonth} credits / month</p>
+                      <p className="text-[12px] text-ink-soft mt-0.5">
+                        {p.creditsPerMonth} credits / month
+                      </p>
                     </div>
                   </button>
                 );

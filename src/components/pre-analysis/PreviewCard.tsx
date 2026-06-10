@@ -30,7 +30,7 @@ export function PreviewCard({ meta }: { meta: VideoMeta | null }) {
           {safe ? "Hide" : "Show"} UI Safe Zones
         </button>
       </div>
-      <div 
+      <div
         className="relative mx-auto rounded-2xl overflow-hidden bg-ink"
         style={{
           aspectRatio: isShort ? "9/16" : "16/9",
@@ -38,12 +38,7 @@ export function PreviewCard({ meta }: { meta: VideoMeta | null }) {
         }}
       >
         {meta ? (
-          <video 
-            src={meta.url} 
-            controls 
-            playsInline 
-            className="w-full h-full object-contain"
-          />
+          <video src={meta.url} controls playsInline className="w-full h-full object-contain" />
         ) : (
           <div className="absolute inset-0 bg-gradient-to-br from-[#3a5a3a] via-[#1a2d1a] to-[#0a0a0a]" />
         )}

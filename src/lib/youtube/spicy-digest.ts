@@ -12,15 +12,15 @@ export function buildChannelDigest(bundle: ChannelIntelBundle, ref?: ChannelVide
   const headlines: string[] = [];
   if (refV && refV.viewsPerDay >= med * 1.5) {
     headlines.push(
-      `"${refV.title.slice(0, 50)}${refV.title.length > 50 ? "…" : ""}" is eating the feed at ${ratio}× their median velocity.`
+      `"${refV.title.slice(0, 50)}${refV.title.length > 50 ? "…" : ""}" is eating the feed at ${ratio}× their median velocity.`,
     );
   } else if (m.velocityCliff) {
     headlines.push(
-      `Recent uploads are bleeding — ~${Math.round(m.velocityCliffRatio * 100)}% of their old views/day. Packaging broke before the algorithm did.`
+      `Recent uploads are bleeding — ~${Math.round(m.velocityCliffRatio * 100)}% of their old views/day. Packaging broke before the algorithm did.`,
     );
   } else if (top) {
     headlines.push(
-      `Clone "${top.title.slice(0, 45)}${top.title.length > 45 ? "…" : ""}" first — ${formatCount(top.views)} views, ~${Math.round(top.viewsPerDay)} views/day.`
+      `Clone "${top.title.slice(0, 45)}${top.title.length > 45 ? "…" : ""}" first — ${formatCount(top.views)} views, ~${Math.round(top.viewsPerDay)} views/day.`,
     );
   }
 
@@ -31,7 +31,9 @@ export function buildChannelDigest(bundle: ChannelIntelBundle, ref?: ChannelVide
 
   if (bundle.inferredNiche) bullets.push(`Niche read: ${bundle.inferredNiche}`);
   if (m.topOutlierTitles[0]) {
-    bullets.push(`Outlier title to steal structure from: "${m.topOutlierTitles[0].slice(0, 55)}${m.topOutlierTitles[0].length > 55 ? "…" : ""}"`);
+    bullets.push(
+      `Outlier title to steal structure from: "${m.topOutlierTitles[0].slice(0, 55)}${m.topOutlierTitles[0].length > 55 ? "…" : ""}"`,
+    );
   }
 
   return {

@@ -8,7 +8,7 @@
 # =============================================================================
 
 name: viraleo
-region: was   # Washington DC (closest to India). Change if needed.
+region: was # Washington DC (closest to India). Change if needed.
 
 env:
   - key: NODE_ENV
@@ -20,7 +20,7 @@ env:
 
 # ── Build ────────────────────────────────────────────────────────────────────
 build:
-  builder: NIXPACKS   # Buildpacks (auto-detects Node.js)
+  builder: NIXPACKS # Buildpacks (auto-detects Node.js)
   # Use vite build directly (not npm run build) to skip Vercel postbuild
   build_command: NITRO_PRESET=node-server npx vite build
 

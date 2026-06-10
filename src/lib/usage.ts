@@ -34,11 +34,20 @@ function saveUsage(data: Record<string, UsageDay>) {
   localStorage.setItem(USAGE_KEY, JSON.stringify(data));
 }
 
-export function recordUsage(feature: "thumbnailTest" | "nicheRanker" | "shadowban" | "preAnalysis") {
+export function recordUsage(
+  feature: "thumbnailTest" | "nicheRanker" | "shadowban" | "preAnalysis",
+) {
   const data = loadUsage();
   const today = new Date().toISOString().slice(0, 10);
   if (!data[today]) {
-    data[today] = { date: today, thumbnailTest: 0, nicheRanker: 0, shadowban: 0, preAnalysis: 0, total: 0 };
+    data[today] = {
+      date: today,
+      thumbnailTest: 0,
+      nicheRanker: 0,
+      shadowban: 0,
+      preAnalysis: 0,
+      total: 0,
+    };
   }
   data[today][feature] += 1;
   data[today].total += 1;
@@ -48,7 +57,17 @@ export function recordUsage(feature: "thumbnailTest" | "nicheRanker" | "shadowba
 export function getUsageWeek(): UsageDay[] {
   const data = loadUsage();
   const days = getWeekDays();
-  return days.map((d) => data[d] || { date: d, thumbnailTest: 0, nicheRanker: 0, shadowban: 0, preAnalysis: 0, total: 0 });
+  return days.map(
+    (d) =>
+      data[d] || {
+        date: d,
+        thumbnailTest: 0,
+        nicheRanker: 0,
+        shadowban: 0,
+        preAnalysis: 0,
+        total: 0,
+      },
+  );
 }
 
 export function getFeatureBreakdown(): { label: string; value: number; color: string }[] {

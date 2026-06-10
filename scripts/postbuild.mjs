@@ -34,4 +34,3 @@ if (vc.runtime !== "nodejs22.x") {
 // 3. Ping search engines
 console.log("[postbuild] Pinging search engines...");
 await import("./ping-search-engines.mjs");
-

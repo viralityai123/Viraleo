@@ -24,15 +24,23 @@ export async function ytFetch<T>(path: string, params: Record<string, string>): 
   const res = await fetch(url.toString());
   if (!res.ok) {
     const body = await res.text().catch(() => "");
-    
+
     // Check for specific API key or enablement errors
-    if (body.includes("API_KEY_INVALID") || body.includes("API key not valid") || body.includes("keyInvalid")) {
+    if (
+      body.includes("API_KEY_INVALID") ||
+      body.includes("API key not valid") ||
+      body.includes("keyInvalid")
+    ) {
       throw new Error("YOUTUBE_API_KEY_INVALID");
     }
-    if (body.includes("Access Not Configured") || body.includes("youtube.googleapis.com has not been used") || body.includes("disabled")) {
+    if (
+      body.includes("Access Not Configured") ||
+      body.includes("youtube.googleapis.com has not been used") ||
+      body.includes("disabled")
+    ) {
       throw new Error("YOUTUBE_API_NOT_ENABLED");
     }
-    
+
     throw new Error(`YouTube API ${path} failed: ${res.status} ${body.slice(0, 200)}`);
   }
   return res.json() as Promise<T>;
@@ -54,7 +62,10 @@ export function formatCount(n: number): string {
 }
 
 export function normalizeHandle(s: string): string {
-  return s.toLowerCase().replace(/^@/, "").replace(/[\s\-_.]/g, "");
+  return s
+    .toLowerCase()
+    .replace(/^@/, "")
+    .replace(/[\s\-_.]/g, "");
 }
 
 export function extractChannelQuery(input: string): string {

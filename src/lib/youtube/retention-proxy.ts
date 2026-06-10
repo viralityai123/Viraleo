@@ -32,19 +32,25 @@ function buildRetentionCurve(
   durationSec: number,
   hookScore: number,
   cutDensity: number,
-  audioEnergy: number
+  audioEnergy: number,
 ): { t: number; v: number }[] {
   const steps = 60;
   const markers: { timestamp: number; severity: "low" | "medium" | "high" }[] = [];
 
   if (hookScore < 85) {
-    markers.push({ timestamp: Math.min(2.5, durationSec * 0.05), severity: hookScore < 70 ? "high" : "medium" });
+    markers.push({
+      timestamp: Math.min(2.5, durationSec * 0.05),
+      severity: hookScore < 70 ? "high" : "medium",
+    });
   }
   if (cutDensity < 0.6) {
     markers.push({ timestamp: durationSec * 0.35, severity: "medium" });
   }
   if (audioEnergy < 0.7) {
-    markers.push({ timestamp: durationSec * 0.62, severity: audioEnergy < 0.5 ? "high" : "medium" });
+    markers.push({
+      timestamp: durationSec * 0.62,
+      severity: audioEnergy < 0.5 ? "high" : "medium",
+    });
   }
   markers.push({ timestamp: durationSec * 0.82, severity: "low" });
 
@@ -74,7 +80,7 @@ function sampleCurve(curve: { t: number; v: number }[], sec: number): number {
  */
 export function estimateRetentionProxy(
   video: ChannelVideoRecord,
-  metrics: ChannelMetrics
+  metrics: ChannelMetrics,
 ): RetentionEstimate | null {
   if (video.views <= 0 || video.durationSec <= 0) return null;
 
@@ -89,14 +95,17 @@ export function estimateRetentionProxy(
   const velocityRatio =
     metrics.medianViewsPerDay > 0 ? video.viewsPerDay / metrics.medianViewsPerDay : 1;
 
-  const engagementScore = Math.min(1.5, likeRatio * 0.45 + commentRatio * 0.35 + Math.min(velocityRatio, 2) * 0.2);
+  const engagementScore = Math.min(
+    1.5,
+    likeRatio * 0.45 + commentRatio * 0.35 + Math.min(velocityRatio, 2) * 0.2,
+  );
   const cliffPenalty = metrics.velocityCliff ? -4 : 0;
 
   const baseEnd = video.isShort || video.durationSec <= 60 ? 52 : video.durationSec > 600 ? 38 : 44;
   const endRetentionPct = clamp(
     baseEnd + engagementScore * 16 + Math.min(10, (velocityRatio - 1) * 5) + cliffPenalty,
     28,
-    78
+    78,
   );
 
   const hookScore = clamp(65 + engagementScore * 22 + Math.min(8, velocityRatio * 3), 55, 95);
@@ -119,8 +128,10 @@ export function estimateRetentionProxy(
   if (likeRatio >= 1.15) basis.push("Like rate above this channel's recent average");
   else if (likeRatio < 0.85) basis.push("Like rate below channel average — softer hold likely");
   if (commentRatio >= 1.15) basis.push("Comment rate suggests active viewers stayed engaged");
-  if (velocityRatio >= 1.5) basis.push("Views/day outperforms channel median — algorithm pushed reach");
-  if (metrics.velocityCliff) basis.push("Channel-wide recent velocity dip — slight downward adjustment");
+  if (velocityRatio >= 1.5)
+    basis.push("Views/day outperforms channel median — algorithm pushed reach");
+  if (metrics.velocityCliff)
+    basis.push("Channel-wide recent velocity dip — slight downward adjustment");
   if (video.isShort) basis.push("Shorts format baseline applied (~50–65% typical end hold)");
   else basis.push("Long-form baseline applied (~35–55% typical end hold)");
   if (basis.length === 0) basis.push("Engagement near channel norms");
@@ -158,7 +169,7 @@ export function videoRecordFromApiItem(
     contentDetails: { duration: string };
   },
   durationSec: number,
-  isShort: boolean
+  isShort: boolean,
 ): ChannelVideoRecord {
   const views = parseInt(item.statistics.viewCount || "0", 10);
   const likes = parseInt(item.statistics.likeCount || "0", 10);

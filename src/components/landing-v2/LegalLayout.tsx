@@ -7,9 +7,7 @@ export function LegalLayout({ children }: { children: ReactNode }) {
     <main className="lv2 lv2-section--g1">
       <Nav />
       <div className="min-h-screen px-6 pt-32 pb-16">
-        <div className="max-w-3xl mx-auto">
-          {children}
-        </div>
+        <div className="max-w-3xl mx-auto">{children}</div>
       </div>
       <Footer />
     </main>

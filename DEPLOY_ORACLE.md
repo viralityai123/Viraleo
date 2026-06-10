@@ -2,20 +2,20 @@
 
 > **Time:** ~1 hour  
 > **Cost:** $0/month (forever)  
-> **Capacity:** 50k-100k monthly active users  
+> **Capacity:** 50k-100k monthly active users
 
 ---
 
 ## 📋 Prerequisites
 
-| What | Where to get it |
-|------|----------------|
+| What                     | Where to get it                                                           |
+| ------------------------ | ------------------------------------------------------------------------- |
 | **Oracle Cloud account** | https://cloud.oracle.com (needs credit card for identity — never charged) |
-| **Your repo** | `git clone <your-repo-url>` |
-| **A domain** | viraleo.pro or any domain you own |
-| **Upstash Redis** | https://upstash.com (free tier: 10k requests/day) |
-| **YouTube API key** | https://console.cloud.google.com |
-| **Gemini API key** | https://aistudio.google.com |
+| **Your repo**            | `git clone <your-repo-url>`                                               |
+| **A domain**             | viraleo.pro or any domain you own                                         |
+| **Upstash Redis**        | https://upstash.com (free tier: 10k requests/day)                         |
+| **YouTube API key**      | https://console.cloud.google.com                                          |
+| **Gemini API key**       | https://aistudio.google.com                                               |
 
 ---
 
@@ -23,18 +23,18 @@
 
 ### Step 1: Create the Oracle Cloud VM
 
-| Action | Screenshot / Command |
-|--------|---------------------|
-| 1. Log in to [Oracle Cloud Console](https://cloud.oracle.com) | |
-| 2. Go to **Compute → Instances** | |
-| 3. Click **Create Instance** | |
-| 4. Name: `viraleo-vm` | |
-| 5. **Image:** Ubuntu 24.04 (or 22.04) | |
-| 6. **Shape:** Select **Ampere A1** | ⚠️ This is the FREE ARM shape |
-| 7. **OCPU count:** 4 (max free) | |
-| **Memory:** 24 GB (max free) | |
-| 8. **Add SSH key:** Generate or paste your public key | 🔑 Save the private key! |
-| 9. Click **Create** | ⏳ Wait 2-3 minutes |
+| Action                                                        | Screenshot / Command          |
+| ------------------------------------------------------------- | ----------------------------- |
+| 1. Log in to [Oracle Cloud Console](https://cloud.oracle.com) |                               |
+| 2. Go to **Compute → Instances**                              |                               |
+| 3. Click **Create Instance**                                  |                               |
+| 4. Name: `viraleo-vm`                                         |                               |
+| 5. **Image:** Ubuntu 24.04 (or 22.04)                         |                               |
+| 6. **Shape:** Select **Ampere A1**                            | ⚠️ This is the FREE ARM shape |
+| 7. **OCPU count:** 4 (max free)                               |                               |
+| **Memory:** 24 GB (max free)                                  |                               |
+| 8. **Add SSH key:** Generate or paste your public key         | 🔑 Save the private key!      |
+| 9. Click **Create**                                           | ⏳ Wait 2-3 minutes           |
 
 ### Step 2: SSH into the VM
 
@@ -60,6 +60,7 @@ bash deploy/setup.sh
 ```
 
 The script does **everything** automatically:
+
 - ✅ Installs Node.js 22, nginx, certbot
 - ✅ Configures firewall (SSH + HTTP + HTTPS only)
 - ✅ Installs PM2 process manager
@@ -101,10 +102,10 @@ pm2 restart viraleo
 
 ### Step 5: Point your domain to the VM
 
-| Where | What to do |
-|-------|-----------|
-| Your domain registrar (Namecheap, Cloudflare, etc.) | Add an **A record**: `@` → `<YOUR_VM_IP>` |
-| | Add an **A record**: `www` → `<YOUR_VM_IP>` |
+| Where                                               | What to do                                  |
+| --------------------------------------------------- | ------------------------------------------- |
+| Your domain registrar (Namecheap, Cloudflare, etc.) | Add an **A record**: `@` → `<YOUR_VM_IP>`   |
+|                                                     | Add an **A record**: `www` → `<YOUR_VM_IP>` |
 
 > DNS changes take 5 minutes to 24 hours to propagate.
 
@@ -175,12 +176,12 @@ sudo reboot
 
 ## 📊 Capacity Planning
 
-| Metric | What 2000 users consume | Still free? |
-|--------|------------------------|-------------|
-| **CPU** | 5-15% of 4 cores | ✅ Yes |
-| **RAM** | 500MB-1.5GB of 24GB | ✅ Yes |
-| **Bandwidth** | 20-50GB of 10TB | ✅ Yes |
-| **Storage** | 1-2GB of 200GB | ✅ Yes |
+| Metric        | What 2000 users consume | Still free? |
+| ------------- | ----------------------- | ----------- |
+| **CPU**       | 5-15% of 4 cores        | ✅ Yes      |
+| **RAM**       | 500MB-1.5GB of 24GB     | ✅ Yes      |
+| **Bandwidth** | 20-50GB of 10TB         | ✅ Yes      |
+| **Storage**   | 1-2GB of 200GB          | ✅ Yes      |
 
 Your 24GB RAM / 4 core VM is **massive overkill** for 2000 users. You'll hit 100k MAU before needing to upgrade.
 
@@ -188,27 +189,27 @@ Your 24GB RAM / 4 core VM is **massive overkill** for 2000 users. You'll hit 100
 
 ## 🚨 Troubleshooting
 
-| Problem | Fix |
-|---------|-----|
-| `Connection refused` on SSH | Check Oracle Console → Instance → Console Connection → Reboot |
-| `502 Bad Gateway` | Node server isn't running: `pm2 restart viraleo` |
-| `certbot` fails | Make sure your domain's A record points to this VM's IP |
-| Build fails with `Killed` | VM ran out of memory during build: add swap `sudo fallocate -l 4G /swap && sudo mkswap /swap && sudo swapon /swap` |
-| `UPSTASH_REDIS_REST_URL` error | Create a free Redis DB at upstash.com, copy the REST URL + token |
-| Slow ML processing | Move face-api.js + tesseract.js to client-side (browser loads models) |
-| Need to redeploy | `cd ~/viraleo && git pull && bash deploy/build.sh && pm2 restart viraleo` |
+| Problem                        | Fix                                                                                                                |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------ |
+| `Connection refused` on SSH    | Check Oracle Console → Instance → Console Connection → Reboot                                                      |
+| `502 Bad Gateway`              | Node server isn't running: `pm2 restart viraleo`                                                                   |
+| `certbot` fails                | Make sure your domain's A record points to this VM's IP                                                            |
+| Build fails with `Killed`      | VM ran out of memory during build: add swap `sudo fallocate -l 4G /swap && sudo mkswap /swap && sudo swapon /swap` |
+| `UPSTASH_REDIS_REST_URL` error | Create a free Redis DB at upstash.com, copy the REST URL + token                                                   |
+| Slow ML processing             | Move face-api.js + tesseract.js to client-side (browser loads models)                                              |
+| Need to redeploy               | `cd ~/viraleo && git pull && bash deploy/build.sh && pm2 restart viraleo`                                          |
 
 ---
 
 ## 🆚 Why This Beats Vercel Free
 
-| | Vercel Free | Oracle ARM VM |
-|--|-----------|--------------|
-| **RAM** | 1GB function limit | **24GB** |
-| **CPU** | Shared | **4 dedicated cores** |
-| **Timeout** | 10 seconds | **None** |
-| **Bandwidth** | 100 GB | **10 TB** |
+|                    | Vercel Free         | Oracle ARM VM              |
+| ------------------ | ------------------- | -------------------------- |
+| **RAM**            | 1GB function limit  | **24GB**                   |
+| **CPU**            | Shared              | **4 dedicated cores**      |
+| **Timeout**        | 10 seconds          | **None**                   |
+| **Bandwidth**      | 100 GB              | **10 TB**                  |
 | **ML/AI friendly** | ❌ Timeout kills ML | ✅ face-api + OCR run fine |
-| **Always-on** | ✅ Yes (functions) | **✅ Full server** |
-| **Cost** | Free | **Free forever** |
-| **Setup** | 1-click | 1 hour |
+| **Always-on**      | ✅ Yes (functions)  | **✅ Full server**         |
+| **Cost**           | Free                | **Free forever**           |
+| **Setup**          | 1-click             | 1 hour                     |

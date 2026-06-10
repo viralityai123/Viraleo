@@ -17,7 +17,11 @@ export async function setRecipient(slug: string, data: RecipientData): Promise<v
   const client = getKv();
   if (client) {
     const existing = await client.get<RecipientData>(recipientKey(slug));
-    await client.set(recipientKey(slug), { ...existing, ...data, createdAt: existing?.createdAt || Date.now() });
+    await client.set(recipientKey(slug), {
+      ...existing,
+      ...data,
+      createdAt: existing?.createdAt || Date.now(),
+    });
   }
 }
 

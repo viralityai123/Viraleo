@@ -5,7 +5,10 @@ export const Route = createFileRoute("/privacy-policy")({
   head: () => ({
     meta: [
       { title: "Privacy Policy — Viraleo" },
-      { name: "description", content: "Viraleo Privacy Policy. Learn how we collect, use, and protect your data." },
+      {
+        name: "description",
+        content: "Viraleo Privacy Policy. Learn how we collect, use, and protect your data.",
+      },
       { property: "og:title", content: "Privacy Policy — Viraleo" },
       { property: "og:description", content: "Viraleo Privacy Policy." },
       { name: "twitter:title", content: "Privacy Policy — Viraleo" },
@@ -26,8 +29,8 @@ function PrivacyPolicy() {
           <h2 className="text-lg font-semibold text-[#07070a] mb-2">1. What we collect</h2>
           <p>
             We collect only the data you explicitly provide: channel URLs you submit for analysis,
-            account email if you register, and basic usage analytics (page views, feature usage).
-            We never access your YouTube account credentials or private videos.
+            account email if you register, and basic usage analytics (page views, feature usage). We
+            never access your YouTube account credentials or private videos.
           </p>
         </section>
 
@@ -43,8 +46,8 @@ function PrivacyPolicy() {
         <section>
           <h2 className="text-lg font-semibold text-[#07070a] mb-2">3. Data retention</h2>
           <p>
-            Analysis reports are retained for 30 days. Account data is kept until you delete
-            your account. Usage analytics are anonymized after 12 months.
+            Analysis reports are retained for 30 days. Account data is kept until you delete your
+            account. Usage analytics are anonymized after 12 months.
           </p>
         </section>
 
@@ -59,9 +62,8 @@ function PrivacyPolicy() {
         <section>
           <h2 className="text-lg font-semibold text-[#07070a] mb-2">5. Your rights</h2>
           <p>
-            You may request access to, correction of, or deletion of your personal data at any
-            time by contacting us. You can also export your analysis history from your account
-            dashboard.
+            You may request access to, correction of, or deletion of your personal data at any time
+            by contacting us. You can also export your analysis history from your account dashboard.
           </p>
         </section>
 

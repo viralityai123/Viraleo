@@ -34,10 +34,7 @@ export function useChannelIntelPrefill(channelParam?: string): {
     return stored;
   }, [channelParam]);
 
-  const prefill = useMemo(
-    () => (bundle ? buildPrefillContext(bundle) : null),
-    [bundle]
-  );
+  const prefill = useMemo(() => (bundle ? buildPrefillContext(bundle) : null), [bundle]);
 
   const channelQuery = channelParam || bundle?.queriedInput?.replace(/^@/, "");
 
@@ -47,7 +44,7 @@ export function useChannelIntelPrefill(channelParam?: string): {
 /** Apply prefill to setters once on mount when channel param or session exists. */
 export function useApplyChannelPrefill(
   channelParam: string | undefined,
-  apply: (prefill: ChannelPrefill) => void
+  apply: (prefill: ChannelPrefill) => void,
 ): void {
   const { prefill } = useChannelIntelPrefill(channelParam);
 

@@ -29,7 +29,8 @@ export function detectChannel(input: string): ChannelMeta {
   const handle = clean.split(/[/?#]/)[0] || "channel";
   const h = hash(handle);
   const detectedIdx = h % 3;
-  const detected: ChannelMode = detectedIdx === 0 ? "shorts" : detectedIdx === 1 ? "long" : "hybrid";
+  const detected: ChannelMode =
+    detectedIdx === 0 ? "shorts" : detectedIdx === 1 ? "long" : "hybrid";
   return {
     handle,
     name: handle.charAt(0).toUpperCase() + handle.slice(1),
@@ -132,11 +133,31 @@ const HOOKS_SHORTS: HookIdea[] = [
   { type: "Replay-bait", hook: "There’s something hidden at second 12." },
 ];
 const IDEAS_SHORTS: VideoIdea[] = [
-  { title: "I copied a viral format with 1 twist", viralScore: 92, reason: "High pattern-match + novelty delta" },
-  { title: "30 seconds that change how you see ___", viralScore: 88, reason: "Save-rate magnet + replay loop" },
-  { title: "POV: you discover ___ for the first time", viralScore: 84, reason: "Emotional opener, low-comp" },
-  { title: "The 3-second test nobody passes", viralScore: 81, reason: "Interactive bait → comments" },
-  { title: "I rebuilt ___ from scratch in 30s", viralScore: 78, reason: "Compression format trending" },
+  {
+    title: "I copied a viral format with 1 twist",
+    viralScore: 92,
+    reason: "High pattern-match + novelty delta",
+  },
+  {
+    title: "30 seconds that change how you see ___",
+    viralScore: 88,
+    reason: "Save-rate magnet + replay loop",
+  },
+  {
+    title: "POV: you discover ___ for the first time",
+    viralScore: 84,
+    reason: "Emotional opener, low-comp",
+  },
+  {
+    title: "The 3-second test nobody passes",
+    viralScore: 81,
+    reason: "Interactive bait → comments",
+  },
+  {
+    title: "I rebuilt ___ from scratch in 30s",
+    viralScore: 78,
+    reason: "Compression format trending",
+  },
 ];
 
 const PATTERNS_LONG = [
@@ -169,8 +190,16 @@ const TITLES_LONG = [
   "___: the rise, the fall, the comeback",
 ];
 const IDEAS_LONG: VideoIdea[] = [
-  { title: "The hidden economy behind ___", viralScore: 91, reason: "High session-time + binge potential" },
-  { title: "I ranked every ___ from worst to best", viralScore: 86, reason: "Tier-list format = comment magnet" },
+  {
+    title: "The hidden economy behind ___",
+    viralScore: 91,
+    reason: "High session-time + binge potential",
+  },
+  {
+    title: "I ranked every ___ from worst to best",
+    viralScore: 86,
+    reason: "Tier-list format = comment magnet",
+  },
   { title: "Why nobody talks about ___", viralScore: 83, reason: "Curiosity gap + authority play" },
   { title: "Inside the world of ___", viralScore: 80, reason: "Documentary-style retention" },
 ];
@@ -210,7 +239,14 @@ export interface Analysis {
   hooks: HookIdea[];
   ideas: VideoIdea[];
   titles?: string[];
-  growth: { uploadTime: string; idealLength: string; frequency: string; viral: number; replay: number; saturation: number };
+  growth: {
+    uploadTime: string;
+    idealLength: string;
+    frequency: string;
+    viral: number;
+    replay: number;
+    saturation: number;
+  };
   thumbnail: { analysis: Insight[]; concepts: string[] };
   blueprint: string[];
   script?: Script;
@@ -230,15 +266,60 @@ function buildTopVideo(channel: string, isShorts: boolean, seed: number): TopVid
       duration: 28,
       isShort: true,
       moments: [
-        { t: 0, type: "hook", label: "Pattern interrupt", detail: "Hard cut + sound spike. Eye locked in 0.4s." },
-        { t: 1, type: "caption", label: "3-word caption pop", detail: "Bold yellow caption assumes sound off." },
-        { t: 3, type: "swipe-stop", label: "Curiosity gap planted", detail: "Implied question keeps thumb off the screen." },
-        { t: 6, type: "retention-spike", label: "Open loop escalation", detail: "Stakes raised — retention bumps +12%." },
-        { t: 11, type: "retention-dip", label: "Mini-lull", detail: "B-roll repeats — 8% drop here. Re-cut suggested." },
-        { t: 14, type: "emotion", label: "Reaction beat", detail: "Face emotion spike — saves cluster here." },
-        { t: 20, type: "pacing", label: "Cut acceleration", detail: "Cuts every 0.6s drives the payoff." },
-        { t: 24, type: "retention-spike", label: "Payoff lands", detail: "Promise from 0:03 resolved." },
-        { t: 27, type: "replay", label: "Loop-back frame", detail: "Last frame matches frame 1 → replay trigger." },
+        {
+          t: 0,
+          type: "hook",
+          label: "Pattern interrupt",
+          detail: "Hard cut + sound spike. Eye locked in 0.4s.",
+        },
+        {
+          t: 1,
+          type: "caption",
+          label: "3-word caption pop",
+          detail: "Bold yellow caption assumes sound off.",
+        },
+        {
+          t: 3,
+          type: "swipe-stop",
+          label: "Curiosity gap planted",
+          detail: "Implied question keeps thumb off the screen.",
+        },
+        {
+          t: 6,
+          type: "retention-spike",
+          label: "Open loop escalation",
+          detail: "Stakes raised — retention bumps +12%.",
+        },
+        {
+          t: 11,
+          type: "retention-dip",
+          label: "Mini-lull",
+          detail: "B-roll repeats — 8% drop here. Re-cut suggested.",
+        },
+        {
+          t: 14,
+          type: "emotion",
+          label: "Reaction beat",
+          detail: "Face emotion spike — saves cluster here.",
+        },
+        {
+          t: 20,
+          type: "pacing",
+          label: "Cut acceleration",
+          detail: "Cuts every 0.6s drives the payoff.",
+        },
+        {
+          t: 24,
+          type: "retention-spike",
+          label: "Payoff lands",
+          detail: "Promise from 0:03 resolved.",
+        },
+        {
+          t: 27,
+          type: "replay",
+          label: "Loop-back frame",
+          detail: "Last frame matches frame 1 → replay trigger.",
+        },
       ],
     };
   }
@@ -249,15 +330,60 @@ function buildTopVideo(channel: string, isShorts: boolean, seed: number): TopVid
     duration: 720,
     isShort: false,
     moments: [
-      { t: 0, type: "hook", label: "Cold open reframe", detail: "First 18s recontextualizes the topic." },
-      { t: 18, type: "retention-spike", label: "Stakes promise", detail: "Payoff promised — retention holds 92%." },
-      { t: 90, type: "swipe-stop", label: "Open loop #1", detail: "First unresolved question planted." },
-      { t: 180, type: "caption", label: "Authority anchor", detail: "Source cited on screen — trust spike." },
-      { t: 240, type: "retention-dip", label: "Mid-video lull", detail: "B-roll repetition — 15% drop. Re-edit." },
-      { t: 360, type: "emotion", label: "Twist beat", detail: "Recontextualizes Chapter 1, comments cluster." },
-      { t: 510, type: "retention-spike", label: "Micro-payoff stack", detail: "3 small wins refresh attention." },
-      { t: 630, type: "pacing", label: "Cut frequency lifts", detail: "Climax build — visual variety every 4s." },
-      { t: 690, type: "replay", label: "Callback ending", detail: "Ties back to cold open — earned runtime." },
+      {
+        t: 0,
+        type: "hook",
+        label: "Cold open reframe",
+        detail: "First 18s recontextualizes the topic.",
+      },
+      {
+        t: 18,
+        type: "retention-spike",
+        label: "Stakes promise",
+        detail: "Payoff promised — retention holds 92%.",
+      },
+      {
+        t: 90,
+        type: "swipe-stop",
+        label: "Open loop #1",
+        detail: "First unresolved question planted.",
+      },
+      {
+        t: 180,
+        type: "caption",
+        label: "Authority anchor",
+        detail: "Source cited on screen — trust spike.",
+      },
+      {
+        t: 240,
+        type: "retention-dip",
+        label: "Mid-video lull",
+        detail: "B-roll repetition — 15% drop. Re-edit.",
+      },
+      {
+        t: 360,
+        type: "emotion",
+        label: "Twist beat",
+        detail: "Recontextualizes Chapter 1, comments cluster.",
+      },
+      {
+        t: 510,
+        type: "retention-spike",
+        label: "Micro-payoff stack",
+        detail: "3 small wins refresh attention.",
+      },
+      {
+        t: 630,
+        type: "pacing",
+        label: "Cut frequency lifts",
+        detail: "Climax build — visual variety every 4s.",
+      },
+      {
+        t: 690,
+        type: "replay",
+        label: "Callback ending",
+        detail: "Ties back to cold open — earned runtime.",
+      },
     ],
   };
 }
@@ -268,7 +394,7 @@ export function analyze(channel: string, mode: "shorts" | "long"): Analysis {
   const W = isShorts ? WEAK_SHORTS : WEAK_LONG;
   const O = isShorts ? OPP_SHORTS : OPP_LONG;
   const seed = hash(channel + mode);
-  const pick = <T,>(arr: T[], n: number, off = 0) =>
+  const pick = <T>(arr: T[], n: number, off = 0) =>
     arr.slice(0, n).map((x, i) => arr[(seed + i + off) % arr.length]);
 
   const ideas = (isShorts ? IDEAS_SHORTS : IDEAS_LONG).map((v) => ({
@@ -327,9 +453,17 @@ export function analyze(channel: string, mode: "shorts" | "long"): Analysis {
           title: `Shorts script for ${channel}`,
           hook: "Don’t scroll — you’ve been doing this wrong your whole life.",
           scenes: [
-            { t: "0:00", beat: "Pattern interrupt", detail: "Hard cut + sound spike + on-screen 3-word hook." },
+            {
+              t: "0:00",
+              beat: "Pattern interrupt",
+              detail: "Hard cut + sound spike + on-screen 3-word hook.",
+            },
             { t: "0:03", beat: "Setup", detail: "Show the wrong way visually. No talking yet." },
-            { t: "0:08", beat: "Open loop", detail: "Tease the twist. ‘But here’s what nobody shows you…’" },
+            {
+              t: "0:08",
+              beat: "Open loop",
+              detail: "Tease the twist. ‘But here’s what nobody shows you…’",
+            },
             { t: "0:14", beat: "Escalation", detail: "Reveal step 1 with bold caption + B-roll." },
             { t: "0:20", beat: "Payoff", detail: "Final move + emotional reaction." },
             { t: "0:26", beat: "Replay bait", detail: "Visual matches frame 1 → swipe-back loop." },

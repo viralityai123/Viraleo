@@ -22,10 +22,12 @@ import { Route as NicheRankerRouteImport } from './routes/niche-ranker'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as HistoryRouteImport } from './routes/history'
 import { Route as FaqRouteImport } from './routes/faq'
+import { Route as DestroyRouteImport } from './routes/destroy'
 import { Route as CookiesRouteImport } from './routes/cookies'
 import { Route as ClearRouteImport } from './routes/clear'
 import { Route as BlogRouteImport } from './routes/blog'
 import { Route as BillingRouteImport } from './routes/billing'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AccountRouteImport } from './routes/account'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as RefSlugRouteImport } from './routes/ref.$slug'
@@ -106,6 +108,11 @@ const FaqRoute = FaqRouteImport.update({
   path: '/faq',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DestroyRoute = DestroyRouteImport.update({
+  id: '/destroy',
+  path: '/destroy',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CookiesRoute = CookiesRouteImport.update({
   id: '/cookies',
   path: '/cookies',
@@ -124,6 +131,11 @@ const BlogRoute = BlogRouteImport.update({
 const BillingRoute = BillingRouteImport.update({
   id: '/billing',
   path: '/billing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AccountRoute = AccountRouteImport.update({
@@ -172,14 +184,14 @@ const ApiCommissionsRoute = ApiCommissionsRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminPayoutsRoute = AdminPayoutsRouteImport.update({
-  id: '/admin/payouts',
-  path: '/admin/payouts',
-  getParentRoute: () => rootRouteImport,
+  id: '/payouts',
+  path: '/payouts',
+  getParentRoute: () => AdminRoute,
 } as any)
 const AdminDashboardRoute = AdminDashboardRouteImport.update({
-  id: '/admin/dashboard',
-  path: '/admin/dashboard',
-  getParentRoute: () => rootRouteImport,
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AdminRoute,
 } as any)
 const ApiTrainingRetrainThumbnailRoute =
   ApiTrainingRetrainThumbnailRouteImport.update({
@@ -201,10 +213,12 @@ const ApiLemonCheckoutRoute = ApiLemonCheckoutRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/account': typeof AccountRoute
+  '/admin': typeof AdminRouteWithChildren
   '/billing': typeof BillingRoute
   '/blog': typeof BlogRouteWithChildren
   '/clear': typeof ClearRoute
   '/cookies': typeof CookiesRoute
+  '/destroy': typeof DestroyRoute
   '/faq': typeof FaqRoute
   '/history': typeof HistoryRoute
   '/login': typeof LoginRoute
@@ -234,10 +248,12 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/account': typeof AccountRoute
+  '/admin': typeof AdminRouteWithChildren
   '/billing': typeof BillingRoute
   '/blog': typeof BlogRouteWithChildren
   '/clear': typeof ClearRoute
   '/cookies': typeof CookiesRoute
+  '/destroy': typeof DestroyRoute
   '/faq': typeof FaqRoute
   '/history': typeof HistoryRoute
   '/login': typeof LoginRoute
@@ -268,10 +284,12 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/account': typeof AccountRoute
+  '/admin': typeof AdminRouteWithChildren
   '/billing': typeof BillingRoute
   '/blog': typeof BlogRouteWithChildren
   '/clear': typeof ClearRoute
   '/cookies': typeof CookiesRoute
+  '/destroy': typeof DestroyRoute
   '/faq': typeof FaqRoute
   '/history': typeof HistoryRoute
   '/login': typeof LoginRoute
@@ -303,10 +321,12 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/account'
+    | '/admin'
     | '/billing'
     | '/blog'
     | '/clear'
     | '/cookies'
+    | '/destroy'
     | '/faq'
     | '/history'
     | '/login'
@@ -336,10 +356,12 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/account'
+    | '/admin'
     | '/billing'
     | '/blog'
     | '/clear'
     | '/cookies'
+    | '/destroy'
     | '/faq'
     | '/history'
     | '/login'
@@ -369,10 +391,12 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/account'
+    | '/admin'
     | '/billing'
     | '/blog'
     | '/clear'
     | '/cookies'
+    | '/destroy'
     | '/faq'
     | '/history'
     | '/login'
@@ -403,10 +427,12 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AccountRoute: typeof AccountRoute
+  AdminRoute: typeof AdminRouteWithChildren
   BillingRoute: typeof BillingRoute
   BlogRoute: typeof BlogRouteWithChildren
   ClearRoute: typeof ClearRoute
   CookiesRoute: typeof CookiesRoute
+  DestroyRoute: typeof DestroyRoute
   FaqRoute: typeof FaqRoute
   HistoryRoute: typeof HistoryRoute
   LoginRoute: typeof LoginRoute
@@ -420,8 +446,6 @@ export interface RootRouteChildren {
   SupportRoute: typeof SupportRoute
   TermsRoute: typeof TermsRoute
   ThumbnailTestRoute: typeof ThumbnailTestRoute
-  AdminDashboardRoute: typeof AdminDashboardRoute
-  AdminPayoutsRoute: typeof AdminPayoutsRoute
   ApiCommissionsRoute: typeof ApiCommissionsRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
   PartnerDashboardRoute: typeof PartnerDashboardRoute
@@ -525,6 +549,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FaqRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/destroy': {
+      id: '/destroy'
+      path: '/destroy'
+      fullPath: '/destroy'
+      preLoaderRoute: typeof DestroyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/cookies': {
       id: '/cookies'
       path: '/cookies'
@@ -551,6 +582,13 @@ declare module '@tanstack/react-router' {
       path: '/billing'
       fullPath: '/billing'
       preLoaderRoute: typeof BillingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/account': {
@@ -618,17 +656,17 @@ declare module '@tanstack/react-router' {
     }
     '/admin/payouts': {
       id: '/admin/payouts'
-      path: '/admin/payouts'
+      path: '/payouts'
       fullPath: '/admin/payouts'
       preLoaderRoute: typeof AdminPayoutsRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/admin/dashboard': {
       id: '/admin/dashboard'
-      path: '/admin/dashboard'
+      path: '/dashboard'
       fullPath: '/admin/dashboard'
       preLoaderRoute: typeof AdminDashboardRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/api/training/retrain-thumbnail': {
       id: '/api/training/retrain-thumbnail'
@@ -654,6 +692,18 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AdminRouteChildren {
+  AdminDashboardRoute: typeof AdminDashboardRoute
+  AdminPayoutsRoute: typeof AdminPayoutsRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminDashboardRoute: AdminDashboardRoute,
+  AdminPayoutsRoute: AdminPayoutsRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
 interface BlogRouteChildren {
   BlogNicheFindingGuideRoute: typeof BlogNicheFindingGuideRoute
   BlogThumbnailsMatterRoute: typeof BlogThumbnailsMatterRoute
@@ -669,10 +719,12 @@ const BlogRouteWithChildren = BlogRoute._addFileChildren(BlogRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AccountRoute: AccountRoute,
+  AdminRoute: AdminRouteWithChildren,
   BillingRoute: BillingRoute,
   BlogRoute: BlogRouteWithChildren,
   ClearRoute: ClearRoute,
   CookiesRoute: CookiesRoute,
+  DestroyRoute: DestroyRoute,
   FaqRoute: FaqRoute,
   HistoryRoute: HistoryRoute,
   LoginRoute: LoginRoute,
@@ -686,8 +738,6 @@ const rootRouteChildren: RootRouteChildren = {
   SupportRoute: SupportRoute,
   TermsRoute: TermsRoute,
   ThumbnailTestRoute: ThumbnailTestRoute,
-  AdminDashboardRoute: AdminDashboardRoute,
-  AdminPayoutsRoute: AdminPayoutsRoute,
   ApiCommissionsRoute: ApiCommissionsRoute,
   AuthCallbackRoute: AuthCallbackRoute,
   PartnerDashboardRoute: PartnerDashboardRoute,

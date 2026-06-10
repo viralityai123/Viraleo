@@ -88,10 +88,7 @@ export async function createTransfer(args: {
   });
 }
 
-export async function fundTransfer(args: {
-  profileId: string;
-  transferId: number;
-}): Promise<any> {
+export async function fundTransfer(args: { profileId: string; transferId: number }): Promise<any> {
   return wiseFetch(`/v3/profiles/${args.profileId}/transfers/${args.transferId}/payments`, {
     method: "POST",
     body: JSON.stringify({ type: "BALANCE" }),

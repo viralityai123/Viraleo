@@ -3,13 +3,25 @@ import { useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { ArrowLeft, Search, ImageIcon, Sparkles, ShieldAlert, Clock, Trash2 } from "lucide-react";
-import { getAllActivities, clearActivities, deleteActivity, restoreActivity, formatTimestamp, getFeatureRoute, type ActivityEntry } from "@/lib/activity";
+import {
+  getAllActivities,
+  clearActivities,
+  deleteActivity,
+  restoreActivity,
+  formatTimestamp,
+  getFeatureRoute,
+  type ActivityEntry,
+} from "@/lib/activity";
 
 export const Route = createFileRoute("/history")({
   head: () => ({
     meta: [
       { title: "Recent History — Viraleo" },
-      { name: "description", content: "View your Viraleo analysis history. Thumbnail tests, niche rankings, shadowban checks, and pre-upload audits." },
+      {
+        name: "description",
+        content:
+          "View your Viraleo analysis history. Thumbnail tests, niche rankings, shadowban checks, and pre-upload audits.",
+      },
       { property: "og:title", content: "Recent History — Viraleo" },
       { property: "og:description", content: "Your Viraleo analysis history." },
       { name: "twitter:title", content: "Recent History — Viraleo" },
@@ -40,9 +52,7 @@ function HistoryPage() {
   const [filter, setFilter] = useState<"all" | ActivityEntry["feature"]>("all");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
-  const filtered = filter === "all"
-    ? activities
-    : activities.filter((a) => a.feature === filter);
+  const filtered = filter === "all" ? activities : activities.filter((a) => a.feature === filter);
 
   const allFilteredSelected = filtered.length > 0 && filtered.every((a) => selectedIds.has(a.id));
 
@@ -55,15 +65,19 @@ function HistoryPage() {
   function handleDelete(id: string, entry: ActivityEntry) {
     const deleted = deleteActivity(id);
     if (!deleted) return;
-    setActivities(prev => prev.filter(x => x.id !== id));
-    setSelectedIds(prev => { const n = new Set(prev); n.delete(id); return n; });
+    setActivities((prev) => prev.filter((x) => x.id !== id));
+    setSelectedIds((prev) => {
+      const n = new Set(prev);
+      n.delete(id);
+      return n;
+    });
     toast("Deleted", {
       description: `"${deleted.label}" removed`,
       action: {
         label: "Undo",
         onClick: () => {
           restoreActivity(deleted);
-          setActivities(prev => {
+          setActivities((prev) => {
             const next = [...prev];
             next.unshift(deleted);
             return next;
@@ -80,7 +94,7 @@ function HistoryPage() {
       const d = deleteActivity(id);
       if (d) deleted.push(d);
     }
-    setActivities(prev => prev.filter(x => !selectedIds.has(x.id)));
+    setActivities((prev) => prev.filter((x) => !selectedIds.has(x.id)));
     setSelectedIds(new Set());
     if (deleted.length === 1) {
       toast("Deleted", {
@@ -89,7 +103,7 @@ function HistoryPage() {
           label: "Undo",
           onClick: () => {
             restoreActivity(deleted[0]);
-            setActivities(prev => {
+            setActivities((prev) => {
               const next = [...prev];
               next.unshift(deleted[0]);
               return next;
@@ -104,9 +118,10 @@ function HistoryPage() {
   }
 
   function toggleSelect(id: string) {
-    setSelectedIds(prev => {
+    setSelectedIds((prev) => {
       const n = new Set(prev);
-      if (n.has(id)) n.delete(id); else n.add(id);
+      if (n.has(id)) n.delete(id);
+      else n.add(id);
       return n;
     });
   }
@@ -137,7 +152,9 @@ function HistoryPage() {
             </Link>
             <div>
               <h1 className="font-display text-[26px] font-black text-ink">Recent History</h1>
-              <p className="text-[13px] text-ink-soft mt-0.5">All your activity across Viraleo features</p>
+              <p className="text-[13px] text-ink-soft mt-0.5">
+                All your activity across Viraleo features
+              </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -163,7 +180,9 @@ function HistoryPage() {
 
         {/* Filter tabs */}
         <div className="flex gap-2 mb-6 flex-wrap">
-          {(["all", "pre-analysis", "thumbnail-test", "niche-ranker", "shadowban-detector"] as const).map((f) => (
+          {(
+            ["all", "pre-analysis", "thumbnail-test", "niche-ranker", "shadowban-detector"] as const
+          ).map((f) => (
             <button
               key={f}
               onClick={() => setFilter(f)}
@@ -199,9 +218,7 @@ function HistoryPage() {
                   />
                   <span>{allFilteredSelected ? "Deselect all" : "Select all"}</span>
                 </label>
-                {selectedCount > 0 && (
-                  <span className="text-ink">{selectedCount} selected</span>
-                )}
+                {selectedCount > 0 && <span className="text-ink">{selectedCount} selected</span>}
               </div>
 
               {filtered.map((a, i) => {
@@ -217,10 +234,15 @@ function HistoryPage() {
                   >
                     <div
                       className={`flex items-center gap-3 p-3.5 rounded-2xl transition cursor-pointer ${
-                        isSelected ? "bg-emerald-50/50 ring-1 ring-emerald-200" : "hover:bg-surface-2"
+                        isSelected
+                          ? "bg-emerald-50/50 ring-1 ring-emerald-200"
+                          : "hover:bg-surface-2"
                       }`}
                     >
-                      <label className="flex items-center shrink-0 cursor-pointer" onClick={(e) => e.stopPropagation()}>
+                      <label
+                        className="flex items-center shrink-0 cursor-pointer"
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <input
                           type="checkbox"
                           checked={isSelected}
@@ -241,14 +263,21 @@ function HistoryPage() {
                             <span className="text-[11px] font-bold uppercase tracking-wider text-ink-soft">
                               {FEATURE_LABELS[a.feature]}
                             </span>
-                            <span className="text-[10px] text-ink-soft/60">{formatTimestamp(a.timestamp)}</span>
+                            <span className="text-[10px] text-ink-soft/60">
+                              {formatTimestamp(a.timestamp)}
+                            </span>
                           </div>
-                          <p className="text-[13px] font-semibold text-ink mt-0.5 truncate">{a.label}</p>
+                          <p className="text-[13px] font-semibold text-ink mt-0.5 truncate">
+                            {a.label}
+                          </p>
                           {a.target && (
                             <p className="text-[11px] text-ink-soft truncate">{a.target}</p>
                           )}
                         </div>
-                        <Clock size={14} className="text-ink-soft/30 group-hover:text-ink-soft/60 transition shrink-0" />
+                        <Clock
+                          size={14}
+                          className="text-ink-soft/30 group-hover:text-ink-soft/60 transition shrink-0"
+                        />
                       </Link>
                       <button
                         onClick={(e) => handleSingleDelete(e, a)}

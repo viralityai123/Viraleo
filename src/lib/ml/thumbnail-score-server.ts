@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { normalizeThumbnailScores } from "@/lib/score-scale";
 import type { ThumbnailFeatures } from "@/lib/ml/thumbnail-types";
 
 export const thumbnailScoreMl = createServerFn({ method: "POST" })
@@ -13,6 +14,11 @@ export const thumbnailScoreMl = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     const { base64, features, title, context, isShort } = data;
+
+    // ── Auth only — credits are charged once via consumeCredit() before this is called ──
+    const { requireAuth } = await import("@/lib/auth/server-auth");
+    await requireAuth();
+    // ────────────────────────────────────────────────────────────────────────────────────
 
     const workerAiKey = process.env.WORKERS_AI_KEY || "";
     const accountId = process.env.CF_ACCOUNT_ID || "";
@@ -71,13 +77,20 @@ Return valid JSON only:
       const text = json.result?.response || "";
       const parsed = tryParseJson(text);
       if (!parsed) return null;
-      return {
-        overallScore: Math.min(10, Math.max(0, parsed.overallScore ?? 5)),
+      const raw = {
+        overallScore: parsed.overallScore ?? 5,
         ctrEstimate: Math.min(1, Math.max(0, parsed.ctrEstimate ?? 0.045)),
         explanation: parsed.explanation || "",
         metrics: Array.isArray(parsed.metrics) ? parsed.metrics.slice(0, 4) : [],
         modelVersion: "workers-ai-v1",
       };
+      const normalized = normalizeThumbnailScores(raw);
+      if (normalized.metrics?.length) {
+        const avg =
+          normalized.metrics.reduce((s, m) => s + m.score, 0) / normalized.metrics.length;
+        normalized.overallScore = Math.round(avg * 10) / 10;
+      }
+      return normalized;
     } catch {
       return null;
     }
@@ -85,7 +98,10 @@ Return valid JSON only:
 
 function tryParseJson(text: string): any {
   try {
-    const trimmed = text.replace(/```json\s*/gi, "").replace(/```\s*$/g, "").trim();
+    const trimmed = text
+      .replace(/```json\s*/gi, "")
+      .replace(/```\s*$/g, "")
+      .trim();
     return JSON.parse(trimmed);
   } catch {
     try {

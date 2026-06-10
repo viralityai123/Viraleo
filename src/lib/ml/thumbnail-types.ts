@@ -6,7 +6,13 @@ export interface ThumbnailFeatures {
   contrast: number;
   hasFace: boolean;
   faceCount: number;
-  faceExpressions: { happy: number; surprised: number; neutral: number; sad: number; angry: number };
+  faceExpressions: {
+    happy: number;
+    surprised: number;
+    neutral: number;
+    sad: number;
+    angry: number;
+  };
   faceSizes: number[];
   skinPixelRatio: number;
   ocrText: string;

@@ -5,7 +5,11 @@ export const Route = createFileRoute("/terms")({
   head: () => ({
     meta: [
       { title: "Terms of Service — Viraleo" },
-      { name: "description", content: "Viraleo Terms of Service. Read the terms governing your use of our YouTube channel intelligence platform." },
+      {
+        name: "description",
+        content:
+          "Viraleo Terms of Service. Read the terms governing your use of our YouTube channel intelligence platform.",
+      },
       { property: "og:title", content: "Terms of Service — Viraleo" },
       { property: "og:description", content: "Viraleo Terms of Service." },
       { name: "twitter:title", content: "Terms of Service — Viraleo" },
@@ -25,8 +29,8 @@ function Terms() {
         <section>
           <h2 className="text-lg font-semibold text-[#07070a] mb-2">1. Acceptance</h2>
           <p>
-            By using Viraleo, you agree to these terms. If you do not agree, do not use the
-            service. We may update these terms; continued use after changes constitutes acceptance.
+            By using Viraleo, you agree to these terms. If you do not agree, do not use the service.
+            We may update these terms; continued use after changes constitutes acceptance.
           </p>
         </section>
 
@@ -41,9 +45,9 @@ function Terms() {
         <section>
           <h2 className="text-lg font-semibold text-[#07070a] mb-2">3. Account</h2>
           <p>
-            You are responsible for maintaining your account credentials. Free accounts are
-            limited to one analysis per day. Upgrade plans increase your daily limit as
-            described on the pricing page.
+            You are responsible for maintaining your account credentials. Free accounts are limited
+            to one analysis per day. Upgrade plans increase your daily limit as described on the
+            pricing page.
           </p>
         </section>
 
@@ -58,9 +62,9 @@ function Terms() {
         <section>
           <h2 className="text-lg font-semibold text-[#07070a] mb-2">5. Cancellation</h2>
           <p>
-            You may cancel your subscription at any time from your account dashboard.
-            Cancellation takes effect immediately and your credits reset to the free tier limit.
-            No refunds for partial billing periods.
+            You may cancel your subscription at any time from your account dashboard. Cancellation
+            takes effect immediately and your credits reset to the free tier limit. No refunds for
+            partial billing periods.
           </p>
         </section>
 

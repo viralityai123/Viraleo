@@ -1,7 +1,18 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Zap, CreditCard, Settings, LogOut, ChevronRight, Check, Clock, User } from "lucide-react";
-import { getCredits, getMaxCredits, getPlanInfo, setPlan, getNextResetDate, type PlanTier, PLANS } from "@/lib/credits";
+import {
+  X,
+  Zap,
+  CreditCard,
+  Settings,
+  LogOut,
+  ChevronRight,
+  Check,
+  Clock,
+  User,
+} from "lucide-react";
+import { PLANS, type PlanTier } from "@/lib/plans";
+import { usePlanDisplay, useUserState, assignPlan } from "@/lib/user-state";
 import { getRecentActivities, formatTimestamp, getFeatureRoute } from "@/lib/activity";
 import { getSettings, updateSettings, clearAllData, type UserSettings } from "@/lib/settings";
 import { Link, useNavigate } from "@tanstack/react-router";
@@ -15,26 +26,23 @@ type PanelTab = "account" | "plan" | "settings";
 
 export function AccountPanel({ open, onClose }: AccountPanelProps) {
   const navigate = useNavigate();
+  const { refresh: refreshUserState } = useUserState();
+  const { tier, label, credits, maxCredits, nextReset } = usePlanDisplay();
   const [tab, setTab] = useState<PanelTab>("account");
-  const [credits, setCredits] = useState(getCredits());
-  const [planInfo, setPlanInfo] = useState(getPlanInfo());
   const [settings, setSettingsState] = useState(getSettings());
   const [activities, setActivities] = useState(getRecentActivities(5));
 
-  const maxCredits = getMaxCredits();
-  const nextReset = getNextResetDate();
   const pct = maxCredits > 0 ? Math.round((credits / maxCredits) * 100) : 0;
 
   function refresh() {
-    setCredits(getCredits());
-    setPlanInfo(getPlanInfo());
+    refreshUserState();
     setSettingsState(getSettings());
     setActivities(getRecentActivities(5));
   }
 
-  function handlePlanChange(tier: PlanTier) {
-    if (tier === "free") {
-      setPlan(tier);
+  async function handlePlanChange(planTier: PlanTier) {
+    if (planTier === "free") {
+      await assignPlan({ data: { tier: planTier } });
       refresh();
     } else {
       navigate({ to: "/select-plan" });
@@ -107,12 +115,16 @@ export function AccountPanel({ open, onClose }: AccountPanelProps) {
                       <span className="text-[11px] font-bold uppercase tracking-widest text-ink-soft">
                         Current Plan
                       </span>
-                      <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider ${
-                        planInfo.tier === "free" ? "bg-amber-100 text-amber-700" :
-                        planInfo.tier === "creator" ? "bg-emerald-100 text-emerald-700" :
-                        "bg-violet-100 text-violet-700"
-                      }`}>
-                        {planInfo.label}
+                      <span
+                        className={`text-[11px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider ${
+                          tier === "free"
+                            ? "bg-amber-100 text-amber-700"
+                            : tier === "creator"
+                              ? "bg-emerald-100 text-emerald-700"
+                              : "bg-violet-100 text-violet-700"
+                        }`}
+                      >
+                        {label}
                       </span>
                     </div>
                     <div className="flex items-baseline gap-1 mb-1">
@@ -121,7 +133,10 @@ export function AccountPanel({ open, onClose }: AccountPanelProps) {
                       <span className="text-[12px] text-ink-soft ml-1">credits</span>
                     </div>
                     <div className="w-full h-2 bg-emerald-100 rounded-full overflow-hidden mb-2">
-                      <div className="h-full bg-emerald-500 rounded-full transition-all" style={{ width: `${pct}%` }} />
+                      <div
+                        className="h-full bg-emerald-500 rounded-full transition-all"
+                        style={{ width: `${pct}%` }}
+                      />
                     </div>
                     <p className="text-[11px] text-ink-soft">Resets {nextReset}</p>
                   </div>
@@ -129,32 +144,51 @@ export function AccountPanel({ open, onClose }: AccountPanelProps) {
                   {/* Recent Activity */}
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <h3 className="text-[11px] font-bold uppercase tracking-widest text-ink-soft">Recent Activity</h3>
-                      <Link to="/history" onClick={onClose} className="text-[11px] font-bold text-emerald-600 hover:text-emerald-700 flex items-center gap-0.5">
+                      <h3 className="text-[11px] font-bold uppercase tracking-widest text-ink-soft">
+                        Recent Activity
+                      </h3>
+                      <Link
+                        to="/history"
+                        onClick={onClose}
+                        className="text-[11px] font-bold text-emerald-600 hover:text-emerald-700 flex items-center gap-0.5"
+                      >
                         View all <ChevronRight size={12} />
                       </Link>
                     </div>
                     <div className="space-y-1">
                       {activities.length === 0 ? (
-                        <p className="text-[12px] text-ink-soft py-3 text-center">No activity yet</p>
-                      ) : activities.map((a) => (
-                        <Link
-                          key={a.id}
-                          to={getFeatureRoute(a.feature)}
-                          onClick={onClose}
-                          className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-surface-2 transition group cursor-pointer"
-                        >
-                          <div className="w-7 h-7 rounded-lg bg-emerald-50 border border-emerald-100 flex items-center justify-center shrink-0">
-                            <Clock size={13} className="text-emerald-600" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-[12px] font-semibold text-ink truncate">{a.label}</p>
-                            {a.target && <p className="text-[10px] text-ink-soft truncate">{a.target}</p>}
-                          </div>
-                          <span className="text-[10px] text-ink-soft shrink-0">{formatTimestamp(a.timestamp)}</span>
-                          <ChevronRight size={12} className="text-ink-soft opacity-0 group-hover:opacity-100 transition shrink-0" />
-                        </Link>
-                      ))}
+                        <p className="text-[12px] text-ink-soft py-3 text-center">
+                          No activity yet
+                        </p>
+                      ) : (
+                        activities.map((a) => (
+                          <Link
+                            key={a.id}
+                            to={getFeatureRoute(a.feature)}
+                            onClick={onClose}
+                            className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-surface-2 transition group cursor-pointer"
+                          >
+                            <div className="w-7 h-7 rounded-lg bg-emerald-50 border border-emerald-100 flex items-center justify-center shrink-0">
+                              <Clock size={13} className="text-emerald-600" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-[12px] font-semibold text-ink truncate">
+                                {a.label}
+                              </p>
+                              {a.target && (
+                                <p className="text-[10px] text-ink-soft truncate">{a.target}</p>
+                              )}
+                            </div>
+                            <span className="text-[10px] text-ink-soft shrink-0">
+                              {formatTimestamp(a.timestamp)}
+                            </span>
+                            <ChevronRight
+                              size={12}
+                              className="text-ink-soft opacity-0 group-hover:opacity-100 transition shrink-0"
+                            />
+                          </Link>
+                        ))
+                      )}
                     </div>
                   </div>
                 </>
@@ -162,10 +196,12 @@ export function AccountPanel({ open, onClose }: AccountPanelProps) {
 
               {tab === "plan" && (
                 <div className="space-y-3">
-                  <p className="text-[12px] text-ink-soft">Choose a plan. Credits reset on the 1st of each month.</p>
+                  <p className="text-[12px] text-ink-soft">
+                    Choose a plan. Credits reset on the 1st of each month.
+                  </p>
                   {(["free", "creator", "pro"] as PlanTier[]).map((tier) => {
                     const p = PLANS[tier];
-                    const selected = planInfo.tier === tier;
+                    const selected = tier === tier;
                     return (
                       <button
                         key={tier}
@@ -176,9 +212,11 @@ export function AccountPanel({ open, onClose }: AccountPanelProps) {
                             : "border-hairline bg-white hover:border-emerald-200"
                         }`}
                       >
-                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${
-                          selected ? "border-emerald-500" : "border-ink-soft"
-                        }`}>
+                        <div
+                          className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${
+                            selected ? "border-emerald-500" : "border-ink-soft"
+                          }`}
+                        >
                           {selected && <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />}
                         </div>
                         <div className="flex-1">
@@ -186,7 +224,9 @@ export function AccountPanel({ open, onClose }: AccountPanelProps) {
                             <span className="font-bold text-[14px] text-ink">{p.label}</span>
                             <span className="font-bold text-[14px] text-ink">{p.price}</span>
                           </div>
-                          <p className="text-[12px] text-ink-soft mt-0.5">{p.creditsPerMonth} credits / month</p>
+                          <p className="text-[12px] text-ink-soft mt-0.5">
+                            {p.creditsPerMonth} credits / month
+                          </p>
                         </div>
                       </button>
                     );

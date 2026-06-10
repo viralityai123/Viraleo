@@ -1,12 +1,21 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { MessageCircle, Mail } from "lucide-react";
 
 export const Route = createFileRoute("/faq")({
   head: () => ({
     meta: [
       { title: "FAQ — Viraleo" },
-      { name: "description", content: "Frequently asked questions about Viraleo's YouTube channel intelligence tools, pricing, and how it works." },
+      {
+        name: "description",
+        content:
+          "Frequently asked questions about Viraleo's YouTube channel intelligence tools, pricing, and how it works.",
+      },
       { property: "og:title", content: "FAQ — Viraleo" },
       { property: "og:description", content: "Frequently asked questions about Viraleo." },
       { name: "twitter:title", content: "FAQ — Viraleo" },
@@ -77,13 +86,26 @@ function FaqPage() {
   return (
     <div className="min-h-screen bg-white text-ink font-text">
       <div className="max-w-2xl mx-auto px-6 py-12">
-        <Link to="/" className="text-[13px] text-emerald-600 font-bold hover:underline mb-6 inline-block">&larr; Back to home</Link>
-        <h1 className="font-display text-[32px] font-black text-ink mb-2">Frequently Asked Questions</h1>
-        <p className="text-[15px] text-ink-soft mb-10">Everything you need to know about Viraleo.</p>
+        <Link
+          to="/"
+          className="text-[13px] text-emerald-600 font-bold hover:underline mb-6 inline-block"
+        >
+          &larr; Back to home
+        </Link>
+        <h1 className="font-display text-[32px] font-black text-ink mb-2">
+          Frequently Asked Questions
+        </h1>
+        <p className="text-[15px] text-ink-soft mb-10">
+          Everything you need to know about Viraleo.
+        </p>
 
         <Accordion type="multiple" className="space-y-2">
           {FAQS.map((faq, i) => (
-            <AccordionItem key={i} value={`item-${i}`} className="border border-hairline rounded-2xl overflow-hidden px-5">
+            <AccordionItem
+              key={i}
+              value={`item-${i}`}
+              className="border border-hairline rounded-2xl overflow-hidden px-5"
+            >
               <AccordionTrigger className="text-[14px] font-semibold text-ink py-4 hover:no-underline">
                 {faq.q}
               </AccordionTrigger>

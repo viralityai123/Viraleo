@@ -9,13 +9,15 @@ const urls = [
 
 async function ping(url) {
   return new Promise((resolve) => {
-    https.get(url, (res) => {
-      console.log(`[ping] ${url} → ${res.statusCode}`);
-      resolve(res.statusCode);
-    }).on("error", (err) => {
-      console.error(`[ping] ${url} → FAILED: ${err.message}`);
-      resolve(null);
-    });
+    https
+      .get(url, (res) => {
+        console.log(`[ping] ${url} → ${res.statusCode}`);
+        resolve(res.statusCode);
+      })
+      .on("error", (err) => {
+        console.error(`[ping] ${url} → FAILED: ${err.message}`);
+        resolve(null);
+      });
   });
 }
 

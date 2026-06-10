@@ -11,7 +11,7 @@ interface CommentThreadsResponse {
 
 export async function fetchCommentSamples(
   topVideos: ChannelVideoRecord[],
-  limit = 3
+  limit = 3,
 ): Promise<CommentSample[]> {
   const samples: CommentSample[] = [];
 
@@ -48,7 +48,7 @@ export async function fetchCommentSamples(
 /** Build pseudo timeline from description sentences when official captions require OAuth. */
 export function buildDescriptionSnippets(
   topVideos: ChannelVideoRecord[],
-  limit = 2
+  limit = 2,
 ): CaptionSnippet[] {
   const snippets: CaptionSnippet[] = [];
 
@@ -56,7 +56,10 @@ export function buildDescriptionSnippets(
     const text = (video.description || "").replace(/\n+/g, " ").trim();
     if (text.length < 40) continue;
 
-    const sentences = text.split(/(?<=[.!?])\s+/).filter((s) => s.length > 10).slice(0, 8);
+    const sentences = text
+      .split(/(?<=[.!?])\s+/)
+      .filter((s) => s.length > 10)
+      .slice(0, 8);
     const lines = sentences.map((text, i) => ({
       startSec: i * (video.isShort ? 8 : 25),
       text: text.slice(0, 200),

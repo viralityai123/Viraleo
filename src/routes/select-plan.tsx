@@ -1,9 +1,10 @@
-import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+﻿import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { ArrowRight, CheckCircle2, Lock, Sparkles, Zap, Crown } from "lucide-react";
 import { toast } from "sonner";
 import { ViraleoLogo } from "@/components/ViraleoLogo";
-import { setPlan, getPlanInfo, type PlanTier } from "@/lib/credits";
+import { type PlanTier } from "@/lib/plans";
+import { assignPlan } from "@/lib/user-state";
 import { getSessionFromDocument } from "@/lib/auth/session";
 import { isLsConfigured, createLsCheckout } from "@/routes/api/lemon/checkout";
 import { trackSignup } from "@/lib/partner-store";
@@ -13,9 +14,9 @@ import "@/components/landing-v2/landing-v2.css";
 const fetchUserPlanFromKv = createServerFn({ method: "POST" })
   .inputValidator((d: { email: string }) => d)
   .handler(async ({ data }) => {
-    const { getUserPlan } = await import("@/lib/user-plan");
-    const stored = await getUserPlan(data.email);
-    return stored?.tier || null;
+    const { getUserState } = await import("@/lib/user-state-server");
+    const state = await getUserState(data.email);
+    return state.hasPlan ? state.plan : null;
   });
 
 const recordReferralSignup = createServerFn({ method: "POST" })
@@ -71,13 +72,13 @@ const PRICING = [
 export const Route = createFileRoute("/select-plan")({
   head: () => ({
     meta: [
-      { title: "Choose your plan — Viraleo" },
+      { title: "Choose your plan ÔÇö Viraleo" },
       { name: "description", content: "Pick the right plan for your YouTube content workflow. Free, Creator ($20/mo), or Pro ($50/mo)." },
-      { property: "og:title", content: "Choose your plan — Viraleo" },
-      { property: "og:description", content: "Pick your Viraleo plan — Free, Creator ($20/mo), or Pro ($50/mo)." },
+      { property: "og:title", content: "Choose your plan ÔÇö Viraleo" },
+      { property: "og:description", content: "Pick your Viraleo plan ÔÇö Free, Creator ($20/mo), or Pro ($50/mo)." },
       { property: "og:image", content: "https://viraleo.pro/vi-logo.png" },
       { property: "og:url", content: "https://viraleo.pro/select-plan" },
-      { name: "twitter:title", content: "Choose your plan — Viraleo" },
+      { name: "twitter:title", content: "Choose your plan ÔÇö Viraleo" },
       { name: "twitter:description", content: "Pick your Viraleo plan." },
       { name: "twitter:image", content: "https://viraleo.pro/vi-logo.png" },
     ],
@@ -115,29 +116,17 @@ function SelectPlanPage() {
 
   useEffect(() => {
     async function init() {
-      const source = localStorage.getItem("viraleo:plan-source");
-      const localPlan = getPlanInfo();
-
-      if (source !== "paid") {
-        const session = getSessionFromDocument();
-        let kvTier: string | null = null;
-        if (session?.email) {
-          kvTier = await fetchUserPlanFromKv({ data: { email: session.email } });
+      const session = getSessionFromDocument();
+      if (!session?.email) return;
+      try {
+        const tier = await fetchUserPlanFromKv({ data: { email: session.email } });
+        if (tier && tier !== "free") {
+          navigate({ to: "/" });
+          return;
         }
-
-        if (kvTier === "creator" || kvTier === "pro") {
-          setPlan(kvTier);
-          localStorage.setItem("viraleo:plan-source", "paid");
-          localStorage.setItem("viraleo:plan-selected", "true");
-        } else if (localPlan.tier !== "free") {
-          setPlan("free");
-          localStorage.removeItem("viraleo:plan-selected");
-        }
-      }
-
-      const info = getPlanInfo();
-      if (info.tier !== "free" || localStorage.getItem("viraleo:plan-selected")) {
-        setCurrentTier(info.tier);
+        if (tier) setCurrentTier(tier);
+      } catch {
+        /* ignore */
       }
     }
     init();
@@ -146,9 +135,13 @@ function SelectPlanPage() {
   async function handleSelect(tier: PlanTier) {
     if (tier === "free") {
       setSelecting(tier);
-      setPlan(tier);
-      localStorage.setItem("viraleo:plan-selected", "true");
-      navigate({ to: "/pre-analysis", search: { channel: undefined, activityId: undefined } });
+      try {
+        await assignPlan({ data: { tier } });
+        navigate({ to: "/pre-analysis", search: { channel: undefined, activityId: undefined } });
+      } catch {
+        toast.error("Could not save plan. Please try again.");
+        setSelecting(null);
+      }
       return;
     }
 
@@ -173,7 +166,7 @@ function SelectPlanPage() {
       // fall through to local fallback
     }
 
-    // No fallback — user must complete payment to unlock paid plan
+    // No fallback ÔÇö user must complete payment to unlock paid plan
     toast.error("Payment service unavailable. Please try again.");
     setSelecting(null);
   }

@@ -28,23 +28,18 @@ export function computeChannelMetrics(videos: ChannelVideoRecord[]): ChannelMetr
   }
 
   const sortedByDate = [...videos].sort(
-    (a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
+    (a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime(),
   );
   const viewsPerDay = videos.map((v) => v.viewsPerDay).sort((a, b) => a - b);
   const mid = Math.floor(viewsPerDay.length / 2);
   const medianViewsPerDay =
-    viewsPerDay.length % 2 === 0
-      ? (viewsPerDay[mid - 1] + viewsPerDay[mid]) / 2
-      : viewsPerDay[mid];
+    viewsPerDay.length % 2 === 0 ? (viewsPerDay[mid - 1] + viewsPerDay[mid]) / 2 : viewsPerDay[mid];
 
   const recent5 = sortedByDate.slice(0, 5);
   const prior5 = sortedByDate.slice(5, 10);
-  const recentAvg =
-    recent5.reduce((s, v) => s + v.viewsPerDay, 0) / Math.max(1, recent5.length);
+  const recentAvg = recent5.reduce((s, v) => s + v.viewsPerDay, 0) / Math.max(1, recent5.length);
   const priorAvg =
-    prior5.length > 0
-      ? prior5.reduce((s, v) => s + v.viewsPerDay, 0) / prior5.length
-      : recentAvg;
+    prior5.length > 0 ? prior5.reduce((s, v) => s + v.viewsPerDay, 0) / prior5.length : recentAvg;
   const velocityCliffRatio = priorAvg > 0 ? recentAvg / priorAvg : 1;
   const velocityCliff = prior5.length >= 3 && velocityCliffRatio < 0.45;
 
@@ -76,7 +71,10 @@ export function computeChannelMetrics(videos: ChannelVideoRecord[]): ChannelMetr
   };
 }
 
-export function inferNicheFromVideos(videos: ChannelVideoRecord[], channelDescription: string): string {
+export function inferNicheFromVideos(
+  videos: ChannelVideoRecord[],
+  channelDescription: string,
+): string {
   const titles = videos
     .slice(0, 8)
     .map((v) => v.title)
@@ -118,17 +116,22 @@ export function inferNicheFromVideos(videos: ChannelVideoRecord[], channelDescri
 export function inferAudienceFromMetrics(
   metrics: ChannelMetrics,
   niche: string,
-  commentSamples: { comments: string[] }[]
+  commentSamples: { comments: string[] }[],
 ): string {
-  const allComments = commentSamples.flatMap((c) => c.comments).join(" ").toLowerCase();
+  const allComments = commentSamples
+    .flatMap((c) => c.comments)
+    .join(" ")
+    .toLowerCase();
   const hints: string[] = [];
   if (metrics.shortsRatio > 0.5) hints.push("mobile-first Shorts viewers");
   if (metrics.avgCommentRate > 0.02) hints.push("highly engaged commenters");
   if (metrics.avgLikeRate > 0.04) hints.push("strong like engagement");
   if (allComments.match(/\b(gen z|teen|school|homework)\b/)) hints.push("younger skew");
-  if (allComments.match(/\b(parent|kids|baby|toddler|mom|dad)\b/)) hints.push("parents / family co-viewing");
+  if (allComments.match(/\b(parent|kids|baby|toddler|mom|dad)\b/))
+    hints.push("parents / family co-viewing");
   if (allComments.match(/\b(invest|stock|money|salary)\b/)) hints.push("money-motivated adults");
-  if (allComments.match(/\b(minecraft|roblox|fortnite|mod|server|skin)\b/)) hints.push("gaming / kid-skewing fandom");
+  if (allComments.match(/\b(minecraft|roblox|fortnite|mod|server|skin)\b/))
+    hints.push("gaming / kid-skewing fandom");
   if (allComments.match(/\b(homework|school|teacher|class)\b/)) hints.push("students");
 
   const hintStr = hints.length > 0 ? hints.join(", ") : "general YouTube feed browsers";
@@ -150,25 +153,35 @@ export interface AudienceSketch {
 export function inferAudienceSketch(
   niche: string,
   metrics: ChannelMetrics,
-  commentSamples: { comments: string[] }[]
+  commentSamples: { comments: string[] }[],
 ): AudienceSketch {
   const combined = `${niche} ${commentSamples.flatMap((c) => c.comments).join(" ")}`.toLowerCase();
   const disclaimer =
     "YouTube does not expose exact age splits on the public API. This sketch is inferred from content category and comment language — including kids watching on a parent's account.";
 
   const isKidsGaming =
-    /\b(minecraft|roblox|fortnite|lego|pokemon|cartoon|kids|nursery|peppa|cocomelon)\b/.test(combined);
-  const isFamily =
-    /\b(parent|family|kids|toddler|baby|children)\b/.test(combined) || isKidsGaming;
+    /\b(minecraft|roblox|fortnite|lego|pokemon|cartoon|kids|nursery|peppa|cocomelon)\b/.test(
+      combined,
+    );
+  const isFamily = /\b(parent|family|kids|toddler|baby|children)\b/.test(combined) || isKidsGaming;
 
   if (isKidsGaming || (isFamily && metrics.shortsRatio < 0.35)) {
     return {
       summary:
         "Family & kid-skewing viewership — includes co-viewing on parents' YouTube accounts (not just 18–34 professionals).",
       segments: [
-        { label: "Kids (primary viewer)", note: "Often mobile/TV; high replay on challenge & story videos" },
-        { label: "Parents / guardians", note: "Account holders who search, subscribe, and gate what plays next" },
-        { label: "Teen superfans", note: "Comment-heavy segment that amplifies inside jokes & memes" },
+        {
+          label: "Kids (primary viewer)",
+          note: "Often mobile/TV; high replay on challenge & story videos",
+        },
+        {
+          label: "Parents / guardians",
+          note: "Account holders who search, subscribe, and gate what plays next",
+        },
+        {
+          label: "Teen superfans",
+          note: "Comment-heavy segment that amplifies inside jokes & memes",
+        },
         { label: "Casual feed browsers", note: "Click from recommendations without subscribing" },
       ],
       disclaimer,
@@ -180,7 +193,10 @@ export function inferAudienceSketch(
       summary: "Mobile-first Shorts scrollers — snackable, high-swipe feeds.",
       segments: [
         { label: "Gen Z / young teens", note: "Fast hook tolerance; meme-native comments" },
-        { label: "Young adults (18–34)", note: "Largest share on many Shorts niches — not guaranteed for every channel" },
+        {
+          label: "Young adults (18–34)",
+          note: "Largest share on many Shorts niches — not guaranteed for every channel",
+        },
         { label: "Binge replays", note: "Loop-friendly formats drive rewatches" },
       ],
       disclaimer,
@@ -199,7 +215,10 @@ export function inferAudienceSketch(
 }
 
 export function inferHookStyle(videos: ChannelVideoRecord[]): string {
-  const titles = videos.slice(0, 10).map((v) => v.title).join(" ");
+  const titles = videos
+    .slice(0, 10)
+    .map((v) => v.title)
+    .join(" ");
   if (/\?/.test(titles)) return "Curiosity-gap questions in titles";
   if (/\b(i |my |i'm )\b/i.test(titles)) return "Personal story / first-person hooks";
   if (/\b(\d+|top \d|ranked)\b/i.test(titles)) return "List / ranking hooks";
@@ -209,8 +228,7 @@ export function inferHookStyle(videos: ChannelVideoRecord[]): string {
 
 export function inferEditingStyle(metrics: ChannelMetrics, videos: ChannelVideoRecord[]): string {
   if (metrics.shortsRatio > 0.6) return "Fast-paced vertical cuts, caption-forward Shorts";
-  const avgDur =
-    videos.reduce((s, v) => s + v.durationSec, 0) / Math.max(1, videos.length);
+  const avgDur = videos.reduce((s, v) => s + v.durationSec, 0) / Math.max(1, videos.length);
   if (avgDur > 600) return "Long-form chapters, B-roll heavy, slower pacing";
   if (avgDur > 180) return "Mid-form explainer pacing with periodic visual resets";
   return "Mixed format editing";
@@ -218,7 +236,7 @@ export function inferEditingStyle(metrics: ChannelMetrics, videos: ChannelVideoR
 
 export function pickTopVideo(
   videos: ChannelVideoRecord[],
-  mode: "shorts" | "long"
+  mode: "shorts" | "long",
 ): ChannelVideoRecord | null {
   const filtered =
     mode === "shorts" ? videos.filter((v) => v.isShort) : videos.filter((v) => !v.isShort);

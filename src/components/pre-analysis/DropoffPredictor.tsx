@@ -98,8 +98,8 @@ export function DropoffPredictor({ meta }: { meta: DropoffMeta }) {
             Drop-Off Predictor
           </div>
           <p className="mt-1 text-[12.5px] text-ink-soft max-w-md">
-            Modeled from cut density, pacing gaps, and audio energy. Markers are
-            the moments most likely to lose viewers.
+            Modeled from cut density, pacing gaps, and audio energy. Markers are the moments most
+            likely to lose viewers.
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -116,20 +116,48 @@ export function DropoffPredictor({ meta }: { meta: DropoffMeta }) {
             <button
               onClick={() => onFeedback("positive")}
               className={`size-6 rounded-full flex items-center justify-center text-[12px] transition-all ${
-                feedback === "positive" ? "bg-good/15 text-good" : "text-ink-soft hover:bg-surface-2"
+                feedback === "positive"
+                  ? "bg-good/15 text-good"
+                  : "text-ink-soft hover:bg-surface-2"
               }`}
               title="Accurate prediction"
             >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14Z"/><path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14Z" />
+                <path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3" />
+              </svg>
             </button>
             <button
               onClick={() => onFeedback("negative")}
               className={`size-6 rounded-full flex items-center justify-center text-[12px] transition-all ${
-                feedback === "negative" ? "bg-critical/15 text-critical" : "text-ink-soft hover:bg-surface-2"
+                feedback === "negative"
+                  ? "bg-critical/15 text-critical"
+                  : "text-ink-soft hover:bg-surface-2"
               }`}
               title="Inaccurate prediction"
             >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3H10Z"/><path d="M17 2h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-3"/></svg>
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3H10Z" />
+                <path d="M17 2h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-3" />
+              </svg>
             </button>
           </div>
         </div>
@@ -174,8 +202,10 @@ export function DropoffPredictor({ meta }: { meta: DropoffMeta }) {
                   {[25, 50, 75].map((y) => (
                     <line
                       key={y}
-                      x1="0" x2={W}
-                      y1={y} y2={y}
+                      x1="0"
+                      x2={W}
+                      y1={y}
+                      y2={y}
                       stroke="var(--color-hairline)"
                       strokeWidth="0.4"
                       vectorEffect="non-scaling-stroke"
@@ -245,8 +275,10 @@ export function DropoffPredictor({ meta }: { meta: DropoffMeta }) {
                   {hover && (
                     <>
                       <line
-                        x1={hover.x} x2={hover.x}
-                        y1="0" y2={H}
+                        x1={hover.x}
+                        x2={hover.x}
+                        y1="0"
+                        y2={H}
                         stroke="var(--color-ink)"
                         strokeWidth="0.4"
                         vectorEffect="non-scaling-stroke"
@@ -379,9 +411,7 @@ export function DropoffPredictor({ meta }: { meta: DropoffMeta }) {
                     <span className="font-display text-[14px] font-semibold tabular-nums text-ink w-12">
                       {formatTimestamp(m.timestamp)}
                     </span>
-                    <span className="text-[12.5px] text-ink font-medium">
-                      {m.reason}
-                    </span>
+                    <span className="text-[12.5px] text-ink font-medium">{m.reason}</span>
                     <span className="ml-auto flex items-center gap-2">
                       <span
                         className="text-[10.5px] font-semibold tabular-nums"
@@ -492,9 +522,8 @@ export function DropoffPredictor({ meta }: { meta: DropoffMeta }) {
             <div
               className="mt-0.5 font-display text-[20px] font-semibold tabular-nums"
               style={{
-                color: prediction.vsNicheAverage >= 0
-                  ? "var(--color-good)"
-                  : "var(--color-critical)",
+                color:
+                  prediction.vsNicheAverage >= 0 ? "var(--color-good)" : "var(--color-critical)",
               }}
             >
               {prediction.vsNicheAverage >= 0 ? "+" : ""}

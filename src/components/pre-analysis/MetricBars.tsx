@@ -38,9 +38,7 @@ export function MetricBars({ metrics, maxScore = 10 }: { metrics: Metric[]; maxS
                 transition={{ duration: 0.9, delay: 0.1 + i * 0.08, ease: [0.16, 1, 0.3, 1] }}
               />
             </div>
-            <p className="mt-2 text-[12.5px] leading-relaxed text-ink-soft">
-              {m.copy}
-            </p>
+            <p className="mt-2 text-[12.5px] leading-relaxed text-ink-soft">{m.copy}</p>
           </div>
         );
       })}

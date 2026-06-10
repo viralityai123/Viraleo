@@ -22,7 +22,10 @@ console.log("Env check:", {
 });
 const url = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
 const token = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
-if (!url || !token) { console.error("KV not configured"); process.exit(1); }
+if (!url || !token) {
+  console.error("KV not configured");
+  process.exit(1);
+}
 
 const kv = createClient({ url, token });
 let deleted = 0;

@@ -53,7 +53,10 @@ function firstSentence(text: string): string {
 function descContext(video: ChannelVideoRecord): string {
   const d = (video.description || "").replace(/\n+/g, " ").trim();
   if (!d || d.length < 15) return "";
-  const tags = d.match(/#[\w]+/g)?.slice(0, 6).join(" ");
+  const tags = d
+    .match(/#[\w]+/g)
+    ?.slice(0, 6)
+    .join(" ");
   const first = firstSentence(d);
   if (tags && first.length < 40) return `${first} ${tags}`.trim();
   return first.slice(0, 180);
@@ -75,7 +78,7 @@ function analyzeTitlePatterns(videos: ChannelVideoRecord[], handle: string): str
 
   if (brandOnly / Math.max(1, titles.length) >= 0.4) {
     patterns.push(
-      `Handle-only titles on ${brandOnly}/${titles.length} uploads — packaging hook is thumbnail + first ~2s, not headline text`
+      `Handle-only titles on ${brandOnly}/${titles.length} uploads — packaging hook is thumbnail + first ~2s, not headline text`,
     );
     return patterns;
   }
@@ -86,7 +89,9 @@ function analyzeTitlePatterns(videos: ChannelVideoRecord[], handle: string): str
   const avgLen = titles.reduce((s, t) => s + t.length, 0) / Math.max(1, titles.length);
 
   if (withQuestion / titles.length > 0.35) {
-    patterns.push(`Questions in titles (${withQuestion}/${titles.length}) — curiosity-gap packaging`);
+    patterns.push(
+      `Questions in titles (${withQuestion}/${titles.length}) — curiosity-gap packaging`,
+    );
   }
   if (withNumber / titles.length > 0.4) {
     patterns.push(`Numbers/lists in titles (${withNumber}/${titles.length})`);
@@ -118,7 +123,7 @@ function extractCommentTriggers(bundle: ChannelIntelBundle): string[] {
 function resolveOpeningSignal(
   v: ChannelVideoRecord,
   bundle: ChannelIntelBundle,
-  visualFirst: boolean
+  visualFirst: boolean,
 ): Pick<ObservedHook, "openingHook" | "openingSource"> {
   const handle = bundle.meta.handle || bundle.meta.name;
   const desc = descContext(v);

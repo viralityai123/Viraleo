@@ -15,9 +15,10 @@ export async function inferThumbnailWithWorkersAi(
   context: string,
   isShort: boolean,
 ): Promise<WorkersAiThumbnailResult | null> {
-  const endpoint = typeof process !== "undefined"
-    ? (process as any).env?.THUMBNAIL_ML_URL || "/api/thumbnail-score"
-    : "/api/thumbnail-score";
+  const endpoint =
+    typeof process !== "undefined"
+      ? (process as any).env?.THUMBNAIL_ML_URL || "/api/thumbnail-score"
+      : "/api/thumbnail-score";
 
   try {
     const res = await fetch(endpoint, {
@@ -26,7 +27,7 @@ export async function inferThumbnailWithWorkersAi(
       body: JSON.stringify({ base64, features, title, context, isShort }),
     });
     if (!res.ok) return null;
-    return await res.json() as WorkersAiThumbnailResult;
+    return (await res.json()) as WorkersAiThumbnailResult;
   } catch {
     return null;
   }

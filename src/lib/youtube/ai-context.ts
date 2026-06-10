@@ -18,7 +18,7 @@ export interface FeatureAiContext {
 
 export function buildDataReceipts(
   bundle: ChannelIntelBundle,
-  extras?: { hasTranscript?: boolean; topVideoTitle?: string }
+  extras?: { hasTranscript?: boolean; topVideoTitle?: string },
 ): string[] {
   const receipts: string[] = [
     `${bundle.videos.length} uploads ingested via YouTube Data API`,
@@ -30,7 +30,7 @@ export function buildDataReceipts(
   }
   if (extras?.hasTranscript) {
     receipts.push(
-      `Auto-captions parsed for "${(extras.topVideoTitle || "").slice(0, 48)}${(extras.topVideoTitle || "").length > 48 ? "…" : ""}"`
+      `Auto-captions parsed for "${(extras.topVideoTitle || "").slice(0, 48)}${(extras.topVideoTitle || "").length > 48 ? "…" : ""}"`,
     );
   }
   if (bundle.metrics.velocityCliff) {
@@ -46,10 +46,11 @@ export async function buildFeatureAiContext(
     referenceVideoId?: string;
     referenceTitle?: string;
     referenceVideo?: ChannelVideoRecord;
-  }
+  },
 ): Promise<FeatureAiContext> {
   const hookIntel = extractHookIntelligence(bundle);
-  const top = opts?.referenceVideo || pickTopVideo(bundle.videos, opts?.mode || "shorts") || undefined;
+  const top =
+    opts?.referenceVideo || pickTopVideo(bundle.videos, opts?.mode || "shorts") || undefined;
   const referenceVideoId = opts?.referenceVideoId || top?.id;
   const referenceTitle = opts?.referenceTitle || top?.title || bundle.meta.name;
   const transcript = referenceVideoId ? await fetchVideoTranscript(referenceVideoId) : null;
@@ -59,7 +60,7 @@ export async function buildFeatureAiContext(
     opts?.mode,
     hookIntel,
     transcript,
-    referenceTitle
+    referenceTitle,
   );
   const receipts = buildDataReceipts(bundle, {
     hasTranscript: Boolean(transcript?.length),
@@ -81,7 +82,7 @@ export async function buildFeatureAiContext(
 /** Attach digest + receipts to any tool JSON response. */
 export function attachIntelProof<T extends Record<string, unknown>>(
   payload: T,
-  ctx: FeatureAiContext
+  ctx: FeatureAiContext,
 ): T & {
   channelDigest: FeatureAiContext["digest"];
   dataReceipts: string[];

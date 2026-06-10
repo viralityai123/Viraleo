@@ -45,8 +45,19 @@ function framesToParts(frames: string[]) {
 }
 
 export async function runPreAnalysis(data: PreAnalysisInput) {
-  const { name, size, duration, width, height, frames, audioEnergy, videoTitle, niche, compareToCompetitor, channelQuery } =
-    data;
+  const {
+    name,
+    size,
+    duration,
+    width,
+    height,
+    frames,
+    audioEnergy,
+    videoTitle,
+    niche,
+    compareToCompetitor,
+    channelQuery,
+  } = data;
   const isShort = height > width;
   const framesParts = framesToParts(frames);
 
@@ -111,13 +122,16 @@ Return JSON:
     "Hook Strength": `The first 3s of "${videoTitle || name}" lack a clear focal point. Add a face or bold text overlay at 0:00.`,
     "Pacing Score": `Cut density drops mid-roll for "${videoTitle || name}". Insert B-roll or quick transitions every 4s.`,
     "Content Idea": `"${videoTitle || name}" fits ${niche || "your niche"} but needs a sharper angle — the concept is broad, tighten the hook premise.`,
-    "Editing": `Transitions feel abrupt in "${videoTitle || name}". Add cross-fades or motion blur between cuts.`,
+    Editing: `Transitions feel abrupt in "${videoTitle || name}". Add cross-fades or motion blur between cuts.`,
     "Thumbnail Potential": `The first frame lacks contrast. Use a bright focal point and bold text overlay for "${videoTitle || name}".`,
     "Retention Forecast": `Expected retention curve drops at mid-point for "${videoTitle || name}". Front-load a stronger hook to flatten decay.`,
   };
   parsed.metrics = parsed.metrics.map((m) => ({
     ...m,
-    copy: isBoringCopy(m.copy) ? (boringFallback[m.label] || `Inspect "${name}" frame at ${m.label === "Hook Strength" ? "0–3s" : "mid-roll"} — adjust based on competitors.`) : m.copy,
+    copy: isBoringCopy(m.copy)
+      ? boringFallback[m.label] ||
+        `Inspect "${name}" frame at ${m.label === "Hook Strength" ? "0–3s" : "mid-roll"} — adjust based on competitors.`
+      : m.copy,
   }));
 
   const normalized = normalizePreScores(parsed);

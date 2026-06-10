@@ -51,7 +51,9 @@ export async function extractThumbnailFeatures(
   const L = new Float64Array(W * H);
   let sumL = 0;
   for (let i = 0; i < W * H; i++) {
-    const r = d[i * 4], g = d[i * 4 + 1], b = d[i * 4 + 2];
+    const r = d[i * 4],
+      g = d[i * 4 + 1],
+      b = d[i * 4 + 2];
     L[i] = 0.299 * r + 0.587 * g + 0.114 * b;
     sumL += L[i];
   }
@@ -66,12 +68,20 @@ export async function extractThumbnailFeatures(
   const H_ = new Float32Array(W * H);
   const S = new Float32Array(W * H);
   const V = new Float32Array(W * H);
-  let sumS = 0, warmPixels = 0, skinPixels = 0;
+  let sumS = 0,
+    warmPixels = 0,
+    skinPixels = 0;
 
   for (let i = 0; i < W * H; i++) {
-    const r = d[i * 4] / 255, g = d[i * 4 + 1] / 255, b = d[i * 4 + 2] / 255;
-    const mx = Math.max(r, g, b), mn = Math.min(r, g, b), delta = mx - mn;
-    let h = 0, s = 0, v = mx;
+    const r = d[i * 4] / 255,
+      g = d[i * 4 + 1] / 255,
+      b = d[i * 4 + 2] / 255;
+    const mx = Math.max(r, g, b),
+      mn = Math.min(r, g, b),
+      delta = mx - mn;
+    let h = 0,
+      s = 0,
+      v = mx;
     if (delta > 0.001) {
       s = delta / mx;
       if (mx === r) h = ((g - b) / delta) % 6;
@@ -80,7 +90,9 @@ export async function extractThumbnailFeatures(
       h *= 60;
       if (h < 0) h += 360;
     }
-    H_[i] = h; S[i] = s * 100; V[i] = v * 100;
+    H_[i] = h;
+    S[i] = s * 100;
+    V[i] = v * 100;
     sumS += s;
     if ((h >= 0 && h <= 30) || h >= 340) warmPixels++;
     if (h >= 0 && h <= 50 && s > 0.1 && v > 0.2 && v < 0.9) skinPixels++;
@@ -109,9 +121,13 @@ export async function extractThumbnailFeatures(
   let textStrips = 0;
   for (let s = 0; s < 6; s++) {
     const yStart = s * stripH;
-    let stripSum = 0, count = 0;
+    let stripSum = 0,
+      count = 0;
     for (let y = yStart; y < yStart + stripH && y < H; y++)
-      for (let x = 0; x < W; x++) { stripSum += sobelH[y * W + x]; count++; }
+      for (let x = 0; x < W; x++) {
+        stripSum += sobelH[y * W + x];
+        count++;
+      }
     if (stripSum / count / 255 > 0.15) textStrips++;
   }
   const textAreaRatio = textStrips / 6;
@@ -124,11 +140,15 @@ export async function extractThumbnailFeatures(
   if (isShort) {
     const forbidBottom = Math.floor(H * 0.85);
     const forbidRight = Math.floor(W * 0.88);
-    let forbiddenFeatures = 0, totalFeatures = 0;
+    let forbiddenFeatures = 0,
+      totalFeatures = 0;
     for (let y = 0; y < H; y++)
       for (let x = 0; x < W; x++) {
         const i = y * W + x;
-        if (sobelH[i] > 30) { totalFeatures++; if (y >= forbidBottom || x >= forbidRight) forbiddenFeatures++; }
+        if (sobelH[i] > 30) {
+          totalFeatures++;
+          if (y >= forbidBottom || x >= forbidRight) forbiddenFeatures++;
+        }
       }
     const overlapRatio = totalFeatures > 0 ? forbiddenFeatures / totalFeatures : 0;
     safeZoneScore = Math.max(0, Math.min(1, 1 - overlapRatio * 2));
@@ -143,8 +163,15 @@ export async function extractThumbnailFeatures(
   const dominanceScore = Math.max(0, Math.min(1, (hhi - 0.15) / 0.6));
 
   // ── 7. Real Face Detection (face-api.js) ──────────────────────────────
-  let faceCount = 0, hasFace = false;
-  let faceExpressions: ThumbnailFeatures["faceExpressions"] = { happy: 0, surprised: 0, neutral: 0.5, sad: 0, angry: 0 };
+  let faceCount = 0,
+    hasFace = false;
+  let faceExpressions: ThumbnailFeatures["faceExpressions"] = {
+    happy: 0,
+    surprised: 0,
+    neutral: 0.5,
+    sad: 0,
+    angry: 0,
+  };
   let faceSizes: number[] = [];
 
   await ensureFaceModels();
@@ -158,14 +185,23 @@ export async function extractThumbnailFeatures(
       faceSizes = detections.map((d) => d.detection.box.area / (W * H));
       if (faceCount > 0) {
         // Average expressions across all faces
-        const avgExp: Record<string, number[]> = { happy: [], surprised: [], neutral: [], sad: [], angry: [] };
+        const avgExp: Record<string, number[]> = {
+          happy: [],
+          surprised: [],
+          neutral: [],
+          sad: [],
+          angry: [],
+        };
         for (const det of detections) {
           for (const key of Object.keys(avgExp)) {
             avgExp[key].push((det.expressions as any)[key] ?? 0);
           }
         }
         faceExpressions = Object.fromEntries(
-          Object.entries(avgExp).map(([k, vals]) => [k, vals.reduce((a, b) => a + b, 0) / vals.length]),
+          Object.entries(avgExp).map(([k, vals]) => [
+            k,
+            vals.reduce((a, b) => a + b, 0) / vals.length,
+          ]),
         ) as ThumbnailFeatures["faceExpressions"];
       }
     } catch {
@@ -192,46 +228,104 @@ export async function extractThumbnailFeatures(
   }
 
   // ── 9. Scene Classification ───────────────────────────────────────────
-  const sceneType = classifyScene(faceCount, faceSizes, textAreaRatio, edgeDensity, popScore, saturation);
+  const sceneType = classifyScene(
+    faceCount,
+    faceSizes,
+    textAreaRatio,
+    edgeDensity,
+    popScore,
+    saturation,
+  );
 
   // ── 10. Title-OCR Synergy ────────────────────────────────────────────
   const titleKeywords = title
     .toLowerCase()
     .split(/\s+/)
     .filter((w) => w.length > 3);
-  const stopWords = new Set(["this", "that", "with", "from", "have", "been", "were", "what", "when", "where", "which", "their", "your", "they", "them", "some", "could", "would", "should", "about", "there", "after", "before", "just", "also", "than", "then", "very", "more"]);
+  const stopWords = new Set([
+    "this",
+    "that",
+    "with",
+    "from",
+    "have",
+    "been",
+    "were",
+    "what",
+    "when",
+    "where",
+    "which",
+    "their",
+    "your",
+    "they",
+    "them",
+    "some",
+    "could",
+    "would",
+    "should",
+    "about",
+    "there",
+    "after",
+    "before",
+    "just",
+    "also",
+    "than",
+    "then",
+    "very",
+    "more",
+  ]);
   const filteredKeywords = titleKeywords.filter((w) => !stopWords.has(w));
 
   let synergyMatchCount = 0;
   for (const kw of filteredKeywords) {
     if (ocrWords.some((ow) => ow.includes(kw) || kw.includes(ow))) synergyMatchCount++;
   }
-  const titleSynergyScore = filteredKeywords.length > 0
-    ? synergyMatchCount / filteredKeywords.length
-    : 0;
+  const titleSynergyScore =
+    filteredKeywords.length > 0 ? synergyMatchCount / filteredKeywords.length : 0;
   const alignmentScore = titleSynergyScore * 0.7 + 0.3;
 
   // ── 11. Derived Metric Scores ─────────────────────────────────────────
   const visualContrast = clamp(contrast * 12, 0, 10);
   const textReadability = clamp((1 - Math.abs(textAreaRatio - 0.18) * 3) * 10, 0, 10);
   const topicRelevance = clamp((alignmentScore * 0.7 + dominanceScore * 0.3) * 10, 0, 10);
-  const faceExpressionBonus = hasFace && faceExpressions.surprised > 0.5 ? 2 : hasFace && faceExpressions.happy > 0.5 ? 1.5 : hasFace ? 1 : 0;
+  const faceExpressionBonus =
+    hasFace && faceExpressions.surprised > 0.5
+      ? 2
+      : hasFace && faceExpressions.happy > 0.5
+        ? 1.5
+        : hasFace
+          ? 1
+          : 0;
   const clickPsychology = clamp(faceExpressionBonus + popScore * 4 + contrast * 3, 0, 10);
 
   // ── 12. Predicted CTR ─────────────────────────────────────────────────
   const predictedCtr = computeCtr(
-    sceneType, hasFace, faceExpressions, textAreaRatio, popScore, titleSynergyScore,
-    thirdsScore, complexityScore, avgBrightness, safeZoneScore, dominanceScore, contrast,
+    sceneType,
+    hasFace,
+    faceExpressions,
+    textAreaRatio,
+    popScore,
+    titleSynergyScore,
+    thirdsScore,
+    complexityScore,
+    avgBrightness,
+    safeZoneScore,
+    dominanceScore,
+    contrast,
   );
 
   return {
-    width: W, height: H,
+    width: W,
+    height: H,
     avgBrightness: +avgBrightness.toFixed(4),
     brightnessVariance: +brightnessVariance.toFixed(4),
     contrast: +contrast.toFixed(4),
-    hasFace, faceCount, faceExpressions, faceSizes,
+    hasFace,
+    faceCount,
+    faceExpressions,
+    faceSizes,
     skinPixelRatio: +skinPixelRatio.toFixed(4),
-    ocrText, ocrWords,
+    ocrText,
+    ocrWords,
     textAreaRatio: +textAreaRatio.toFixed(4),
     titleSynergyScore: +titleSynergyScore.toFixed(4),
     saturation: +saturation.toFixed(4),
@@ -262,7 +356,13 @@ function sobelHorizontal(gray: Float64Array, W: number, H: number): Float64Array
   for (let y = 1; y < H - 1; y++)
     for (let x = 1; x < W - 1; x++) {
       const i = y * W + x;
-      out[i] = -gray[i - W - 1] - 2 * gray[i - 1] - gray[i + W - 1] + gray[i - W + 1] + 2 * gray[i + 1] + gray[i + W + 1];
+      out[i] =
+        -gray[i - W - 1] -
+        2 * gray[i - 1] -
+        gray[i + W - 1] +
+        gray[i - W + 1] +
+        2 * gray[i + 1] +
+        gray[i + W + 1];
     }
   return out;
 }
@@ -272,7 +372,13 @@ function sobelVertical(gray: Float64Array, W: number, H: number): Float64Array {
   for (let y = 1; y < H - 1; y++)
     for (let x = 1; x < W - 1; x++) {
       const i = y * W + x;
-      out[i] = -gray[i - W - 1] + gray[i - W + 1] - 2 * gray[i + W - 1] + 2 * gray[i + W + 1] - gray[i - 1] + gray[i + 1];
+      out[i] =
+        -gray[i - W - 1] +
+        gray[i - W + 1] -
+        2 * gray[i + W - 1] +
+        2 * gray[i + W + 1] -
+        gray[i - 1] +
+        gray[i + 1];
     }
   return out;
 }
@@ -280,26 +386,37 @@ function sobelVertical(gray: Float64Array, W: number, H: number): Float64Array {
 // ── Rule of Thirds ─────────────────────────────────────────────────────────
 
 function computeThirdsScore(mag: Float64Array, W: number, H: number): number {
-  const thirdW = Math.floor(W / 3), thirdH = Math.floor(H / 3);
-  let intersectSum = 0, centerSum = 0;
-  for (const [gx, gy] of [[1, 1], [1, 3], [3, 1], [3, 3]]) {
-    const xStart = (gx - 1) * thirdW, yStart = (gy - 1) * thirdH;
+  const thirdW = Math.floor(W / 3),
+    thirdH = Math.floor(H / 3);
+  let intersectSum = 0,
+    centerSum = 0;
+  for (const [gx, gy] of [
+    [1, 1],
+    [1, 3],
+    [3, 1],
+    [3, 3],
+  ]) {
+    const xStart = (gx - 1) * thirdW,
+      yStart = (gy - 1) * thirdH;
     for (let y = yStart; y < yStart + thirdH && y < H; y++)
-      for (let x = xStart; x < xStart + thirdW && x < W; x++)
-        intersectSum += mag[y * W + x];
+      for (let x = xStart; x < xStart + thirdW && x < W; x++) intersectSum += mag[y * W + x];
   }
-  const cxStart = 1 * thirdW, cyStart = 1 * thirdH;
+  const cxStart = 1 * thirdW,
+    cyStart = 1 * thirdH;
   for (let y = cyStart; y < cyStart + thirdH && y < H; y++)
-    for (let x = cxStart; x < cxStart + thirdW && x < W; x++)
-      centerSum += mag[y * W + x];
+    for (let x = cxStart; x < cxStart + thirdW && x < W; x++) centerSum += mag[y * W + x];
   return intersectSum / (intersectSum + centerSum + 0.01);
 }
 
 // ── Scene Classification ────────────────────────────────────────────────────
 
 function classifyScene(
-  faceCount: number, faceSizes: number[], textAreaRatio: number,
-  edgeDensity: number, popScore: number, saturation: number,
+  faceCount: number,
+  faceSizes: number[],
+  textAreaRatio: number,
+  edgeDensity: number,
+  popScore: number,
+  saturation: number,
 ): SceneType {
   const maxFaceSize = faceSizes.length > 0 ? Math.max(...faceSizes) : 0;
   if (faceCount === 1 && maxFaceSize > 0.15) return "close-up face";
@@ -316,7 +433,13 @@ function classifyScene(
 function computeCtr(
   sceneType: SceneType,
   hasFace: boolean,
-  faceExpressions: { happy: number; surprised: number; neutral: number; sad: number; angry: number },
+  faceExpressions: {
+    happy: number;
+    surprised: number;
+    neutral: number;
+    sad: number;
+    angry: number;
+  },
   textAreaRatio: number,
   popScore: number,
   titleSynergyScore: number,
@@ -334,33 +457,50 @@ function computeCtr(
     "group people": 0.015,
     "text overlay": 0.023,
     "product shot": 0.006,
-    "screenshot": -0.013,
+    screenshot: -0.013,
     "high energy": 0.018,
     "color pop": 0.014,
-    "mixed": 0.010,
+    mixed: 0.01,
   };
-  const sceneBonus = sceneBoosts[sceneType] ?? 0.010;
+  const sceneBonus = sceneBoosts[sceneType] ?? 0.01;
 
   // Face expression bonus
   const expBonus = hasFace
-    ? faceExpressions.surprised * 0.020 + faceExpressions.happy * 0.015 -
-      faceExpressions.neutral * 0.005 + faceExpressions.angry * 0.008
+    ? faceExpressions.surprised * 0.02 +
+      faceExpressions.happy * 0.015 -
+      faceExpressions.neutral * 0.005 +
+      faceExpressions.angry * 0.008
     : 0;
 
-  const contrastBonus = Math.min(contrast * 0.025, 0.020);
+  const contrastBonus = Math.min(contrast * 0.025, 0.02);
   const textOptimal = 1 - Math.abs(textAreaRatio - 0.18);
   const textBonus = textOptimal * 0.008;
   const popBonus = popScore * 0.012;
   const synergyBonus = titleSynergyScore * 0.025;
   const thirdsBonus = thirdsScore * 0.006;
   const complexityBonus = complexityScore * 0.004;
-  const brightnessPenalty = avgBrightness < 0.3 ? (0.3 - avgBrightness) * 0.015 : avgBrightness > 0.8 ? (avgBrightness - 0.8) * 0.015 : 0;
+  const brightnessPenalty =
+    avgBrightness < 0.3
+      ? (0.3 - avgBrightness) * 0.015
+      : avgBrightness > 0.8
+        ? (avgBrightness - 0.8) * 0.015
+        : 0;
   const safeZoneBonus = safeZoneScore * 0.006;
   const dominanceBonus = dominanceScore * 0.002;
 
-  const ctr = ctrBaseline + sceneBonus + expBonus + contrastBonus + textBonus +
-    popBonus + synergyBonus + thirdsBonus + complexityBonus - brightnessPenalty +
-    safeZoneBonus + dominanceBonus;
+  const ctr =
+    ctrBaseline +
+    sceneBonus +
+    expBonus +
+    contrastBonus +
+    textBonus +
+    popBonus +
+    synergyBonus +
+    thirdsBonus +
+    complexityBonus -
+    brightnessPenalty +
+    safeZoneBonus +
+    dominanceBonus;
 
   return Math.max(0.005, Math.min(0.25, ctr));
 }

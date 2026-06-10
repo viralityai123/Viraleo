@@ -74,7 +74,7 @@ export function buildTimestampsFromGrounding(
   videoTitle: string,
   durationSec: number,
   descriptionSnippet: string,
-  beats: { startSec: number; text: string }[] = []
+  beats: { startSec: number; text: string }[] = [],
 ): TimestampSegment[] {
   const titleHook = videoTitle.replace(/\s*\|.*$/, "").trim();
   const desc = descriptionSnippet.replace(/\n+/g, " ").trim();
@@ -119,24 +119,28 @@ export function buildTimestampsFromGrounding(
       action: hookAction,
       whyItWorked:
         "The click came from the title and thumbnail — not from the first 10 seconds of content. At 0:00, the viewer is checking 'is this the video I thought I clicked?' If the first frame doesn't visually confirm the thumbnail's promise, they swipe before you even start talking. Think of the thumbnail as a contract: the first frame is where you honor it. Most creators lose here because they open with branding, B-roll, or setup that delays the payoff.",
-      retentionImpact: "At 0:00-0:12, the viewer's decision is made in roughly 3 seconds. If they clicked a thumbnail of a huge Minecraft build and you open with a slow pan across a forest, the mismatch is instant. They don't wait for the build to appear — they assume you tricked them and leave. The first frame needs to be the highest-impact visual from the video, period.",
+      retentionImpact:
+        "At 0:00-0:12, the viewer's decision is made in roughly 3 seconds. If they clicked a thumbnail of a huge Minecraft build and you open with a slow pan across a forest, the mismatch is instant. They don't wait for the build to appear — they assume you tricked them and leave. The first frame needs to be the highest-impact visual from the video, period.",
     },
     {
       time: formatTimeRange(t1, t2),
       action: loopAction,
-      whyItWorked: "The title and thumbnail set up a question — 'can he actually do this?' or 'what happens next?' — and this section is where you prove the question was worth asking. The viewer isn't looking for the answer yet, they're looking for confirmation that there WILL be an answer. If you stall here with tangents or extra setup, they lose faith and leave before the payoff. Keep the tension alive by showing progress toward the answer.",
+      whyItWorked:
+        "The title and thumbnail set up a question — 'can he actually do this?' or 'what happens next?' — and this section is where you prove the question was worth asking. The viewer isn't looking for the answer yet, they're looking for confirmation that there WILL be an answer. If you stall here with tangents or extra setup, they lose faith and leave before the payoff. Keep the tension alive by showing progress toward the answer.",
       retentionImpact: `${formatTimeRange(t1, t2)} is where most viewers decide 'this video is or isn't for me.' The opening question ('who wins?', 'is it real?', 'what happens?') needs to feel like it's being actively pursued, not delayed. If the viewer senses you're stalling, they'll skip ahead or swipe away.`,
     },
     {
       time: formatTimeRange(t3, t4),
       action: anchorAction,
-      whyItWorked: "By this point, the viewer has committed. They've seen the setup and now they want the payoff. This section delivers movement — new information, reveals, tension, or humor — so the video doesn't stall on one beat. The biggest mistake clones make here is repeating the same type of content from the first two sections. Each section needs to FEEL different from the last. If the middle feels like more of the same intro, the viewer gets bored and clicks off.",
+      whyItWorked:
+        "By this point, the viewer has committed. They've seen the setup and now they want the payoff. This section delivers movement — new information, reveals, tension, or humor — so the video doesn't stall on one beat. The biggest mistake clones make here is repeating the same type of content from the first two sections. Each section needs to FEEL different from the last. If the middle feels like more of the same intro, the viewer gets bored and clicks off.",
       retentionImpact: `${formatTimeRange(t3, t4)} is where retention spikes or tanks. Mid-video drop-off usually happens because the content plateaued — the viewer feels like they've already seen everything the video has to offer. The solution: introduce something NEW here, not more of the same. A new angle, a new reveal, a new tension point. Make it feel like a second video started.`,
     },
     {
       time: formatTimeRange(t5, durationSec),
       action: endAction,
-      whyItWorked: "The ending is where most creators give up. They know the video is wrapping, so they rush to a 'like and subscribe' and fade out. But the best closers do the opposite: they make the ending feel like a reward for staying. They close the question from the hook, deliver one last punchline or reveal, and then ask for engagement as a natural next step — not as a beg. If the viewer feels satisfied, they'll comment, like, and rewatch without being asked.",
+      whyItWorked:
+        "The ending is where most creators give up. They know the video is wrapping, so they rush to a 'like and subscribe' and fade out. But the best closers do the opposite: they make the ending feel like a reward for staying. They close the question from the hook, deliver one last punchline or reveal, and then ask for engagement as a natural next step — not as a beg. If the viewer feels satisfied, they'll comment, like, and rewatch without being asked.",
       retentionImpact: `${formatTimeRange(t5, durationSec)} is your conversion window. If you've held them this long, you've earned the right to ask for something. But here's the key: ask for engagement that feels like a natural extension of the video (like 'which version should I do next?'), not a generic 'smash that like button.' Comments triggered by a specific question are worth 10x more to the algorithm than a generic 'like and subscribe'.`,
     },
   ];
@@ -153,7 +157,7 @@ function pickSegment(segments: TimestampSegment[], ratio: number): TimestampSegm
 /** Build 4 phases from timestamp segments — always video-specific. */
 export function buildFlowchartFromTimestamps(
   segments: TimestampSegment[],
-  videoTitle: string
+  videoTitle: string,
 ): FlowchartStep[] {
   if (!segments.length) {
     return [
@@ -166,19 +170,22 @@ export function buildFlowchartFromTimestamps(
       {
         step: 2,
         title: "2 · Raise the stakes (why this matters)",
-        detail: "After hooking them visually, now tell them why they should care. What's at stake? What's the question this video answers? Keep it tight — one clear sentence that makes the rest of the video feel necessary.",
+        detail:
+          "After hooking them visually, now tell them why they should care. What's at stake? What's the question this video answers? Keep it tight — one clear sentence that makes the rest of the video feel necessary.",
         color: "blue",
       },
       {
         step: 3,
         title: "3 · Deliver the payoff (prove it)",
-        detail: "This is where you deliver what the title and thumbnail promised. The build reveal, the challenge completion, the answer to the question. Don't drag it out — the payoff should be the most satisfying part of the video.",
+        detail:
+          "This is where you deliver what the title and thumbnail promised. The build reveal, the challenge completion, the answer to the question. Don't drag it out — the payoff should be the most satisfying part of the video.",
         color: "purple",
       },
       {
         step: 4,
         title: "4 · What's next (keep them watching)",
-        detail: "Don't end with a generic 'subscribe' screen. Tease what's coming in the next video or ask a specific question related to THIS video's topic. Give them a reason to check your channel page, not just hit like and leave.",
+        detail:
+          "Don't end with a generic 'subscribe' screen. Tease what's coming in the next video or ask a specific question related to THIS video's topic. Give them a reason to check your channel page, not just hit like and leave.",
         color: "red",
       },
     ];
@@ -194,7 +201,7 @@ export function buildFlowchartFromTimestamps(
     title: string,
     seg: TimestampSegment,
     color: string,
-    role: string
+    role: string,
   ): FlowchartStep => ({
     step,
     title,
@@ -206,7 +213,13 @@ export function buildFlowchartFromTimestamps(
   });
 
   return [
-    phase(1, "1 · Prove the thumbnail wasn't clickbait", hook, "emerald", "First frame matches the promise"),
+    phase(
+      1,
+      "1 · Prove the thumbnail wasn't clickbait",
+      hook,
+      "emerald",
+      "First frame matches the promise",
+    ),
     phase(2, "2 · Raise the stakes", loop, "blue", "Why this matters"),
     phase(3, "3 · Deliver the payoff", anchor, "purple", "The proof section"),
     phase(4, "4 · What's next", end, "red", "Tease the follow-up"),
@@ -216,10 +229,15 @@ export function buildFlowchartFromTimestamps(
 export function mergeFlowchartSteps(
   llmSteps: FlowchartStep[] | undefined,
   segments: TimestampSegment[] | undefined,
-  videoTitle: string
+  videoTitle: string,
 ): FlowchartStep[] {
   const fromTimestamps = buildFlowchartFromTimestamps(segments || [], videoTitle);
-  const titles = ["1 · Prove the thumbnail wasn't clickbait", "2 · Raise the stakes", "3 · Deliver the payoff", "4 · What's next"];
+  const titles = [
+    "1 · Prove the thumbnail wasn't clickbait",
+    "2 · Raise the stakes",
+    "3 · Deliver the payoff",
+    "4 · What's next",
+  ];
   const colors = ["emerald", "blue", "purple", "red"];
 
   const llm = llmSteps?.length === 4 ? llmSteps : [];
@@ -247,13 +265,13 @@ export function ensureTimestampAnalysis(
   videoTitle: string,
   durationSec: number,
   descriptionSnippet?: string,
-  beats: { startSec: number; text: string }[] = []
+  beats: { startSec: number; text: string }[] = [],
 ): TimestampSegment[] {
   const grounded = buildTimestampsFromGrounding(
     videoTitle,
     durationSec,
     descriptionSnippet || "",
-    beats
+    beats,
   );
 
   if (!segments?.length) return grounded;
@@ -262,6 +280,6 @@ export function ensureTimestampAnalysis(
   if (!hasSpecific) return grounded;
 
   return segments.map((s, i) =>
-    isGenericTimestampAction(s.action) && grounded[i] ? grounded[i] : s
+    isGenericTimestampAction(s.action) && grounded[i] ? grounded[i] : s,
   );
 }

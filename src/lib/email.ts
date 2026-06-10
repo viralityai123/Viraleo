@@ -37,7 +37,12 @@ export async function sendWelcomeEmail(email: string, name: string): Promise<boo
   );
 }
 
-export async function sendPaymentReceiptEmail(email: string, name: string, tier: string, amount: string): Promise<boolean> {
+export async function sendPaymentReceiptEmail(
+  email: string,
+  name: string,
+  tier: string,
+  amount: string,
+): Promise<boolean> {
   return sendEmail(
     email,
     `Payment confirmed — ${tier} plan`,
@@ -50,7 +55,12 @@ export async function sendPaymentReceiptEmail(email: string, name: string, tier:
   );
 }
 
-export async function sendCommissionNotificationEmail(email: string, name: string, amount: string, referrerName: string): Promise<boolean> {
+export async function sendCommissionNotificationEmail(
+  email: string,
+  name: string,
+  amount: string,
+  referrerName: string,
+): Promise<boolean> {
   return sendEmail(
     email,
     "You earned a commission! 🎉",
@@ -62,7 +72,11 @@ export async function sendCommissionNotificationEmail(email: string, name: strin
   );
 }
 
-export async function sendPayoutNotificationEmail(email: string, name: string, amount: string): Promise<boolean> {
+export async function sendPayoutNotificationEmail(
+  email: string,
+  name: string,
+  amount: string,
+): Promise<boolean> {
   return sendEmail(
     email,
     "Payout processed! 💰",

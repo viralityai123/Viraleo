@@ -24,7 +24,9 @@ export const createLsCheckout = createServerFn({ method: "POST" })
     const redirectUrl = process.env.APP_URL
       ? `${process.env.APP_URL}/payment/success?tier=${tier}`
       : `/payment/success?tier=${tier}`;
-    const checkout = await createCheckout({ variantId, email, name, redirectUrl, referrer }).catch(() => null);
+    const checkout = await createCheckout({ variantId, email, name, redirectUrl, referrer }).catch(
+      () => null,
+    );
     return checkout?.url || null;
   });
 

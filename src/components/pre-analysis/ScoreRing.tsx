@@ -47,9 +47,7 @@ export function ScoreRing({
             />
           </svg>
           <div className="absolute inset-0 flex items-center justify-center">
-            <span className="font-display text-[28px] font-semibold text-good">
-              {grade}
-            </span>
+            <span className="font-display text-[28px] font-semibold text-good">{grade}</span>
           </div>
         </div>
         <div>
