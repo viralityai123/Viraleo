@@ -34,4 +34,11 @@ dist-ssr
 .vercel
 .env
 .env.vercel
+
+# youtube-scraper output
+youtube-scraper/output/
+youtube-scraper/email_template.html
+youtube-scraper/rendered_output.html
+youtube-scraper/blast.bat
+youtube-scraper/marketing_list.csv
 deploy/koyeb-env.txt

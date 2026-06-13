@@ -97,13 +97,15 @@ MAX_SUBSCRIBERS = 50000
 TARGET_COUNTRIES = ["US", "GB", "CA"]
 STRICT_COUNTRY_FILTER = False  # False = keep channels with no country set (yt-dlp search already US-biased)
 
-# ─── EMAIL (GMAIL SMTP) ───
-SMTP_SERVER = "smtp.gmail.com"
+# ─── EMAIL (BREVO SMTP) ───
+SMTP_SERVER = "smtp-relay.brevo.com"
 SMTP_PORT = 587
-GMAIL_USER = "viraleo.support@gmail.com"
-GMAIL_APP_PASSWORD = "whxt xshp subu vshf"
-EMAIL_DAILY_LIMIT = 100  # Gmail free tier ~100/day; go higher = risk of temp ban
-SENDER_NAME = "Alex from Viraleo"
+SMTP_ACCOUNTS = [
+    (os.environ.get("BREVO_SMTP_LOGIN", ""), os.environ.get("BREVO_SMTP_KEY", "")),
+]
+EMAIL_DAILY_LIMIT = 50
+SENDER_EMAIL = "viraleo.support@gmail.com"  # From: header (must be verified in Brevo)
+SENDER_NAME = "MabiX — Viraleo"
 LANDING_URL = "https://viraleo.pro"
 
 # ─── OUTPUT ───

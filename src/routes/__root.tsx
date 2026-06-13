@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { inject } from "@vercel/analytics";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
@@ -490,6 +491,10 @@ function RootComponent() {
     "/destroy",
   ];
   const isPublicPath = publicPaths.some((p) => pathname.startsWith(p));
+
+  useEffect(() => {
+    inject();
+  }, []);
 
   useEffect(() => {
     if (!loaded) return;
