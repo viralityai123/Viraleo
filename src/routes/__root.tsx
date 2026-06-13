@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { inject } from "@vercel/analytics";
+import { Analytics } from "@vercel/analytics/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
@@ -199,6 +199,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         {children}
+        <Analytics />
         <Toaster />
         <Scripts />
       </body>
@@ -491,10 +492,6 @@ function RootComponent() {
     "/destroy",
   ];
   const isPublicPath = publicPaths.some((p) => pathname.startsWith(p));
-
-  useEffect(() => {
-    inject();
-  }, []);
 
   useEffect(() => {
     if (!loaded) return;
