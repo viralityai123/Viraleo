@@ -268,7 +268,7 @@ function Hero() {
             ))}
           </div>
           <span className="text-[12.5px] font-medium text-[color:var(--lv2-ink-soft)]">
-            Trusted by 100K Creators Worldwide.
+            Beta Testing Phase
           </span>
         </motion.div>
 

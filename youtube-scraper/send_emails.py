@@ -23,7 +23,7 @@ HTML_TEMPLATE = """\
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Viraleo - Channel Report</title>
+<title>Viraleo - Partnership</title>
 </head>
 <body style="margin:0;padding:0;background-color:#f4f4f6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif">
 <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:#f4f4f6">
@@ -59,218 +59,49 @@ HTML_TEMPLATE = """\
                   <td valign="middle" style="padding-right:4px;color:#f59e0b;font-size:11px;line-height:1">★</td>
                   <td valign="middle" style="padding-right:4px;color:#f59e0b;font-size:11px;line-height:1">★</td>
                   <td valign="middle" style="padding-right:7px;color:#f59e0b;font-size:11px;line-height:1">★</td>
-                  <td valign="middle"><span style="font-size:11.5px;font-weight:500;color:#bbb;white-space:nowrap">Trusted by <strong style="color:#eee;font-weight:600">100K+</strong> creators</span></td>
+                  <td valign="middle"><span style="font-size:11.5px;font-weight:500;color:#bbb;white-space:nowrap">Beta <strong style="color:#eee;font-weight:600">Testing</strong> Phase</span></td>
                 </tr>
               </table>
             </td>
           </tr>
         </table>
-        <p style="font-size:12.5px;color:#999;line-height:1.55;margin:18px 0 0 0;position:relative;z-index:1">
-          Channel report for <span style="color:#fff;font-weight:500">{channel_name}</span> &middot; Generated just now
-        </p>
       </td>
     </tr>
 
     <tr>
       <td style="padding:26px 32px;background-color:#0e0e10">
 
-        <p style="font-size:16px;color:#fff;margin:0 0 6px 0">Hey {first_name},</p>
-        <p style="font-size:14.5px;line-height:1.7;color:#bbb;margin:0 0 24px 0">
-          We ran <strong style="color:#fff;font-weight:600">{channel_name}</strong> through Viraleo's pattern engine. One video is single-handedly dragging your stats down &mdash; and the numbers are brutal.
+        <p style="font-size:16px;color:#fff;margin:0 0 18px 0">Hey {first_name},</p>
+
+        <p style="font-size:14.5px;line-height:1.7;color:#bbb;margin:0 0 16px 0">
+          I've built a creator analytics platform called <strong style="color:#fff;font-weight:600">Viraleo</strong>.
         </p>
 
-        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-radius:16px;padding:1px;margin-bottom:32px">
-        <tr><td style="border-radius:15px;background-color:#13131a;padding:20px 22px">
-          <p style="font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:#999;font-weight:500;margin:0 0 10px 0">Underperforming video detected</p>
-          <p style="font-size:15px;font-weight:600;color:#fff;line-height:1.45;margin:0 0 18px 0">&quot;{flop_title}&quot;</p>
-          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
-            <tr>
-              <td width="33%" style="padding-right:4px">
-                <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.07);border-radius:11px">
-                  <tr><td style="padding:11px 12px">
-                    <p style="font-size:9.5px;color:#aaa;font-weight:500;text-transform:uppercase;letter-spacing:0.06em;margin:0 0 5px 0">Views</p>
-                    <p style="font-size:18px;font-weight:700;color:#fff;letter-spacing:-0.03em;margin:0">{flop_views}</p>
-                  </td></tr>
-                </table>
-              </td>
-              <td width="34%" style="padding:0 4px">
-                <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.07);border-radius:11px">
-                  <tr><td style="padding:11px 12px">
-                    <p style="font-size:9.5px;color:#aaa;font-weight:500;text-transform:uppercase;letter-spacing:0.06em;margin:0 0 5px 0">Your avg</p>
-                    <p style="font-size:18px;font-weight:700;color:#fff;letter-spacing:-0.03em;margin:0">{avg_views}</p>
-                  </td></tr>
-                </table>
-              </td>
-              <td width="33%" style="padding-left:4px">
-                <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:rgba(239,68,68,0.09);border:1px solid rgba(239,68,68,0.2);border-radius:11px">
-                  <tr><td style="padding:11px 12px">
-                    <p style="font-size:9.5px;color:#f87171;font-weight:500;text-transform:uppercase;letter-spacing:0.06em;margin:0 0 5px 0">Below avg</p>
-                    <p style="font-size:18px;font-weight:700;color:#ef4444;letter-spacing:-0.03em;margin:0">{gap_pct}%</p>
-                  </td></tr>
-                </table>
-              </td>
-            </tr>
-          </table>
-          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-top:14px">
-            <tr>
-              <td style="font-size:10px;color:#aaa;font-weight:500;padding-bottom:5px">
-                <table width="100%"><tr><td align="left" style="font-size:10px;color:#aaa;font-weight:500">CTR score</td><td align="right" style="font-size:10px;color:#ef4444;font-weight:700">{ctr_score} / 100</td></tr></table>
-              </td>
-            </tr>
-            <tr>
-              <td style="height:4px;background:rgba(255,255,255,0.07);border-radius:2px;overflow:hidden;font-size:1px;line-height:1px">
-                <table width=\"{ctr_score}%\" style=\"height:4px;background:linear-gradient(90deg,#ef4444,#f97316);border-radius:2px\"><tr><td></td></tr></table>
-              </td>
-            </tr>
-          </table>
-        </td></tr>
-        </table>
+        <p style="font-size:14.5px;line-height:1.7;color:#bbb;margin:0 0 16px 0">
+          It analyzes videos before upload and helps creators identify issues with hooks, retention, thumbnails, and content positioning before they publish.
+        </p>
 
-        <p style="font-family:Georgia,serif;font-size:22px;color:#e0e0e0;margin:24px 0 4px 0;font-weight:500;letter-spacing:-0.02em">We found why your video <span style="color:#ef4444;font-style:italic;font-weight:700">flopped</span>.</p>
-        <p style="font-family:Georgia,serif;font-size:12px;color:#555;margin:0 0 22px 0;letter-spacing:0.3em">~ ~ ~ ~ ~ ~ ~</p>
+        <p style="font-size:14.5px;line-height:1.7;color:#bbb;margin:0 0 16px 0">
+          I'm reaching out because I think your audience could genuinely benefit from it, and I'd like to explore a <strong style="color:#fff;font-weight:600">partnership</strong>.
+        </p>
 
-        <p style="font-size:10.5px;font-weight:600;letter-spacing:0.09em;text-transform:uppercase;color:#aaa;margin:0 0 12px 0">Why this video tanked</p>
+        <p style="font-size:14.5px;line-height:1.7;color:#bbb;margin:0 0 16px 0">
+          Instead of a traditional sponsorship, I'd be happy to structure it as a <strong style="color:#fff;font-weight:600">revenue share/affiliate</strong> arrangement where you earn a percentage of every customer you bring in.
+        </p>
 
-        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border:1px solid rgba(255,255,255,0.07);border-radius:14px;margin-bottom:20px;background:rgba(255,255,255,0.02)">
-          <tr>
-            <td style="padding:14px 16px;border-bottom:1px solid rgba(255,255,255,0.05)">
-              <table role="presentation" cellpadding="0" cellspacing="0" border="0">
-                <tr>
-                  <td valign="top" style="width:32px;height:32px;background:rgba(239,68,68,0.12);border-radius:9px;text-align:center;vertical-align:middle;font-size:16px;line-height:32px">⏱</td>
-                  <td style="padding-left:12px">
-                    <p style="font-size:13px;color:#bbb;line-height:1.65;margin:0;padding-top:1px">
-                      Hook fires at <strong style="color:#fff;font-weight:600">{hook_time}s</strong> &mdash; your top videos average <strong style="color:#fff;font-weight:600">{hook_avg}s</strong>. Viewers leave before your premise lands.
-                    </p>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding:14px 16px;border-bottom:1px solid rgba(255,255,255,0.05)">
-              <table role="presentation" cellpadding="0" cellspacing="0" border="0">
-                <tr>
-                  <td valign="top" style="width:32px;height:32px;background:rgba(234,179,8,0.1);border-radius:9px;text-align:center;vertical-align:middle;font-size:16px;line-height:32px">🖼</td>
-                  <td style="padding-left:12px">
-                    <p style="font-size:13px;color:#bbb;line-height:1.65;margin:0;padding-top:1px">
-                      Thumbnail contrast <strong style="color:#fff;font-weight:600">{thumb_score}/100</strong> vs. niche median <strong style="color:#fff;font-weight:600">{thumb_median}</strong>. It disappears in the feed next to competitors.
-                    </p>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding:14px 16px">
-              <table role="presentation" cellpadding="0" cellspacing="0" border="0">
-                <tr>
-                  <td valign="top" style="width:32px;height:32px;background:rgba(99,102,241,0.1);border-radius:9px;text-align:center;vertical-align:middle;font-size:16px;line-height:32px">📉</td>
-                  <td style="padding-left:12px">
-                    <p style="font-size:13px;color:#bbb;line-height:1.65;margin:0;padding-top:1px">
-                      Retention drops to <strong style="color:#fff;font-weight:600">{retention_drop_pct}%</strong> by <strong style="color:#fff;font-weight:600">{retention_drop_time}s</strong> &mdash; your top videos hold <strong style="color:#fff;font-weight:600">{retention_avg_pct}%</strong> at that mark. You're losing viewers right at the critical window.
-                    </p>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-        </table>
+        <p style="font-size:14.5px;line-height:1.7;color:#bbb;margin:0 0 16px 0">
+          I've built the product and infrastructure already. What I'm missing is someone who understands distribution at scale.
+        </p>
 
-        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom:22px">
-          <tr>
-            <td>
-              <table width="100%">
-                <tr>
-                  <td align="left" style="font-size:10.5px;font-weight:600;letter-spacing:0.09em;text-transform:uppercase;color:#aaa">Fixes</td>
-                  <td align="right">
-                    <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="background:rgba(99,102,241,0.12);border:1px solid rgba(99,102,241,0.2);border-radius:999px;display:inline-table">
-                      <tr><td style="padding:3px 10px;font-size:11px;font-weight:600;color:#818cf8">
-                        <span style="font-size:10px;vertical-align:middle;margin-right:3px">🔒</span>
-                        5 fixes ready
-                      </td></tr>
-                    </table>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-        </table>
-
-        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border:1px solid rgba(255,255,255,0.07);border-radius:14px;overflow:hidden;margin-bottom:22px;background:rgba(255,255,255,0.02)">
-          <tr><td style="padding:4px 16px">
-            <table width="100%">
-              <tr><td style="padding:13px 0;border-bottom:1px solid rgba(255,255,255,0.05)">
-                <table><tr>
-                   <td valign="middle" style="width:22px;height:22px;border-radius:6px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.1);text-align:center;vertical-align:middle;font-size:10px;font-weight:700;color:#999">1</td>
-                  <td style="padding-left:12px">
-                    <table style="width:68%;height:10px;border-radius:5px;background:rgba(255,255,255,0.08);margin-bottom:7px"><tr><td></td></tr></table>
-                    <table style="width:90%;height:8px;border-radius:4px;background:rgba(255,255,255,0.05)"><tr><td></td></tr></table>
-                  </td>
-                </tr></table>
-              </td></tr>
-              <tr><td style="padding:13px 0;border-bottom:1px solid rgba(255,255,255,0.05)">
-                <table><tr>
-                  <td valign="middle" style="width:22px;height:22px;border-radius:6px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.1);text-align:center;vertical-align:middle;font-size:10px;font-weight:700;color:#999">2</td>
-                  <td style="padding-left:12px">
-                    <table style="width:52%;height:10px;border-radius:5px;background:rgba(255,255,255,0.08);margin-bottom:7px"><tr><td></td></tr></table>
-                    <table style="width:82%;height:8px;border-radius:4px;background:rgba(255,255,255,0.05)"><tr><td></td></tr></table>
-                  </td>
-                </tr></table>
-              </td></tr>
-              <tr><td style="padding:13px 0;border-bottom:1px solid rgba(255,255,255,0.05)">
-                <table><tr>
-                  <td valign="middle" style="width:22px;height:22px;border-radius:6px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.1);text-align:center;vertical-align:middle;font-size:10px;font-weight:700;color:#999">3</td>
-                  <td style="padding-left:12px">
-                    <table style="width:63%;height:10px;border-radius:5px;background:rgba(255,255,255,0.08);margin-bottom:7px"><tr><td></td></tr></table>
-                    <table style="width:76%;height:8px;border-radius:4px;background:rgba(255,255,255,0.05)"><tr><td></td></tr></table>
-                  </td>
-                </tr></table>
-              </td></tr>
-              <tr><td style="padding:13px 0;border-bottom:1px solid rgba(255,255,255,0.05)">
-                <table><tr>
-                  <td valign="middle" style="width:22px;height:22px;border-radius:6px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.1);text-align:center;vertical-align:middle;font-size:10px;font-weight:700;color:#999">4</td>
-                  <td style="padding-left:12px">
-                    <table style="width:49%;height:10px;border-radius:5px;background:rgba(255,255,255,0.08);margin-bottom:7px"><tr><td></td></tr></table>
-                    <table style="width:88%;height:8px;border-radius:4px;background:rgba(255,255,255,0.05)"><tr><td></td></tr></table>
-                  </td>
-                </tr></table>
-              </td></tr>
-              <tr><td style="padding:13px 0">
-                <table><tr>
-                  <td valign="middle" style="width:22px;height:22px;border-radius:6px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.1);text-align:center;vertical-align:middle;font-size:10px;font-weight:700;color:#999">5</td>
-                  <td style="padding-left:12px">
-                    <table style="width:58%;height:10px;border-radius:5px;background:rgba(255,255,255,0.08);margin-bottom:7px"><tr><td></td></tr></table>
-                    <table style="width:72%;height:8px;border-radius:4px;background:rgba(255,255,255,0.05)"><tr><td></td></tr></table>
-                  </td>
-                </tr></table>
-              </td></tr>
-            </table>
-          </td></tr>
-          <tr><td align="center" style="padding:0;font-size:1px;line-height:1px">
-            <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#1a1a2e,#16213e);border:2px solid rgba(99,102,241,0.4);mso-hide:all">
-              <tr><td style="font-size:24px;line-height:24px;text-align:center;vertical-align:middle;padding:0" height="52" valign="middle">🔒</td></tr>
-            </table>
-          </td></tr>
-          <tr><td style="padding:20px 24px;text-align:center">
-            <p style="font-size:11.5px;color:#aaa;margin:0 0 12px 0">Unlock to see all 5 actionable fixes</p>
-            <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="display:inline-table">
-              <tr>
-                <td style="background:linear-gradient(135deg,#1a1a2e,#16213e);border:1px solid rgba(99,102,241,0.35);border-radius:999px;padding:10px 20px;text-align:center">
-                  <a href="{landing_url}" style="color:#a5b4fc;font-size:13px;font-weight:600;text-decoration:none;display:inline-block">
-                    <span style="font-size:13px;vertical-align:middle;margin-right:5px">🔒</span>
-                    Unlock fixes
-                  </a>
-                </td>
-              </tr>
-            </table>
-          </td></tr>
-        </table>
+        <p style="font-size:14.5px;line-height:1.7;color:#bbb;margin:0 0 24px 0">
+          If you're open to it, I'd love to show you a quick demo and see if there's a fit.
+        </p>
 
         <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom:22px">
           <tr>
             <td style="border-radius:14px;background:linear-gradient(135deg,#22c55e,#16a34a);padding:15px 24px;text-align:center">
               <a href="{landing_url}" style="color:#ffffff;font-size:15px;font-weight:700;letter-spacing:-0.02em;text-decoration:none;display:inline-block">
-                See full channel report on Viraleo
+                Check out Viraleo
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="display:inline-block;vertical-align:middle;margin-left:6px">
                   <path d="M3 8h10M9 4l4 4-4 4" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
@@ -278,6 +109,11 @@ HTML_TEMPLATE = """\
             </td>
           </tr>
         </table>
+
+        <p style="font-size:14.5px;line-height:1.7;color:#bbb;margin:0">
+          Thanks,<br>
+          <span style="color:#fff;font-weight:600">MabiX</span>
+        </p>
 
       </td>
     </tr>
@@ -313,20 +149,23 @@ HTML_TEMPLATE = """\
 </html>
 """
 TEXT_TEMPLATE = """\
-Channel Report — {channel_name}
-
 Hey {first_name},
 
-{channel_name} has a video that's tanking your stats. Here's why.
+I've built a creator analytics platform called Viraleo.
 
-"{flop_title}"
-Views: {flop_views:,} | Your avg: {avg_views:,} | Gap: {gap_pct}%
+It analyzes videos before upload and helps creators identify issues with hooks, retention, thumbnails, and content positioning before they publish.
 
-{insights_text}
+I'm reaching out because I think your audience could genuinely benefit from it, and I'd like to explore a partnership.
 
-→ Full breakdown: {landing_url}
+Instead of a traditional sponsorship, I'd be happy to structure it as a revenue share/affiliate arrangement where you earn a percentage of every customer you bring in.
 
-—
+I've built the product and infrastructure already. What I'm missing is someone who understands distribution at scale.
+
+If you're open to it, I'd love to show you a quick demo and see if there's a fit.
+
+→ Check out Viraleo: {landing_url}
+
+Thanks,
 MabiX
 Founder, viraleo.pro
 Unsubscribe: {unsubscribe_url}
@@ -578,7 +417,7 @@ def main():
 
             email = row["email"].strip()
             channel = row.get("channel_name", "").strip()
-            first_name = extract_first_name(channel)
+            first_name = row.get("first_name", "").strip() or extract_first_name(channel)
             flop_title = row.get("flop_video_title", "").strip() or "a recent video"
             if len(flop_title) > 80:
                 flop_title = flop_title[:77] + "..."
@@ -595,36 +434,17 @@ def main():
 
             html_full = fill(HTML_TEMPLATE,
                 first_name=first_name,
-                channel_name=channel,
-                flop_title=flop_title,
-                flop_views=f"{flop_views:,}",
-                avg_views=f"{avg_views:,}",
-                gap_pct=gap_pct,
-                ctr_score=ctr_score,
-                hook_time=12,
-                hook_avg=6,
-                thumb_score=41,
-                thumb_median=68,
-                retention_drop_pct=38,
-                retention_drop_time=22,
-                retention_avg_pct=72,
                 landing_url=LANDING_URL,
                 unsubscribe_url=f"{LANDING_URL}/unsubscribe?email={email}",
             )
             text = fill(TEXT_TEMPLATE,
                 first_name=first_name,
-                channel_name=channel,
-                flop_title=flop_title,
-                flop_views=flop_views,
-                avg_views=avg_views,
-                gap_pct=gap_pct,
-                insights_text=insights_text,
                 landing_url=LANDING_URL,
                 unsubscribe_url=f"{LANDING_URL}/unsubscribe?email={email}",
             )
 
             tracking_id = f"{email}_{date.today().isoformat()}"
-            subject = f"Your {channel} video is underperforming by {gap_pct}%"
+            subject = f"Partnership opportunity with Viraleo"
             send_email(smtp, SENDER_EMAIL, email, subject, html_full, text)
             sent.add(tracking_id)
             save_sent(sent)
@@ -642,8 +462,7 @@ def main():
 
     remaining_count = len(remaining) - len(batch)
     if remaining_count <= 0:
-        print("All done. Shutting down in 60 seconds...")
-        os.system("shutdown /s /t 60")
+        print("All done! 43 partnership emails sent.")
     else:
         print(f"{remaining_count} remaining. PC stays on.")
 
