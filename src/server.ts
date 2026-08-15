@@ -2,6 +2,9 @@ import "./lib/error-capture";
 
 import serverEntry from "@tanstack/react-start/server-entry";
 import { renderErrorPage } from "./lib/error-page";
+import { startThreadsMonitor } from "./lib/threads/monitor";
+
+startThreadsMonitor();
 
 const SECURITY_HEADERS = {
   "content-type": "text/html; charset=utf-8",

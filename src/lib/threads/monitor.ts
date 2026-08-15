@@ -1,0 +1,278 @@
+import { THREADS_CONFIG, isMonitorEnabled } from "./config";
+import { searchKeyword, buildPostUrl } from "./fetcher";
+import { scorePost } from "./scorer";
+import { publishReply } from "./publisher";
+import { getAuth } from "./store";
+import { refreshAccessToken } from "./publisher";
+import { hasBuyingIntent, THREADS_CATEGORIES } from "./taxonomy";
+import { sendThreadsAlert, sendThreadsLeadAlert } from "@/lib/email";
+import type { ThreadsLead, ThreadsRawPost, ThreadsMonitorState, ThreadsSource } from "./types";
+import {
+  getMonitorState,
+  setMonitorState,
+  isSeen,
+  markSeen,
+  pushLead,
+  countQueue,
+  getRepliesToday,
+  incrementReplies,
+  getAutoApprove,
+  appendTrackerRow,
+  trackerRow,
+  isKvReady,
+} from "./store";
+
+const TAG = "[threads-monitor]";
+
+let started = false;
+let running = false;
+
+function log(...args: unknown[]) {
+  console.log(TAG, ...args);
+}
+
+function categoryLabel(id: string): string {
+  return THREADS_CATEGORIES.find((c) => c.id === id)?.label || id;
+}
+
+async function checkTokenHealth(): Promise<void> {
+  const auth = await getAuth();
+  if (!auth) return;
+  const state = await getMonitorState();
+  if (Date.now() >= auth.expiresAt) {
+    if (!state.tokenWarningSent) {
+      await sendThreadsAlert(
+        "Threads token expired",
+        `Your Threads access token expired. Reconnect: sign in to /threads-queue and press "Connect Threads account".`,
+      );
+      await setMonitorState({ ...state, tokenWarningSent: true });
+    }
+    return;
+  }
+  if (Date.now() >= auth.expiresAt - 7 * 24 * 60 * 60 * 1000) {
+    const refreshed = await refreshAccessToken(auth.accessToken);
+    if (!refreshed) {
+      await sendThreadsAlert(
+        "Threads token refresh failed",
+        "The long-lived token could not be refreshed automatically. Reconnect at /threads-queue before it expires.",
+      );
+    }
+  }
+}
+
+function categoryAutoApproveEnabled(
+  autoApprove: Record<string, boolean>,
+  category: string,
+): boolean {
+  return autoApprove[category] === true;
+}
+
+/**
+ * One full poll cycle. Fetches a rotating slice of keywords, pre-filters,
+ * LLM-scores candidates, queues high-intent leads (or auto-publishes),
+ * and sends digest alerts.
+ */
+export async function pollOnce(): Promise<void> {
+  if (running) return;
+  running = true;
+  const cycleStarted = Date.now();
+  try {
+    const state = await getMonitorState();
+    const kvReady = isKvReady();
+    if (!kvReady) {
+      log("KV not configured — skipping cycle");
+      await setMonitorState({ ...state, lastPollAt: Date.now() });
+      return;
+    }
+
+    await checkTokenHealth();
+
+    const allKeywords = THREADS_CATEGORIES.flatMap((c) => c.keywords);
+    if (allKeywords.length === 0) return;
+
+    const perCycle =
+      THREADS_CONFIG.keywordsPerCycle > 0
+        ? Math.min(THREADS_CONFIG.keywordsPerCycle, allKeywords.length)
+        : allKeywords.length;
+    const keywords: string[] = [];
+    for (let i = 0; i < perCycle; i++) {
+      const idx = (state.keywordCursor + i) % allKeywords.length;
+      keywords.push(allKeywords[idx]);
+    }
+    const nextCursor = (state.keywordCursor + perCycle) % allKeywords.length;
+
+    const cycleFailures: string[] = [];
+    let lastSource: ThreadsSource = "ssr";
+    let fetched = 0;
+    const candidates: { post: ThreadsRawPost; matched: string }[] = [];
+
+    for (const keyword of keywords) {
+      try {
+        const { posts, source } = await searchKeyword(keyword, state.consecutiveFailures);
+        fetched += posts.length;
+        lastSource = source;
+        if (posts.length === 0) continue;
+        const urls = posts.map((p) => buildPostUrl(p));
+        await markSeen(urls);
+        for (const post of posts) {
+          if (
+            THREADS_CONFIG.ownUsername &&
+            post.username?.toLowerCase() === THREADS_CONFIG.ownUsername
+          ) {
+            continue;
+          }
+          if (!post.text) continue;
+          const matched = hasBuyingIntent(post.text);
+          if (!matched) continue;
+          if (await isSeen(buildPostUrl(post))) continue;
+          candidates.push({ post, matched });
+        }
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        cycleFailures.push(msg);
+        log("keyword failed:", keyword, "-", msg);
+      }
+      await new Promise((r) => setTimeout(r, 250 + Math.random() * 450));
+    }
+
+    const toScore = candidates.slice(0, THREADS_CONFIG.llmCallsPerCycle);
+    const autoApprove = await getAutoApprove();
+    const repliesToday = await getRepliesToday();
+    const newLeads: ThreadsLead[] = [];
+
+    for (const { post, matched } of toScore) {
+      const scored = await scorePost(post.username || "", post.text || "", matched);
+      if (!scored) continue;
+      if (scored.intentScore < THREADS_CONFIG.intentThreshold) continue;
+      if (scored.category === "other" && scored.intentScore < THREADS_CONFIG.autoApproveThreshold) {
+        continue;
+      }
+      const drafts = [scored.draftA, scored.draftB].filter((d) => d && d.length > 10);
+      if (drafts.length === 0) continue;
+
+      const lead: ThreadsLead = {
+        postId: post.id,
+        postUrl: buildPostUrl(post),
+        username: post.username || "unknown",
+        text: (post.text || "").slice(0, 600),
+        category: scored.category,
+        intentScore: scored.intentScore,
+        takenAt: post.takenAt || 0,
+        foundAt: Date.now(),
+        source: lastSource,
+        matchedKeyword: matched,
+        replyDrafts: drafts,
+        status: "queued",
+      };
+
+      const canAutoApprove =
+        scored.intentScore >= THREADS_CONFIG.autoApproveThreshold &&
+        categoryAutoApproveEnabled(autoApprove, scored.category) &&
+        repliesToday + newLeads.filter((l) => l.status === "approved").length <
+          THREADS_CONFIG.dailyReplyCap;
+
+      if (canAutoApprove) {
+        const result = await publishReply(post.id, drafts[0]);
+        if (result.ok) {
+          lead.status = "approved";
+          lead.replyId = result.replyId || "";
+          lead.repliedAt = Date.now();
+          await incrementReplies();
+          await appendTrackerRow(trackerRow(lead, result.replyId || "", "auto-approved"));
+          log("auto-approved reply for", lead.username, "on", lead.category);
+          continue;
+        }
+        lead.error = result.error;
+      }
+
+      await pushLead(lead);
+      newLeads.push(lead);
+      log("queued lead:", lead.username, `(${scored.category}, ${scored.intentScore})`);
+    }
+
+    if (newLeads.length > 0) {
+      const now = Date.now();
+      if (now - state.lastEmailAt >= THREADS_CONFIG.emailMinGapMs) {
+        const emailLeads = newLeads.slice(0, THREADS_CONFIG.emailMaxLeads).map((l) => ({
+          username: l.username,
+          postUrl: l.postUrl,
+          category: categoryLabel(l.category),
+          intentScore: l.intentScore,
+          draft: l.replyDrafts[0] || "",
+        }));
+        await sendThreadsLeadAlert(emailLeads, repliesToday + 1);
+        await setMonitorState({
+          ...state,
+          lastEmailAt: now,
+          lastEmailCount: newLeads.length,
+          lastPollAt: Date.now(),
+          keywordCursor: nextCursor,
+          consecutiveFailures: 0,
+          lastError: undefined,
+        });
+      } else {
+        await setMonitorState({
+          ...state,
+          lastPollAt: Date.now(),
+          keywordCursor: nextCursor,
+          consecutiveFailures: 0,
+          lastError: undefined,
+        });
+      }
+    } else if (cycleFailures.length > 0) {
+      const newFailures = state.consecutiveFailures + cycleFailures.length;
+      const nextState: ThreadsMonitorState = {
+        ...state,
+        lastPollAt: Date.now(),
+        keywordCursor: nextCursor,
+        consecutiveFailures: newFailures,
+        lastError: cycleFailures[0],
+      };
+      if (newFailures >= THREADS_CONFIG.errorEmailAfterFailures) {
+        await sendThreadsAlert(
+          "Threads monitor in trouble",
+          `Poll cycle failed on ${newFailures} consecutive keyword searches. Last error: ${cycleFailures[0]}. Scraper shape may have changed.`,
+        );
+        nextState.consecutiveFailures = 0;
+      }
+      await setMonitorState(nextState);
+      log("cycle finished with", cycleFailures.length, "keyword failures");
+    } else {
+      await setMonitorState({
+        ...state,
+        lastPollAt: Date.now(),
+        keywordCursor: nextCursor,
+        consecutiveFailures: 0,
+        lastError: undefined,
+      });
+    }
+
+    log(
+      `cycle done in ${((Date.now() - cycleStarted) / 1000).toFixed(1)}s — fetched ${fetched}, candidates ${candidates.length}, new leads ${newLeads.length}, queue total ${await countQueue()}, replies today ${await getRepliesToday()}`,
+    );
+  } catch (e) {
+    log("cycle crashed:", e);
+    try {
+      await sendThreadsAlert(
+        "Threads monitor crashed",
+        e instanceof Error ? e.stack || e.message : String(e),
+      );
+    } catch {
+      // ignore
+    }
+  } finally {
+    running = false;
+  }
+}
+
+/** Starts the 24/7 monitor loop. Only runs on long-lived processes (Koyeb), never on Vercel. */
+export function startThreadsMonitor(): void {
+  if (started) return;
+  if (!isMonitorEnabled()) return;
+  started = true;
+  log("starting monitor loop");
+  pollOnce().catch((e) => log("initial poll failed:", e));
+  setInterval(() => {
+    pollOnce().catch((e) => log("poll failed:", e));
+  }, THREADS_CONFIG.pollIntervalMs);
+}
