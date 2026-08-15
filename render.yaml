@@ -1,0 +1,27 @@
+# =============================================================================
+# Render Deploy Config — Viraleo
+# =============================================================================
+# 1. Push this repo to GitHub
+# 2. Go to https://dashboard.render.com -> New -> Web Service
+# 3. Pick this repo -> Render auto-detects render.yaml
+# 4. Set env vars (see deploy/koyeb-env.txt) and Deploy
+# =============================================================================
+
+services:
+  - type: web
+    name: viraleo
+    runtime: docker
+    plan: free
+    dockerContext: ./
+    dockerfilePath: ./deploy/Dockerfile
+    healthCheckPath: /
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "3000"
+      - key: HOST
+        value: 0.0.0.0
+      - key: THREADS_MONITOR_ENABLED
+        value: "1"

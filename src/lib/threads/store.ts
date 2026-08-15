@@ -1,4 +1,5 @@
 import { getKv } from "@/lib/kv";
+import { THREADS_CONFIG } from "./config";
 import type { ThreadsAuth, ThreadsLead, ThreadsMonitorState } from "./types";
 
 const QUEUE_KEY = "threads:queue";
@@ -37,11 +38,11 @@ function repliesKey(): string {
   return `threads:replies:${today}`;
 }
 
-async function listAll(key: string): Promise<string[]> {
+async function listAll(key: string): Promise<unknown[]> {
   const kv = getKv();
   if (!kv) return [];
   try {
-    return await kv.lrange(key, 0, -1);
+    return (await kv.lrange<unknown>(key, 0, -1)) ?? [];
   } catch {
     return [];
   }
@@ -83,15 +84,75 @@ export async function pushLead(lead: ThreadsLead): Promise<void> {
 
 export async function listQueue(): Promise<ThreadsLead[]> {
   const items = await listAll(QUEUE_KEY);
-  return items
-    .map((raw) => {
-      try {
-        return JSON.parse(raw) as ThreadsLead;
-      } catch {
-        return null;
+  const out: ThreadsLead[] = [];
+  for (const raw of items) {
+    try {
+      const lead =
+        typeof raw === "string" ? (JSON.parse(raw) as ThreadsLead) : (raw as ThreadsLead);
+      if (lead && typeof lead === "object" && lead.postId && Array.isArray(lead.replyDrafts)) {
+        out.push(lead);
       }
-    })
-    .filter((l): l is ThreadsLead => l !== null);
+    } catch {
+      // skip unparsable entries
+    }
+  }
+  return out;
+}
+
+/** Two-tier eligibility: fresh (<= freshWindowSec) OR aged (<= maxAgedLeadAgeSec) with zero replies. */
+function isLeadEligible(lead: ThreadsLead, nowSec: number): boolean {
+  if (!lead.takenAt) return true;
+  const ageSec = nowSec - lead.takenAt;
+  if (ageSec <= THREADS_CONFIG.freshWindowSec) return true;
+  if (ageSec > THREADS_CONFIG.maxAgedLeadAgeSec) return false;
+  if (!THREADS_CONFIG.agedRequiresNoReplies) return true;
+  return (lead.replyCount ?? 0) === 0;
+}
+
+/** Eligible queue (fresh or no-reply aged), ascending by post time. */
+export async function listQueueFresh(): Promise<ThreadsLead[]> {
+  const leads = await listQueue();
+  const nowSec = Date.now() / 1000;
+  return leads
+    .filter((l) => isLeadEligible(l, nowSec))
+    .sort((a, b) => (a.takenAt ?? nowSec) - (b.takenAt ?? nowSec));
+}
+
+/** Removes queued leads outside the eligible window. Returns how many were removed. */
+export async function purgeExpiredLeads(): Promise<number> {
+  const kv = getKv();
+  if (!kv) return 0;
+  try {
+    const raw = await kv.lrange<unknown>(QUEUE_KEY, 0, -1);
+    if (!raw || raw.length === 0) return 0;
+    const nowSec = Date.now() / 1000;
+    const kept: unknown[] = [];
+    for (const el of raw) {
+      try {
+        const lead = typeof el === "string" ? JSON.parse(el) : el;
+        if (!lead || typeof lead !== "object" || !("takenAt" in lead)) {
+          kept.push(el);
+          continue;
+        }
+        if (isLeadEligible(lead as ThreadsLead, nowSec)) kept.push(el);
+      } catch {
+        kept.push(el);
+      }
+    }
+    const removed = raw.length - kept.length;
+    if (removed > 0) {
+      await kv.del(QUEUE_KEY);
+      if (kept.length > 0) {
+        await kv.rpush(
+          QUEUE_KEY,
+          ...kept.map((l) => (typeof l === "string" ? l : JSON.stringify(l))),
+        );
+      }
+    }
+    return removed;
+  } catch {
+    return 0;
+  }
 }
 
 export async function removeFromQueue(lead: ThreadsLead): Promise<void> {
@@ -134,7 +195,8 @@ export async function appendTrackerRow(row: string): Promise<void> {
 }
 
 export async function listTrackerRows(): Promise<string[]> {
-  return listAll(TRACKER_KEY);
+  const items = await listAll(TRACKER_KEY);
+  return items.map((raw) => (typeof raw === "string" ? raw : JSON.stringify(raw)));
 }
 
 // --- daily reply counter ---

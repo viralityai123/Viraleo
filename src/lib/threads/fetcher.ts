@@ -8,20 +8,25 @@ import tls from "node:tls";
 /**
  * Fetcher engine, newest-first:
  *
- * 1. SSR (primary, free): GET https://www.threads.com/search?q=<kw> and parse the
- *    server-rendered Relay payload ("searchResults" edges) out of the HTML.
- *    Verified working from datacenter IPs, no login/cookies, no doc_id needed.
- * 2. DIY GraphQL probe (mostly dead from datacenter IPs — Meta serves an HTML
- *    shell instead of JSON, kept only as a free probe / for proxy IPs).
- * 3. Apify (emergency fallback): automation-lab~threads-scraper when APIFY_TOKEN
- *    is set and SSR is blocked/empty.
+ * 1. Session SSR (primary): GET https://www.threads.com/search?q=<kw> as the
+ *    logged-in user's mobile session; the server-rendered page embeds the
+ *    searchResults GraphQL response (verified working, no doc_id needed).
+ * 2. Anonymous SSR (fallback): same URL, no cookies (currently 429-walled
+ *    from datacenter IPs; kept for proxies/local).
+ * 3. Apify (emergency fallback): automation-lab~threads-scraper when
+ *    APIFY_TOKEN is set and SSR is blocked/empty.
  *
- * The Threads account is never used for scraping, so it can't be banned by this.
+ * NOTE: the persisted-query GraphQL endpoint (doc_id 28300107386286707 for
+ * BarcelonaSearchResultsQuery) rejects every variables payload with
+ * `invalid_variable_type` — the operation appears to require client-side
+ * comet context (__csr/__dyn bitmaps) that can't be reproduced server-side,
+ * so search is done via SSR only. Other docs (viewer data etc.) do work.
  */
 
 const X_IG_APP_ID = "238260118697367";
 
 const BROWSER_UAS = [
+  "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
@@ -229,45 +234,56 @@ function proxyFetch(
  * search payload at all (block/challenge page or shape change), otherwise
  * the extracted posts (possibly an empty array for a legitimately empty
  * result set).
+ *
+ * The page contains multiple `{"__bbox":{"complete":true` JSON blocks (one
+ * per server-rendered GraphQL query). Only the one with `searchResults`
+ * carries the results, so each block is scanned in turn.
  */
 function parseSearchResults(html: string): ThreadsRawPost[] | null {
-  const anchor = '"searchResults"';
-  const idx = html.indexOf(anchor);
-  if (idx === -1) return null;
-  const start = html.indexOf('{"__bbox":{"complete":true', html.indexOf(anchor, 0) - 2000);
-  if (start === -1) return null;
-  const obj = balancedSlice(html, start);
-  if (!obj) return null;
-  let parsed: any;
-  try {
-    parsed = JSON.parse(obj);
-  } catch {
-    return null;
-  }
-  const edges = parsed?.__bbox?.result?.data?.searchResults?.edges;
-  if (!Array.isArray(edges)) return null;
-  const posts: ThreadsRawPost[] = [];
-  for (const edge of edges) {
-    const thread = edge?.node?.thread;
-    const items = thread?.thread_items;
-    if (!Array.isArray(items)) continue;
-    for (const item of items) {
-      const node = item?.post;
-      if (!node) continue;
-      const text = extractText(node);
-      if (!text) continue;
-      posts.push({
-        id: String(node.pk ?? node.id ?? Math.random().toString(36).slice(2)),
-        code: node.code,
-        username: node?.user?.username,
-        text,
-        takenAt: node.taken_at ? Number(node.taken_at) : undefined,
-        likeCount: node.like_count,
-        replyCount: node?.text_post_app_info?.direct_reply_count,
-      });
+  const needle = '{"__bbox":{"complete":true';
+  let from = 0;
+  let foundSearchResults = false;
+  while (true) {
+    const start = html.indexOf(needle, from);
+    if (start === -1) break;
+    from = start + 1;
+    const obj = balancedSlice(html, start);
+    if (!obj) continue;
+    let parsed: any;
+    try {
+      parsed = JSON.parse(obj);
+    } catch {
+      continue;
     }
+    const sr = parsed?.__bbox?.result?.data?.searchResults;
+    if (!sr || typeof sr !== "object") continue;
+    foundSearchResults = true;
+    const edges = sr.edges;
+    if (!Array.isArray(edges)) continue;
+    const posts: ThreadsRawPost[] = [];
+    for (const edge of edges) {
+      const thread = edge?.node?.thread;
+      const items = thread?.thread_items;
+      if (!Array.isArray(items)) continue;
+      for (const item of items) {
+        const node = item?.post;
+        if (!node) continue;
+        const text = extractText(node);
+        if (!text) continue;
+        posts.push({
+          id: String(node.pk ?? node.id ?? Math.random().toString(36).slice(2)),
+          code: node.code,
+          username: node?.user?.username,
+          text,
+          takenAt: node.taken_at ? Number(node.taken_at) : undefined,
+          likeCount: node.like_count,
+          replyCount: node?.text_post_app_info?.direct_reply_count,
+        });
+      }
+    }
+    return posts;
   }
-  return posts;
+  return foundSearchResults ? [] : null;
 }
 
 export async function searchSsr(keyword: string): Promise<ThreadsRawPost[]> {
@@ -388,6 +404,89 @@ export async function searchDiy(keyword: string): Promise<ThreadsRawPost[]> {
 }
 
 /* ------------------------------------------------------------------ */
+/* Session-based search (needs a logged-in threads session)            */
+/* ------------------------------------------------------------------ */
+
+function hasThreadsSession(): boolean {
+  return Boolean(process.env.THREADS_SESSION_ID);
+}
+
+function randomIgDid(): string {
+  return (
+    "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+      const r = (Math.random() * 16) | 0;
+      const v = c === "x" ? r : (r & 0x3) | 0x8;
+      return v.toString(16);
+    }) + "-" + Math.floor(Math.random() * 1e6).toString(36)
+  );
+}
+
+function sessionCookieHeader(): string {
+  if (process.env.THREADS_COOKIES) return process.env.THREADS_COOKIES;
+  const parts = [`sessionid=${process.env.THREADS_SESSION_ID || ""}`];
+  if (process.env.THREADS_CSRF_TOKEN) parts.push(`csrftoken=${process.env.THREADS_CSRF_TOKEN}`);
+  if (process.env.THREADS_USER_ID) parts.push(`ds_user_id=${process.env.THREADS_USER_ID}`);
+  parts.push(`ig_did=${randomIgDid()}`, "dpr=2");
+  return parts.join("; ");
+}
+
+/**
+ * Server-rendered search page rendered for a logged-in mobile session.
+ * The SSR payload embeds the searchResults GraphQL response (same
+ * `{"__bbox":{"complete":true` shape parseSearchResults already reads), so
+ * results come back without any GraphQL call, doc_id, or comet tokens.
+ *
+ * Returns null when no session is configured or the page had no search
+ * payload (block/challenge/redirect), so the caller can fall back to the
+ * anonymous SSR search.
+ */
+export async function searchThreadsLatest(keyword: string): Promise<ThreadsRawPost[] | null> {
+  if (!hasThreadsSession()) return null;
+  const cookie = sessionCookieHeader();
+  const searchUrl = `https://www.threads.com/search?q=${encodeURIComponent(keyword)}`;
+
+  try {
+    const res = await fetch(searchUrl, {
+      headers: {
+        cookie,
+        "user-agent": MOBILE_UA,
+        "accept-language": "en-GB,en;q=0.9",
+        accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        referer: "https://www.threads.com/",
+      },
+      redirect: "follow",
+      signal: AbortSignal.timeout(THREADS_CONFIG.fetchTimeoutMs),
+    });
+    if (res.status === 429 || res.status === 403 || res.status === 401) {
+      console.log(`[threads-session] "${keyword}" html blocked (${res.status})`);
+      return null;
+    }
+    if (!res.ok) {
+      console.log(
+        `[threads-session] "${keyword}" html status ${res.status}${res.redirected ? ` -> ${res.url}` : ""}`,
+      );
+      return null;
+    }
+    const html = await res.text();
+    const parsed = parseSearchResults(html);
+    if (parsed === null) {
+      console.log(`[threads-session] "${keyword}" html had no search payload (${html.length}b)`);
+      return null;
+    }
+    const posts = dedupe(parsed).slice(0, THREADS_CONFIG.maxResultsPerKeyword);
+    console.log(
+      `[threads-session] "${keyword}" html ${res.status} (${html.length}b) -> ${posts.length} posts`,
+    );
+    return posts;
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    if (msg.includes("Blocked") || msg.includes("Timeout") || msg.includes("aborted")) return null;
+    console.log(`[threads-session] "${keyword}" html fetch failed: ${msg}`);
+    return null;
+  }
+}
+
+/* ------------------------------------------------------------------ */
 /* Apify (emergency fallback)                                          */
 /* ------------------------------------------------------------------ */
 
@@ -462,6 +561,8 @@ export async function searchKeyword(
 
   if (ssrAllowed) {
     try {
+      const latest = hasThreadsSession() ? await searchThreadsLatest(keyword) : null;
+      if (latest && latest.length > 0) return { posts: latest, source: "ssr" };
       const posts = await searchSsr(keyword);
       if (posts.length > 0) return { posts, source: "ssr" };
       return { posts: [], source: "ssr" };

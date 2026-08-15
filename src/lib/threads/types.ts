@@ -24,6 +24,7 @@ export interface ThreadsLead {
   matchedKeyword: string;
   replyDrafts: string[];
   status: "queued" | "approved" | "skipped" | "failed";
+  replyCount?: number;
   replyId?: string;
   repliedAt?: number;
   error?: string;

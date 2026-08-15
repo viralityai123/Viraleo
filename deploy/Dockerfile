@@ -25,6 +25,10 @@ COPY server/ ./server/
 # vite build directly (not npm run build) skips the Vercel-specific postbuild
 RUN NITRO_PRESET=node-server ./node_modules/.bin/vite build
 
+# Apply the nitro lazy-service patch (required for the 24/7 monitor to boot)
+ENV POSTBUILD_SKIP_PING=1
+RUN node scripts/postbuild.mjs
+
 # ─── Stage 2: Production runtime ─────────────────────────────────────────────
 FROM node:22-alpine AS runner
 

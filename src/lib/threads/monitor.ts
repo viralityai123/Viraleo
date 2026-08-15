@@ -14,6 +14,7 @@ import {
   markSeen,
   pushLead,
   countQueue,
+  purgeExpiredLeads,
   getRepliesToday,
   incrementReplies,
   getAutoApprove,
@@ -104,44 +105,99 @@ export async function pollOnce(): Promise<void> {
     const cycleFailures: string[] = [];
     let lastSource: ThreadsSource = "ssr";
     let fetched = 0;
+    let freshFound = 0;
+    let agedNoReplyFound = 0;
     const candidates: { post: ThreadsRawPost; matched: string }[] = [];
 
-    for (const keyword of keywords) {
-      try {
-        const { posts, source } = await searchKeyword(keyword, state.consecutiveFailures);
-        fetched += posts.length;
-        lastSource = source;
-        if (posts.length === 0) continue;
-        const urls = posts.map((p) => buildPostUrl(p));
-        await markSeen(urls);
-        for (const post of posts) {
-          if (
-            THREADS_CONFIG.ownUsername &&
-            post.username?.toLowerCase() === THREADS_CONFIG.ownUsername
-          ) {
-            continue;
+    const concurrency = Math.max(1, THREADS_CONFIG.keywordConcurrency);
+    let nextIdx = 0;
+    const worker = async () => {
+      while (true) {
+        const idx = nextIdx++;
+        if (idx >= keywords.length) return;
+        const keyword = keywords[idx];
+        try {
+          const { posts, source } = await searchKeyword(keyword, state.consecutiveFailures);
+          fetched += posts.length;
+          lastSource = source;
+          if (posts.length === 0) continue;
+          const fresh: { post: ThreadsRawPost; matched: string }[] = [];
+          for (const post of posts) {
+            if (
+              THREADS_CONFIG.ownUsername &&
+              post.username?.toLowerCase() === THREADS_CONFIG.ownUsername
+            ) {
+              continue;
+            }
+            if (!post.text) continue;
+            if (post.takenAt) {
+              const ageSec = Date.now() / 1000 - post.takenAt;
+              if (ageSec > THREADS_CONFIG.maxAgedLeadAgeSec) continue;
+              if (ageSec <= THREADS_CONFIG.freshWindowSec) {
+                freshFound++;
+              } else {
+                if (
+                  THREADS_CONFIG.agedRequiresNoReplies &&
+                  (post.replyCount ?? 0) > 0
+                ) {
+                  continue;
+                }
+                agedNoReplyFound++;
+              }
+            }
+            const matched = hasBuyingIntent(post.text);
+            if (!matched) continue;
+            if (await isSeen(buildPostUrl(post))) continue;
+            fresh.push({ post, matched });
           }
-          if (!post.text) continue;
-          const matched = hasBuyingIntent(post.text);
-          if (!matched) continue;
-          if (await isSeen(buildPostUrl(post))) continue;
-          candidates.push({ post, matched });
+          candidates.push(...fresh);
+          await markSeen(posts.map((p) => buildPostUrl(p)));
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : String(e);
+          cycleFailures.push(msg);
+          log("keyword failed:", keyword, "-", msg);
         }
-      } catch (e) {
-        const msg = e instanceof Error ? e.message : String(e);
-        cycleFailures.push(msg);
-        log("keyword failed:", keyword, "-", msg);
+        await new Promise((r) =>
+          setTimeout(
+            r,
+            THREADS_CONFIG.requestJitterMs + Math.random() * THREADS_CONFIG.requestJitterMs,
+          ),
+        );
       }
-      await new Promise((r) => setTimeout(r, 250 + Math.random() * 450));
-    }
+    };
+    await Promise.all(
+      Array.from({ length: Math.min(concurrency, keywords.length) }, () => worker()),
+    );
+
+    candidates.sort((a, b) => (a.post.takenAt ?? 0) - (b.post.takenAt ?? 0));
 
     const toScore = candidates.slice(0, THREADS_CONFIG.llmCallsPerCycle);
     const autoApprove = await getAutoApprove();
     const repliesToday = await getRepliesToday();
     const newLeads: ThreadsLead[] = [];
 
-    for (const { post, matched } of toScore) {
-      const scored = await scorePost(post.username || "", post.text || "", matched);
+    const scoredResults = new Array<Awaited<ReturnType<typeof scorePost>>>(toScore.length);
+    let scoreIdx = 0;
+    const scoreWorkers = Array.from(
+      { length: Math.min(6, toScore.length) },
+      async () => {
+        while (true) {
+          const i = scoreIdx++;
+          if (i >= toScore.length) return;
+          const { post, matched } = toScore[i];
+          scoredResults[i] = await scorePost(
+            post.username || "",
+            post.text || "",
+            matched,
+          );
+        }
+      },
+    );
+    await Promise.all(scoreWorkers);
+
+    for (let i = 0; i < toScore.length; i++) {
+      const scored = scoredResults[i];
+      const { post, matched } = toScore[i];
       if (!scored) continue;
       if (scored.intentScore < THREADS_CONFIG.intentThreshold) continue;
       if (scored.category === "other" && scored.intentScore < THREADS_CONFIG.autoApproveThreshold) {
@@ -163,6 +219,7 @@ export async function pollOnce(): Promise<void> {
         matchedKeyword: matched,
         replyDrafts: drafts,
         status: "queued",
+        replyCount: post.replyCount ?? 0,
       };
 
       const canAutoApprove =
@@ -247,8 +304,12 @@ export async function pollOnce(): Promise<void> {
       });
     }
 
+    lastCycleFetched = fetched;
+
+    const purged = await purgeExpiredLeads();
+
     log(
-      `cycle done in ${((Date.now() - cycleStarted) / 1000).toFixed(1)}s — fetched ${fetched}, candidates ${candidates.length}, new leads ${newLeads.length}, queue total ${await countQueue()}, replies today ${await getRepliesToday()}`,
+      `cycle done in ${((Date.now() - cycleStarted) / 1000).toFixed(1)}s — fetched ${fetched}, fresh ${freshFound}, aged-no-reply ${agedNoReplyFound}, candidates ${candidates.length}, new leads ${newLeads.length}, purged ${purged}, queue total ${await countQueue()}, replies today ${await getRepliesToday()}`,
     );
   } catch (e) {
     log("cycle crashed:", e);
@@ -261,9 +322,14 @@ export async function pollOnce(): Promise<void> {
       // ignore
     }
   } finally {
+    lastCycleAllFailed = lastCycleFetched === 0;
     running = false;
   }
 }
+
+let allFailedCycles = 0;
+let lastCycleAllFailed = false;
+let lastCycleFetched = 0;
 
 /** Starts the 24/7 monitor loop. Only runs on long-lived processes (Koyeb), never on Vercel. */
 export function startThreadsMonitor(): void {
@@ -271,8 +337,17 @@ export function startThreadsMonitor(): void {
   if (!isMonitorEnabled()) return;
   started = true;
   log("starting monitor loop");
-  pollOnce().catch((e) => log("initial poll failed:", e));
-  setInterval(() => {
-    pollOnce().catch((e) => log("poll failed:", e));
-  }, THREADS_CONFIG.pollIntervalMs);
+  const schedule = (delayMs: number) => {
+    setTimeout(() => {
+      pollOnce()
+        .catch((e) => log("poll failed:", e))
+        .finally(() => {
+          if (lastCycleAllFailed) allFailedCycles = Math.min(allFailedCycles + 1, 4);
+          else allFailedCycles = 0;
+          const extraBackoff = lastCycleAllFailed ? allFailedCycles * 30_000 : 0;
+          schedule(THREADS_CONFIG.pollIntervalMs + extraBackoff);
+        });
+    }, delayMs);
+  };
+  schedule(0);
 }

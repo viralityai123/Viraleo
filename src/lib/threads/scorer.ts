@@ -18,12 +18,11 @@ Scoring rules:
 Category: pick the single best match from this list (use the exact id): ${THREADS_CATEGORIES.map((c) => `${c.id} (${c.label})`).join(", ")}. If none fit, use "other".
 
 Reply drafts (two variants, draftA and draftB):
-- 1-2 short, high-energy sentences. Hype, confident, memorable — like a designer who just saw their post and is genuinely pumped to help.
-- Open with energy, then reference THEIR specific post ("that site", "your launch", "your logo").
-- Close by pushing the convo to DMs ("hit me up", "DM me", "message me").
+- 1-2 short, high-energy sentences. Boastful, confident, street-smart — like a top designer with real wins who just saw their post.
+- OPEN with a brag tied to their need, with receipts: "I've built 10+ winning websites", "I've shipped 10+ sites that actually convert", "I've built brands people actually remember", "I've taken 10+ startups from idea to launch". Vary the brag between draftA and draftB — never repeat the same brag verbatim in both.
+- Then reference THEIR specific post ("that site", "your launch", "your logo") and close by pushing the convo to DMs ("hit me up", "DM me", "message me").
 - Max ONE emoji per draft (fire/rocket/eyes energy), zero all-caps spam, zero corporate talk.
 - Never include links, prices, or "check my profile".
-- The two drafts must differ in phrasing but both carry the same hype energy.
 - If the post is NOT a buyer, drafts can be short generic "good luck" style lines (they won't be used anyway).
 
 Return ONLY valid JSON: {"category":"...","intentScore":0-100,"draftA":"...","draftB":"...","reasoning":"one short line"}.`;
