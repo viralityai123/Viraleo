@@ -6,7 +6,9 @@
 # =============================================================================
 
 # ─── Stage 1: Install deps + Build ───────────────────────────────────────────
-FROM node:22-bookworm-slim AS builder
+# node:24 matches the validated local environment (npm 11 accepts the lockfile;
+# npm 10 in node:22 rejects the unstorage optional-peer entry for lru-cache)
+FROM node:24-bookworm-slim AS builder
 
 WORKDIR /app
 
@@ -30,7 +32,7 @@ ENV POSTBUILD_SKIP_PING=1
 RUN node scripts/postbuild.mjs
 
 # ─── Stage 2: Production runtime ─────────────────────────────────────────────
-FROM node:22-alpine AS runner
+FROM node:24-alpine AS runner
 
 # Install wget for healthcheck
 RUN apk add --no-cache wget ca-certificates tzdata
