@@ -215,7 +215,6 @@ export async function pollOnce(): Promise<void> {
       if (scored.category === "other" && scored.intentScore < THREADS_CONFIG.autoApproveThreshold) {
         continue;
       }
-      if (await isSeen(post.id)) continue;
       const drafts = [scored.draftA, scored.draftB].filter((d) => d && d.length > 10);
       if (drafts.length === 0) continue;
 

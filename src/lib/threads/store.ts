@@ -1,5 +1,6 @@
 import { getKv } from "@/lib/kv";
 import { THREADS_CONFIG } from "./config";
+import { recommendFiverrGig } from "./fiverr";
 import type { ThreadsAuth, ThreadsLead, ThreadsMonitorState } from "./types";
 
 const QUEUE_KEY = "threads:queue";
@@ -90,6 +91,7 @@ export async function listQueue(): Promise<ThreadsLead[]> {
       const lead =
         typeof raw === "string" ? (JSON.parse(raw) as ThreadsLead) : (raw as ThreadsLead);
       if (lead && typeof lead === "object" && lead.postId && Array.isArray(lead.replyDrafts)) {
+        if (!lead.fiverrGig) lead.fiverrGig = recommendFiverrGig(lead.category);
         out.push(lead);
       }
     } catch {
