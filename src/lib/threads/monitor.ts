@@ -21,6 +21,7 @@ import {
   getAutoApprove,
   appendTrackerRow,
   trackerRow,
+  getRepliedPostUrls,
   isKvReady,
 } from "./store";
 
@@ -159,7 +160,6 @@ export async function pollOnce(): Promise<void> {
             if (!matched) continue;
             if (await isSeen(post.id)) continue;
             fresh.push({ post, matched });
-            await markSeen([post.id]);
           }
           candidates.push(...fresh);
         } catch (e) {
@@ -200,6 +200,7 @@ export async function pollOnce(): Promise<void> {
     const toScore = deduped.slice(0, THREADS_CONFIG.llmCallsPerCycle);
     const autoApprove = await getAutoApprove();
     const repliesToday = await getRepliesToday();
+    const repliedPostUrls = await getRepliedPostUrls();
     const newLeads: ThreadsLead[] = [];
 
     const scoredResults = new Array<Awaited<ReturnType<typeof scorePost>>>(toScore.length);
@@ -216,6 +217,7 @@ export async function pollOnce(): Promise<void> {
             post.text || "",
             matched,
           );
+          await markSeen([post.id]);
         }
       },
     );
@@ -232,9 +234,15 @@ export async function pollOnce(): Promise<void> {
       const drafts = [scored.draftA, scored.draftB].filter((d) => d && d.length > 10);
       if (drafts.length === 0) continue;
 
+      const postUrl = buildPostUrl(post);
+      if (repliedPostUrls.has(postUrl)) {
+        log("already replied, skipping:", post.username || "unknown", postUrl);
+        continue;
+      }
+
       const lead: ThreadsLead = {
         postId: post.id,
-        postUrl: buildPostUrl(post),
+        postUrl,
         username: post.username || "unknown",
         text: (post.text || "").slice(0, 600),
         category: scored.category,

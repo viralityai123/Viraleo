@@ -204,6 +204,20 @@ export async function listTrackerRows(): Promise<string[]> {
   return items.map((raw) => (typeof raw === "string" ? raw : JSON.stringify(raw)));
 }
 
+/** Post URLs that were already replied to (from the tracker CSV). */
+export async function getRepliedPostUrls(): Promise<Set<string>> {
+  const rows = await listTrackerRows();
+  const out = new Set<string>();
+  for (const row of rows) {
+    const fields = row.split(",");
+    if (fields.length >= 3) {
+      const url = fields[2].replace(/^"|"$/g, "");
+      if (url.startsWith("http")) out.add(url);
+    }
+  }
+  return out;
+}
+
 // --- daily reply counter ---
 
 export async function getRepliesToday(): Promise<number> {

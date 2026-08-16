@@ -34,7 +34,7 @@ export const THREADS_CONFIG = {
   /** Hard cap on auto-posted replies per 24h — protects the account from spam flags. */
   dailyReplyCap: int("THREADS_DAILY_REPLY_CAP", 20),
   /** Max Gemini scoring calls per cycle. */
-  llmCallsPerCycle: int("THREADS_LLM_CALLS_PER_CYCLE", 120),
+  llmCallsPerCycle: int("THREADS_LLM_CALLS_PER_CYCLE", 240),
   /** Min gap between lead alert emails. */
   emailMinGapMs: 10 * 60_000,
   /** Max leads included in a single alert email. */
