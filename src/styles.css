@@ -343,3 +343,67 @@
 .animate-rainbow {
   animation: rainbow 6s linear infinite;
 }
+
+/* ── Channel Blueprint Detector tokens ────────────────────────────────────── */
+:root {
+  --bp-win: oklch(0.52 0.14 152);        /* emerald-ish green */
+  --bp-win-surface: oklch(0.96 0.04 152);
+  --bp-canvas-glow: radial-gradient(
+    120% 80% at 15% -10%,
+    oklch(0.95 0.05 155 / 0.45) 0%,
+    transparent 55%
+  ), radial-gradient(
+    100% 70% at 100% 0%,
+    oklch(0.92 0.04 220 / 0.3) 0%,
+    transparent 50%
+  );
+}
+
+@keyframes bp-rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes bp-float-soft-kf {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-8px); }
+}
+
+@keyframes bp-trophy-glow-kf {
+  0%, 100% { box-shadow: 0 10px 40px -8px oklch(0.52 0.14 152 / 0.35); }
+  50%       { box-shadow: 0 14px 55px -6px oklch(0.52 0.14 152 / 0.6);  }
+}
+
+.bp-rise {
+  animation: bp-rise-in 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.bp-float-soft {
+  animation: bp-float-soft-kf 5s ease-in-out infinite;
+}
+
+.bp-trophy-glow {
+  animation: bp-trophy-glow-kf 3.5s ease-in-out infinite;
+}
+
+.bp-canvas-bg {
+  background: var(--surface);
+  background-image: var(--bp-canvas-glow);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bp-rise,
+  .bp-float-soft,
+  .bp-trophy-glow {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+

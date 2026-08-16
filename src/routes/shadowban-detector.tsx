@@ -22,6 +22,10 @@ import {
   TrendingDown,
   FileWarning,
   RefreshCw,
+  Upload,
+  Flame,
+  Clock,
+  Star,
 } from "lucide-react";
 
 export const Route = createFileRoute("/shadowban-detector")({
@@ -201,6 +205,20 @@ function ShadowbanDetectorPage() {
     "Compiling escape protocol...",
   ];
 
+  const placeholders = [
+    "Enter your channel handle (@CreatorName)...",
+    "Paste video or channel link to check reach...",
+    "Audit competitor algorithmic indexability...",
+  ];
+  const [placeholderIdx, setPlaceholderIdx] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setPlaceholderIdx((prev) => (prev + 1) % placeholders.length);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [placeholders.length]);
+
   useEffect(() => {
     if (phase !== "scanning") return;
     const t = setInterval(() => setTick((p) => (p + 1) % scanLabels.length), 1800);
@@ -346,31 +364,46 @@ function ShadowbanDetectorPage() {
             </div>
 
             <div className="bg-surface border border-hairline rounded-[28px] shadow-[0_4px_60px_-20px_rgba(0,0,0,0.1)] overflow-hidden">
-              <div className="flex items-center gap-4 px-6 py-5">
+              <div className="flex items-center gap-4 px-6 py-5 relative">
                 <Search size={20} className="text-ink-soft shrink-0" />
-                <input
-                  type="text"
-                  value={channel}
-                  onChange={(e) => setChannel(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && run(channel)}
-                  placeholder="@YourChannel or youtube.com/c/..."
-                  className="flex-1 bg-transparent text-[16px] text-ink placeholder:text-ink-soft/50 focus:outline-none"
-                  autoFocus
-                />
+                <div className="relative flex-1 min-w-0">
+                  <AnimatePresence mode="wait">
+                    {!channel && (
+                      <motion.div
+                        key={placeholderIdx}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        transition={{ duration: 0.3 }}
+                        className="absolute inset-0 pointer-events-none text-ink-soft/60 text-[16px] flex items-center"
+                      >
+                        {placeholders[placeholderIdx]}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                  <input
+                    type="text"
+                    value={channel}
+                    onChange={(e) => setChannel(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && run(channel)}
+                    className="w-full bg-transparent text-[16px] text-ink focus:outline-none relative z-10"
+                    autoFocus
+                  />
+                </div>
                 <motion.button
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.97 }}
                   onClick={() => run(channel)}
-                  className="bg-ink text-surface text-[13px] font-bold px-5 py-2.5 rounded-xl flex items-center gap-2 shrink-0 hover:opacity-90 transition"
+                  className="bg-ink text-surface text-[13px] font-bold px-5 py-2.5 rounded-xl flex items-center gap-2 shrink-0 hover:opacity-90 transition z-10"
                 >
                   Scan <ArrowRight size={14} />
                 </motion.button>
               </div>
               <div className="border-t border-hairline px-6 py-4 bg-surface-2/40 flex flex-wrap gap-2 items-center">
                 <span className="text-[11px] font-bold uppercase tracking-widest text-ink-soft">
-                  Try:
+                  Try Channels:
                 </span>
-                {["@MrBeast", "@PewDiePie", "@mkbhd"].map((n) => (
+                {["@Veritasium", "@Airrack", "@MagnatesMedia", "@ColinAndSamir"].map((n) => (
                   <button
                     key={n}
                     onClick={() => {
@@ -464,10 +497,10 @@ function ShadowbanDetectorPage() {
 
             {/* Hero Status Banner */}
             <div
-              className={`rounded-[28px] border-2 ${cfg.border} ${cfg.bg} ${cfg.glow} p-8 mb-8 flex flex-col md:flex-row items-center gap-8`}
+              className={`rounded-[28px] border-2 ${cfg.border} ${cfg.bg} ${cfg.glow} p-8 mb-6 flex flex-col md:flex-row items-center gap-8`}
             >
               <RadarPing status={data.status} />
-              <div className="text-center md:text-left">
+              <div className="text-center md:text-left flex-1">
                 <div
                   className={`text-[12px] font-bold uppercase tracking-widest ${cfg.color} mb-2`}
                 >
@@ -488,6 +521,118 @@ function ShadowbanDetectorPage() {
                 </div>
               </div>
             </div>
+
+            {/* Ready to Upload / Warmed Up / Trust Score Row */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+              {/* Ready to Upload */}
+              <div className={`rounded-[20px] border-2 p-4 flex flex-col items-center text-center gap-2 ${
+                data.readyToUpload
+                  ? "bg-emerald-50 border-emerald-200"
+                  : "bg-red-50 border-red-200"
+              }`}>
+                <Upload size={22} className={data.readyToUpload ? "text-emerald-500" : "text-red-400"} />
+                <div className={`text-[18px] font-black ${
+                  data.readyToUpload ? "text-emerald-600" : "text-red-600"
+                }`}>
+                  {data.readyToUpload ? "Ready" : "Hold Off"}
+                </div>
+                <div className="text-[11px] font-bold uppercase tracking-widest text-ink-soft">Upload Status</div>
+              </div>
+
+              {/* Warmed Up */}
+              <div className={`rounded-[20px] border-2 p-4 flex flex-col items-center text-center gap-2 ${
+                data.warmedUp
+                  ? "bg-amber-50 border-amber-200"
+                  : "bg-surface border-hairline"
+              }`}>
+                <Flame size={22} className={data.warmedUp ? "text-amber-500" : "text-ink-soft"} />
+                <div className={`text-[18px] font-black ${
+                  data.warmedUp ? "text-amber-600" : "text-ink-soft"
+                }`}>
+                  {data.warmedUp ? "Warmed Up" : "Warming Up"}
+                </div>
+                <div className="text-[11px] font-bold uppercase tracking-widest text-ink-soft">Channel Heat</div>
+              </div>
+
+              {/* Niche Trust Score */}
+              <div className="rounded-[20px] border-2 border-violet-200 bg-violet-50 p-4 flex flex-col items-center text-center gap-2">
+                <Star size={22} className="text-violet-500" />
+                <div className="text-[28px] font-black text-violet-600">
+                  {data.nicheTrustScore ?? "—"}
+                  <span className="text-[14px] font-bold text-violet-400">/100</span>
+                </div>
+                <div className="text-[11px] font-bold uppercase tracking-widest text-ink-soft">Algo Trust</div>
+              </div>
+
+              {/* Upload Schedule */}
+              <div className="rounded-[20px] border-2 border-blue-200 bg-blue-50 p-4 flex flex-col items-center text-center gap-2">
+                <Clock size={22} className="text-blue-500" />
+                <div className="text-[13px] font-bold text-blue-700 leading-snug">
+                  {data.uploadSchedule || "See escape protocol"}
+                </div>
+                <div className="text-[11px] font-bold uppercase tracking-widest text-ink-soft">Recommended Cadence</div>
+              </div>
+            </div>
+
+            {/* Hard Channel Data & Algorithmic Signals Strip */}
+            {data.statsSummary && (
+              <div className="bg-surface border border-hairline rounded-[24px] p-6 mb-8 hover:border-ink/10 transition-all">
+                <div className="flex items-center justify-between gap-4 mb-4 pb-3 border-b border-hairline">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 size={16} className="text-emerald-500" />
+                    <h2 className="font-semibold text-ink text-[16px]">Verified Channel Metrics & API Signals</h2>
+                  </div>
+                  <span className="text-[11px] font-bold uppercase tracking-widest text-ink-soft bg-surface-2 px-3 py-1 rounded-full border border-hairline">
+                    {data.statsSummary.totalIngestedUploads} Uploads Audited
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-5">
+                  <div className="bg-surface-2 rounded-[16px] p-3.5 border border-hairline">
+                    <div className="text-[11px] font-bold uppercase tracking-widest text-ink-soft mb-1">Velocity Cliff</div>
+                    <div className={`text-[18px] font-black ${
+                      data.statsSummary.velocityCliffDetected ? "text-red-600" : "text-emerald-600"
+                    }`}>
+                      {data.statsSummary.velocityChangeLabel}
+                    </div>
+                    <div className="text-[11px] text-ink-soft mt-0.5">
+                      {data.statsSummary.velocityCliffDetected ? "Recent cliff flagged" : "Steady velocity"}
+                    </div>
+                  </div>
+
+                  <div className="bg-surface-2 rounded-[16px] p-3.5 border border-hairline">
+                    <div className="text-[11px] font-bold uppercase tracking-widest text-ink-soft mb-1">Like-to-View Ratio</div>
+                    <div className="text-[18px] font-black text-ink">{data.statsSummary.avgLikeRatePercent}</div>
+                    <div className="text-[11px] text-ink-soft mt-0.5">Engagement signal</div>
+                  </div>
+
+                  <div className="bg-surface-2 rounded-[16px] p-3.5 border border-hairline">
+                    <div className="text-[11px] font-bold uppercase tracking-widest text-ink-soft mb-1">Median Daily Reach</div>
+                    <div className="text-[18px] font-black text-ink">{data.statsSummary.medianViewsPerDay.toLocaleString()}</div>
+                    <div className="text-[11px] text-ink-soft mt-0.5">Views / day baseline</div>
+                  </div>
+
+                  <div className="bg-surface-2 rounded-[16px] p-3.5 border border-hairline">
+                    <div className="text-[11px] font-bold uppercase tracking-widest text-ink-soft mb-1">Upload Cadence</div>
+                    <div className="text-[18px] font-black text-ink">{data.statsSummary.uploadIntervalDays}</div>
+                    <div className="text-[11px] text-ink-soft mt-0.5">Average frequency</div>
+                  </div>
+                </div>
+
+                {data.statsSummary.recentTitles?.length > 0 && (
+                  <div>
+                    <div className="text-[11px] font-bold uppercase tracking-widest text-ink-soft mb-2">Recent Videos Analyzed:</div>
+                    <div className="flex flex-wrap gap-2">
+                      {data.statsSummary.recentTitles.map((title: string, idx: number) => (
+                        <span key={idx} className="text-[12px] bg-surface border border-hairline px-3 py-1 rounded-lg text-ink-soft truncate max-w-[280px]">
+                          🎥 {title}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Diagnostic Grid */}
             <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">

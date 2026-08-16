@@ -3,12 +3,14 @@ import { useEffect, useState } from "react";
 import { createServerFn } from "@tanstack/react-start";
 import { clearActivities, purgeLegacySharedKeys } from "@/lib/activity";
 
-const DESTROY_SECRET = "Rasheed@123";
-
 const wipeAllUserData = createServerFn({ method: "POST" })
   .inputValidator((d: { secret: string }) => d)
   .handler(async ({ data }) => {
-    if (data.secret !== DESTROY_SECRET) return { ok: false, error: "Invalid secret" };
+    // Secret is read server-side from env — never hardcoded in source
+    const expectedSecret = process.env.DESTROY_SECRET || "";
+    if (!expectedSecret || data.secret !== expectedSecret) {
+      return { ok: false, error: "Invalid secret" };
+    }
     const { clearAllPlanData } = await import("@/lib/user-plan");
     const deleted = await clearAllPlanData();
     return { ok: true, deleted };
@@ -28,10 +30,11 @@ function DestroyPage() {
 
   useEffect(() => {
     const secret = key || new URLSearchParams(window.location.search).get("destroy") || "";
-    if (secret !== DESTROY_SECRET) {
+    if (!secret) {
       setStatus("denied");
       return;
     }
+    // Secret is validated server-side against DESTROY_SECRET env var
     wipeAllUserData({ data: { secret } })
       .then((res) => {
         if (res.ok) {

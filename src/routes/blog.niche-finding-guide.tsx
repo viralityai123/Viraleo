@@ -8,7 +8,7 @@ export const Route = createFileRoute("/blog/niche-finding-guide")({
       {
         name: "description",
         content:
-          "Data-driven guide to finding a profitable YouTube niche. Learn how to analyze RPM, competition levels, outlier potential, and audience demand before you start creating.",
+          "Data-driven guide to finding a profitable YouTube niche. Learn how to analyze monetization potential, competition levels, outlier potential, and audience demand before you start creating.",
       },
       { property: "og:title", content: "How to Find a Profitable YouTube Niche — Viraleo" },
       {

@@ -28,26 +28,35 @@ ${velocityNote}
 DATA_HEADLINE: ${ctx.digest.headline}
 
 Rules:
-- verdict = one brutal sentence a creator would screenshot — cite views/day or a video title
-- escapeProtocol steps must name THEIR videos or upload cadence from data
+- verdict = one brutal sentence a creator would screenshot — cite real views/day or actual video titles from data
+- escapeProtocol steps must name THEIR actual video titles, metadata issues, or upload cadence from data
 - If velocity cliff: pattern = "Overnight Cliff" or "Declining"
 - Do not invent strikes (default 0)
+- warmedUp: true if channel has been consistently active for 90+ days with regular uploads and decent engagement
+- readyToUpload: true only if status is "healthy" OR ("warmup" AND engagement metrics look stable)
+- uploadSchedule: recommended cadence based on their actual upload history and niche (e.g. "3x/week Shorts + 1x/week long-form")
+- nicheTrustScore: 0-100 how much the algorithm currently trusts this channel based on ALL signals
+- CRITICAL: NEVER output generic placeholder strings like "term 1", "term 2", "title", "specific action detail", "step 1", or "N/A". If no metadata terms are flagged, return an empty array []. All escape protocol actions MUST contain real, specific, actionable steps tailored to this channel.
 
 Return JSON:
 {
-  "channelName": "cleaned channel name/handle",
+  "channelName": "${channelName}",
   "status": "healthy" | "warmup" | "restricted" | "shadowbanned",
   "statusLabel": "Healthy" | "Warmup Phase" | "Restricted Reach" | "Shadowbanned",
   "riskScore": number (0-100, higher = more risk),
-  "verdict": "a single brutally honest 1-sentence verdict",
+  "verdict": "a single brutally honest 1-sentence verdict citing real metrics or video names",
+  "warmedUp": boolean,
+  "readyToUpload": boolean,
+  "uploadSchedule": "specific recommended upload cadence for this channel",
+  "nicheTrustScore": number (0-100),
   "indexability": {
     "score": number (0-100),
     "status": "Indexed" | "Partially Indexed" | "De-indexed",
-    "insight": "2 sentences on search index health"
+    "insight": "2 sentences on search index health based on channel data"
   },
   "metadataHealth": {
     "score": number (0-100),
-    "flaggedTerms": ["term 1", "term 2"],
+    "flaggedTerms": ["actual flagged term if any, or empty array []"],
     "insight": "2 sentences on metadata and keyword risk"
   },
   "engagementVelocity": {
@@ -61,10 +70,10 @@ Return JSON:
     "insight": "2 sentences on community guidelines status"
   },
   "escapeProtocol": [
-    { "step": number, "action": "title", "detail": "specific action detail" },
-    { "step": number, "action": "title", "detail": "specific action detail" },
-    { "step": number, "action": "title", "detail": "specific action detail" },
-    { "step": number, "action": "title", "detail": "specific action detail" }
+    { "step": 1, "action": "Specific Action Title", "detail": "Detailed concrete step to take" },
+    { "step": 2, "action": "Specific Action Title", "detail": "Detailed concrete step to take" },
+    { "step": 3, "action": "Specific Action Title", "detail": "Detailed concrete step to take" },
+    { "step": 4, "action": "Specific Action Title", "detail": "Detailed concrete step to take" }
   ],
   "recoveryTimeline": "estimated time to recover (e.g. '2-4 weeks with consistent uploading')"
 }`;
@@ -76,5 +85,55 @@ Return JSON:
     parsed.verdict = ctx.digest.headline;
   }
 
-  return { ...attachIntelProof(parsed, ctx), _intelBundle: bundle };
+  // Scrub any accidental generic placeholder text from LLM output
+  if (parsed.metadataHealth && typeof parsed.metadataHealth === "object") {
+    const meta = parsed.metadataHealth as any;
+    if (Array.isArray(meta.flaggedTerms)) {
+      meta.flaggedTerms = meta.flaggedTerms.filter(
+        (t: string) =>
+          typeof t === "string" &&
+          !/^term\s*\d+$/i.test(t) &&
+          !/^flagged\s*term/i.test(t) &&
+          t.toLowerCase() !== "none" &&
+          t.toLowerCase() !== "n/a",
+      );
+    }
+  }
+
+  if (Array.isArray(parsed.escapeProtocol)) {
+    parsed.escapeProtocol = (parsed.escapeProtocol as any[]).map((step: any, idx: number) => ({
+      step: typeof step.step === "number" ? step.step : idx + 1,
+      action:
+        typeof step.action === "string" && !step.action.includes("title")
+          ? step.action
+          : `Audit Video Metadata & Tags`,
+      detail:
+        typeof step.detail === "string" && !step.detail.includes("action detail")
+          ? step.detail
+          : `Review recent video titles and descriptions for sensationalized terms that trigger algorithmic suppression.`,
+    }));
+  }
+
+  // Calculate quantitative statistics for empirical data proof
+  const velocityPct = Math.round((bundle.metrics.velocityCliffRatio - 1) * 100);
+  const statsSummary = {
+    subsLabel: bundle.meta.subs || "N/A",
+    subsCount: bundle.meta.subsCount || 0,
+    totalIngestedUploads: bundle.videos.length,
+    medianViewsPerDay: Math.round(bundle.metrics.medianViewsPerDay),
+    avgLikeRatePercent: `${(bundle.metrics.avgLikeRate * 100).toFixed(1)}%`,
+    avgCommentRatePercent: `${(bundle.metrics.avgCommentRate * 100).toFixed(2)}%`,
+    uploadIntervalDays: bundle.metrics.avgUploadIntervalDays > 0
+      ? `${bundle.metrics.avgUploadIntervalDays.toFixed(1)} days`
+      : "Daily / Frequent",
+    velocityChangeLabel: velocityPct > 0 ? `+${velocityPct}%` : `${velocityPct}%`,
+    velocityCliffDetected: bundle.metrics.velocityCliff,
+    recentTitles: bundle.metrics.recentUploadTitles.slice(0, 5),
+  };
+
+  return {
+    ...attachIntelProof(parsed, ctx),
+    statsSummary,
+    _intelBundle: bundle,
+  };
 }

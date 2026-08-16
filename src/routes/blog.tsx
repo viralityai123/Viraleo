@@ -40,7 +40,7 @@ const ARTICLES = [
     slug: "niche-finding-guide",
     title: "How to Find a Profitable YouTube Niche: A Data-Driven Guide",
     excerpt:
-      "Most creators pick niches by gut feel and burn out. We break down how to use RPM data, competition analysis, and outlier detection to find a niche where you can actually grow.",
+      "Most creators pick niches by gut feel and burn out. We break down how to use monetization data, competition analysis, and outlier detection to find a niche where you can actually grow.",
     date: "May 28, 2026",
     readTime: "8 min",
     tags: ["Niche Research", "Strategy"],

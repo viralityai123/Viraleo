@@ -39,13 +39,13 @@ export const Route = createFileRoute("/niche-ranker")({
       {
         name: "description",
         content:
-          "Discover the best YouTube niches for growth. AI-powered saturation analysis, trend velocity, CPM estimates, and breakthrough difficulty scoring.",
+          "Discover the best YouTube niches for growth. AI-powered saturation analysis, trend velocity, monetization potential, and breakthrough difficulty scoring.",
       },
       { property: "og:title", content: "Niche Ranker — Viraleo" },
       {
         property: "og:description",
         content:
-          "Discover the best YouTube niches. AI-powered saturation, trends, and CPM analysis.",
+          "Discover the best YouTube niches. AI-powered saturation, trends, and monetization analysis.",
       },
       { property: "og:image", content: "https://viraleo.pro/vi-logo.png" },
       { property: "og:url", content: "https://viraleo.pro/niche-ranker" },
@@ -134,7 +134,7 @@ function NicheRankerPage() {
     "Searching YouTube data...",
     "Analyzing saturation levels...",
     "Measuring trend velocity...",
-    "Calculating RPM estimates...",
+    "Analyzing monetization potential...",
     "Generating report...",
   ];
 
@@ -281,9 +281,9 @@ function NicheRankerPage() {
           copy: data.metrics.trendVelocity.insight,
         },
         {
-          label: "RPM",
-          score: (data.metrics.rpmRange ?? data.metrics.cpmRange).max,
-          copy: (data.metrics.rpmRange ?? data.metrics.cpmRange).insight,
+          label: "Monetization",
+          score: data.metrics.monetization.isMonetizable === "yes" ? 100 : data.metrics.monetization.isMonetizable === "limited" ? 50 : 0,
+          copy: data.metrics.monetization.insight,
         },
         {
           label: "Difficulty",
@@ -366,28 +366,30 @@ function NicheRankerPage() {
             <div className="bg-surface border border-hairline rounded-[28px] shadow-[0_4px_60px_-20px_rgba(0,0,0,0.12)] overflow-hidden">
               <div className="flex items-center gap-4 px-6 py-5 border-b border-hairline bg-white/50 relative">
                 <Compass size={20} className="text-ink-soft shrink-0" />
-                <AnimatePresence mode="wait">
-                  {!query && (
-                    <motion.div
-                      key={placeholderIdx}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      transition={{ duration: 0.3 }}
-                      className="absolute left-14 right-40 pointer-events-none text-ink-soft/60 text-[16px]"
-                    >
-                      {placeholders[placeholderIdx]}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-                <input
-                  type="text"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && run(query)}
-                  className="flex-1 bg-transparent text-[16px] text-ink focus:outline-none relative z-10 w-full min-w-0"
-                  autoFocus
-                />
+                <div className="relative flex-1 min-w-0">
+                  <AnimatePresence mode="wait">
+                    {!query && (
+                      <motion.div
+                        key={placeholderIdx}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        transition={{ duration: 0.3 }}
+                        className="absolute inset-0 pointer-events-none text-ink-soft/60 text-[16px] flex items-center"
+                      >
+                        {placeholders[placeholderIdx]}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                  <input
+                    type="text"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && run(query)}
+                    className="w-full bg-transparent text-[16px] text-ink focus:outline-none relative z-10"
+                    autoFocus
+                  />
+                </div>
                 <motion.button
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.97 }}
@@ -568,15 +570,12 @@ function NicheRankerPage() {
                     },
                     {
                       icon: DollarSign,
-                      label: "Est. RPM",
-                      value: `$${(data.metrics.rpmRange ?? data.metrics.cpmRange).min}–$${(data.metrics.rpmRange ?? data.metrics.cpmRange).max}`,
-                      sub: "creator revenue / 1K views",
-                      color: "text-ink",
-                      barColor: "bg-blue-400",
-                      score: Math.min(
-                        100,
-                        ((data.metrics.rpmRange ?? data.metrics.cpmRange).max / 20) * 100,
-                      ),
+                      label: "Monetization",
+                      value: data.metrics.monetization.isMonetizable === "yes" ? "Yes ✓" : data.metrics.monetization.isMonetizable === "limited" ? "Limited ~" : "No ✗",
+                      sub: data.metrics.monetization.adSenseEligibility === "high" ? "Strong ad demand" : data.metrics.monetization.adSenseEligibility === "medium" ? "Moderate ad demand" : data.metrics.monetization.adSenseEligibility === "low" ? "Low ad demand" : "AdSense at risk",
+                      color: data.metrics.monetization.isMonetizable === "yes" ? "text-emerald-500" : data.metrics.monetization.isMonetizable === "limited" ? "text-amber-500" : "text-red-500",
+                      barColor: data.metrics.monetization.isMonetizable === "yes" ? "bg-emerald-400" : data.metrics.monetization.isMonetizable === "limited" ? "bg-amber-400" : "bg-red-400",
+                      score: data.metrics.monetization.isMonetizable === "yes" ? 100 : data.metrics.monetization.isMonetizable === "limited" ? 50 : 10,
                     },
                     {
                       icon: Flame,
@@ -619,21 +618,21 @@ function NicheRankerPage() {
                         insight: data.metrics.saturation.insight,
                         score: data.metrics.saturation.score,
                         barColor: data.metrics.saturation.score > 70 ? "bg-red-400" : "bg-good",
+                        extra: null,
                       },
                       {
                         title: "Trend Velocity",
                         insight: data.metrics.trendVelocity.insight,
                         score: data.metrics.trendVelocity.score,
                         barColor: "bg-blue-400",
+                        extra: null,
                       },
                       {
-                        title: "Revenue Potential (RPM)",
-                        insight: (data.metrics.rpmRange ?? data.metrics.cpmRange).insight,
-                        score: Math.min(
-                          100,
-                          ((data.metrics.rpmRange ?? data.metrics.cpmRange).max / 20) * 100,
-                        ),
-                        barColor: "bg-emerald-400",
+                        title: "Monetization Strategy",
+                        insight: data.metrics.monetization.insight,
+                        score: data.metrics.monetization.isMonetizable === "yes" ? 100 : data.metrics.monetization.isMonetizable === "limited" ? 50 : 10,
+                        barColor: data.metrics.monetization.isMonetizable === "yes" ? "bg-emerald-400" : data.metrics.monetization.isMonetizable === "limited" ? "bg-amber-400" : "bg-red-400",
+                        extra: "monetization",
                       },
                       {
                         title: "Breakthrough Difficulty",
@@ -641,8 +640,9 @@ function NicheRankerPage() {
                         score: data.metrics.breakthroughDifficulty.score,
                         barColor:
                           data.metrics.breakthroughDifficulty.score > 70 ? "bg-red-400" : "bg-good",
+                        extra: null,
                       },
-                    ].map(({ title, insight, score, barColor }) => (
+                    ].map(({ title, insight, score, barColor, extra }) => (
                       <div
                         key={title}
                         className="bg-surface-2 rounded-[16px] p-4 border border-hairline"
@@ -655,6 +655,36 @@ function NicheRankerPage() {
                         </div>
                         <ScoreBar score={score} color={barColor} />
                         <p className="text-[13px] text-ink-soft mt-3 leading-relaxed">{insight}</p>
+                        {extra === "monetization" && (
+                          <div className="mt-3 space-y-2">
+                            {data.metrics.monetization.formatNotes?.shorts && (
+                              <div className="text-[12px] bg-surface border border-hairline rounded-lg px-3 py-2">
+                                <span className="font-bold text-ink">📱 Shorts: </span>
+                                <span className="text-ink-soft">{data.metrics.monetization.formatNotes.shorts}</span>
+                              </div>
+                            )}
+                            {data.metrics.monetization.formatNotes?.longForm && (
+                              <div className="text-[12px] bg-surface border border-hairline rounded-lg px-3 py-2">
+                                <span className="font-bold text-ink">🎬 Long-form: </span>
+                                <span className="text-ink-soft">{data.metrics.monetization.formatNotes.longForm}</span>
+                              </div>
+                            )}
+                            {data.metrics.monetization.recommendedMonetization?.length > 0 && (
+                              <div className="flex flex-wrap gap-1.5 mt-2">
+                                {data.metrics.monetization.recommendedMonetization.map((m: string) => (
+                                  <span key={m} className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 border border-emerald-200 text-emerald-700">{m}</span>
+                                ))}
+                              </div>
+                            )}
+                            {data.metrics.monetization.policyWarnings?.length > 0 && (
+                              <div className="mt-2 space-y-1">
+                                {data.metrics.monetization.policyWarnings.map((w: string) => (
+                                  <div key={w} className="text-[11px] text-orange-700 bg-orange-50 border border-orange-100 rounded-lg px-2.5 py-1.5">⚠️ {w}</div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -761,7 +791,7 @@ function NicheRankerPage() {
 
             <UpgradeBanner
               title="Rank more niches"
-              description="Upgrade for more monthly niche analyses, competitor intel, and RPM revenue data."
+              description="Upgrade for more monthly niche analyses, competitor intel, and monetization intelligence."
             />
           </motion.main>
         )}

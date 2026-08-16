@@ -325,7 +325,7 @@
   content: "";
   position: absolute;
   left: 0;
-  right: -25px;
+  right: 0;
   top: 0;
   bottom: 0;
   background: linear-gradient(
@@ -929,10 +929,16 @@
 .lv2-proof-img-wrap img {
   transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
   display: block;
-  width: calc(100% + 24px);
-  max-width: none;
+  width: 100%;
   height: auto;
-  margin: -12px;
+}
+
+@media (min-width: 768px) {
+  .lv2-proof-img-wrap img {
+    width: calc(100% + 24px);
+    max-width: none;
+    margin: -12px;
+  }
 }
 
 .lv2-proof-label {
@@ -955,31 +961,105 @@
 /* Mobile */
 @media (max-width: 768px) {
   .lv2-section {
-    padding: 60px 16px;
+    padding: 48px 16px;
   }
+
+  /* Nav: full width pill on mobile, constrained to screen */
   .lv2-nav {
     left: 12px;
     right: 12px;
+    width: auto;
     transform: none;
+    max-width: calc(100vw - 24px);
+    padding: 8px 10px 8px 14px;
+  }
+  .lv2-nav--expanded {
+    padding: 10px 10px 10px 14px;
+    top: 12px;
+    gap: 8px;
   }
   .lv2-nav .hide-m {
     display: none;
   }
+
+  /* Hero headline: allow wrap on small screens */
   .lv2-hero-line {
     white-space: normal;
+    word-break: break-word;
   }
 
-  /* ProductMock: make the browser frame scrollable instead of clipped */
+  /* ProductMock: tighter radius */
   .lv2-frame {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
     border-radius: 14px;
-  }
-  .lv2-frame > div {
-    min-width: 720px;
   }
   /* Hide overflow chips on mobile (they render outside bounds) */
   .lv2-chip {
     display: none !important;
+  }
+
+  /* Feature reel tab pills: allow full-width wrap */
+  .lv2-section .inline-flex.flex-wrap {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  /* Feature panel: shorter on mobile */
+  .lv2-section .relative.h-\[380px\] {
+    height: 260px !important;
+  }
+
+  /* Marquee: narrower cards on mobile */
+  .lv2-marq-card {
+    flex: 0 0 160px !important;
+  }
+  .lv2-marq {
+    gap: 10px;
+  }
+
+  /* Compare section rows: keep side-by-side but tight */
+  .lv2-section .grid.grid-cols-2.gap-4 > div {
+    font-size: 12px;
+  }
+
+  /* Footer: stack vertically */
+  .lv2-container.flex.flex-col.md\:flex-row {
+    gap: 16px;
+    text-align: center;
+  }
+
+  /* Proof section: scroll-driven transforms can cause jitter on mobile — flatten */
+  .lv2-tilt-card {
+    transform: none !important;
+  }
+
+  /* Pricing: full-width cards stack */
+  .lv2-price {
+    padding: 24px 20px;
+  }
+
+  /* Metrics: 2-column tight */
+  .grid.grid-cols-2.md\:grid-cols-4 {
+    gap-x: 16px;
+  }
+
+  /* How It Works steps: single column */
+  .lv2-step-card {
+    padding: 0 8px;
+  }
+}
+
+/* Extra small screens */
+@media (max-width: 380px) {
+  .lv2-nav {
+    left: 8px;
+    right: 8px;
+    max-width: calc(100vw - 16px);
+  }
+  .lv2-section {
+    padding: 40px 12px;
+  }
+  .lv2-btn-primary {
+    padding: 12px 16px;
+    font-size: 13px;
   }
 }

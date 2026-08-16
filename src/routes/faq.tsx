@@ -38,7 +38,7 @@ const FAQS = [
   },
   {
     q: "What is the Niche Ranker?",
-    a: "Enter a YouTube niche or channel. We analyze saturation, trend velocity, CPM estimates, and breakthrough difficulty using real channel data to tell you if it's a good niche to enter.",
+    a: "Enter a YouTube niche or channel. We analyze saturation, trend velocity, monetization potential, and breakthrough difficulty using real channel data to tell you if it's a good niche to enter.",
   },
   {
     q: "How does the Shadowban Detector work?",
@@ -50,7 +50,7 @@ const FAQS = [
   },
   {
     q: "How many credits do I get?",
-    a: "Free plan: 1 analysis per day. Creator: 10 per day. Pro: 25 per day. Credits reset daily. Unused credits don't roll over.",
+    a: "Free plan: 1 analysis per month. Creator: 10 per month. Pro: 25 per month. Credits reset monthly. Unused credits don't roll over.",
   },
   {
     q: "Can I upgrade or downgrade my plan?",

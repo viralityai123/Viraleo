@@ -278,17 +278,17 @@ function postsFromSearchResults(html: string): { posts: ThreadsRawPost[]; found:
   return { posts: [], found: foundSearchResults };
 }
 
-/** Loose mode: any __bbox block whose data contains thread_items (tag/explore/feed shapes). */
-function postsFromAnyPayload(html: string): ThreadsRawPost[] {
+/** Loose mode: any object tree whose data contains thread_items (tag/explore/feed shapes). */
+function postsFromAnyObject(root: any): ThreadsRawPost[] {
   const out: ThreadsRawPost[] = [];
   const seenIds = new Set<string>();
-  const collect = (root: any) => {
-    if (!root || typeof root !== "object") return;
-    if (Array.isArray(root)) {
-      for (const item of root) collect(item);
+  const collect = (node0: any) => {
+    if (!node0 || typeof node0 !== "object") return;
+    if (Array.isArray(node0)) {
+      for (const item of node0) collect(item);
       return;
     }
-    const items = root?.thread_items;
+    const items = node0?.thread_items;
     if (Array.isArray(items)) {
       for (const item of items) {
         const node = item?.post;
@@ -310,12 +310,19 @@ function postsFromAnyPayload(html: string): ThreadsRawPost[] {
       }
       return;
     }
-    for (const value of Object.values(root)) {
+    for (const value of Object.values(node0)) {
       if (value && typeof value === "object") collect(value);
     }
   };
+  collect(root);
+  return out;
+}
+
+/** Loose mode: any __bbox block whose data contains thread_items (tag/explore/feed shapes). */
+function postsFromAnyPayload(html: string): ThreadsRawPost[] {
   const needle = '{"__bbox":{"complete":true';
   let from = 0;
+  const out: ThreadsRawPost[] = [];
   while (true) {
     const start = html.indexOf(needle, from);
     if (start === -1) break;
@@ -323,7 +330,7 @@ function postsFromAnyPayload(html: string): ThreadsRawPost[] {
     const obj = balancedSlice(html, start);
     if (!obj) continue;
     try {
-      collect(JSON.parse(obj));
+      out.push(...postsFromAnyObject(JSON.parse(obj)));
     } catch {
       // keep scanning
     }
@@ -624,6 +631,129 @@ async function searchExploreCached(): Promise<{ posts: ThreadsRawPost[] | null; 
 }
 
 /* ------------------------------------------------------------------ */
+/* Browser-mode tag harvesting                                         */
+/* The SSR HTML is 429-walled on burned IPs, but the page's JS fetches */
+/* the tag feed from /graphql/query with 200 — capture that payload.   */
+/* ------------------------------------------------------------------ */
+
+const BROWSER_UA_WS =
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36";
+
+let tagBrowserState: {
+  browser: any;
+  context: any;
+  sessionTs: number;
+  broken: boolean;
+} | null = null;
+let tagBrowserQueue: Promise<unknown> = Promise.resolve();
+
+async function ensureTagBrowser(): Promise<any | null> {
+  try {
+    const s = await getSession();
+    if (!s) return null;
+    if (
+      tagBrowserState &&
+      !tagBrowserState.broken &&
+      Date.now() - tagBrowserState.sessionTs < 25 * 60_000
+    ) {
+      return tagBrowserState.context;
+    }
+    await tagBrowserState?.browser?.close().catch(() => {});
+    tagBrowserState = null;
+    const pw: any = await import("playwright");
+    const browser = await pw.chromium.launch({
+      headless: true,
+      args: [
+        "--no-sandbox",
+        "--disable-dev-shm-usage",
+        "--disable-gpu",
+        "--disable-blink-features=AutomationControlled",
+      ],
+    });
+    const context = await browser.newContext({
+      userAgent: BROWSER_UA_WS,
+      viewport: { width: 1280, height: 800 },
+      locale: "en-US",
+      timezoneId: "America/New_York",
+    });
+    const ck = s.cookies
+      .split("; ")
+      .map((kv: string) => {
+        const i = kv.indexOf("=");
+        return { name: kv.slice(0, i), value: kv.slice(i + 1), domain: ".threads.com", path: "/" };
+      })
+      .filter((c: any) => c.name && c.value);
+    await context.addCookies(ck);
+    tagBrowserState = { browser, context, sessionTs: Date.now(), broken: false };
+    console.log("[tag-browser] browser context ready");
+    return context;
+  } catch (e) {
+    console.log("[tag-browser] init failed:", e instanceof Error ? e.message : String(e));
+    return null;
+  }
+}
+
+export async function searchTagBrowser(
+  keyword: string,
+): Promise<{ posts: ThreadsRawPost[] | null; blocked: boolean }> {
+  const run = async () => {
+    try {
+      const context = await ensureTagBrowser();
+      if (!context) return { posts: null, blocked: false };
+      const slug = keyword.toLowerCase().replace(/[^a-z0-9]+/g, "");
+      if (!slug) return { posts: null, blocked: false };
+      const page = await context.newPage();
+      page.setDefaultTimeout(25_000);
+      const payloads: Promise<any>[] = [];
+      page.on("response", (res: any) => {
+        try {
+          const u = res.url();
+          if (!/graphql\/query|barcelona/i.test(u)) return;
+          const ct = res.headers()["content-type"] || "";
+          if (!ct.includes("json")) return;
+          payloads.push(
+            res
+              .text()
+              .then((txt: string) => (txt.includes("thread_items") ? JSON.parse(txt) : null))
+              .catch(() => null),
+          );
+        } catch {
+          // ignore
+        }
+      });
+      await page
+        .goto(`https://www.threads.com/tag/${slug}`, {
+          waitUntil: "domcontentloaded",
+          timeout: 40_000,
+        })
+        .catch(() => {});
+      await page.waitForTimeout(8000);
+      await page.close().catch(() => {});
+      const parsed = (await Promise.all(payloads)).filter(Boolean);
+      const posts = dedupe(parsed.flatMap((p) => postsFromAnyObject(p))).slice(
+        0,
+        THREADS_CONFIG.maxResultsPerKeyword,
+      );
+      if (posts.length > 0) {
+        console.log(`[tag-browser] "${keyword}" -> ${posts.length} posts (${parsed.length} payloads)`);
+        return { posts, blocked: false };
+      }
+      console.log(`[tag-browser] "${keyword}" -> no posts (${parsed.length} payloads)`);
+      return { posts: null, blocked: false };
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.log(`[tag-browser] "${keyword}" failed:`, msg);
+      if (tagBrowserState) tagBrowserState.broken = true;
+      return { posts: null, blocked: true };
+    }
+  };
+  const result = await new Promise<{ posts: ThreadsRawPost[] | null; blocked: boolean }>((resolve) => {
+    tagBrowserQueue = tagBrowserQueue.then(() => run().then(resolve));
+  });
+  return result;
+}
+
+/* ------------------------------------------------------------------ */
 /* Apify (emergency fallback)                                          */
 /* ------------------------------------------------------------------ */
 
@@ -708,11 +838,15 @@ export async function searchKeyword(
         if (tag.posts && tag.posts.length > 0) {
           return { posts: tag.posts, source: "ssr", blocked: false };
         }
+        const tagBrowser = await searchTagBrowser(keyword);
+        if (tagBrowser.posts && tagBrowser.posts.length > 0) {
+          return { posts: tagBrowser.posts, source: "ssr", blocked: false };
+        }
         const explore = await searchExploreCached();
         if (explore.posts && explore.posts.length > 0) {
           return { posts: explore.posts, source: "ssr", blocked: false };
         }
-        blocked = latest.blocked && tag.blocked && explore.blocked;
+        blocked = latest.blocked && tag.blocked && tagBrowser.blocked && explore.blocked;
         if (blocked) return { posts: [], source: "ssr", blocked: true };
       }
       const posts = await searchSsr(keyword);

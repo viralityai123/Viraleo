@@ -70,7 +70,11 @@ function PrivacyPolicy() {
         <section>
           <h2 className="text-lg font-semibold text-[#07070a] mb-2">6. Contact</h2>
           <p>
-            Questions about this policy? Reach us at{" "}
+            Questions about this policy or your privacy? Reach us at{" "}
+            <a href="mailto:viraleo.support@gmail.com" className="underline hover:text-[#07070a]">
+              viraleo.support@gmail.com
+            </a>{" "}
+            or{" "}
             <a href="mailto:privacy@viraleo.pro" className="underline hover:text-[#07070a]">
               privacy@viraleo.pro
             </a>

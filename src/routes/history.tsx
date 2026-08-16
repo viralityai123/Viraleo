@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { ArrowLeft, Search, ImageIcon, Sparkles, ShieldAlert, Clock, Trash2 } from "lucide-react";
+import { ArrowLeft, Search, ImageIcon, Sparkles, ShieldAlert, Clock, Trash2, GitBranch } from "lucide-react";
 import {
   getAllActivities,
   clearActivities,
@@ -38,6 +38,7 @@ const FEATURE_ICONS: Record<ActivityEntry["feature"], typeof Search> = {
   "thumbnail-test": ImageIcon,
   "niche-ranker": Sparkles,
   "shadowban-detector": ShieldAlert,
+  blueprint: GitBranch,
 };
 
 const FEATURE_LABELS: Record<ActivityEntry["feature"], string> = {
@@ -45,6 +46,7 @@ const FEATURE_LABELS: Record<ActivityEntry["feature"], string> = {
   "thumbnail-test": "Thumbnail Test",
   "niche-ranker": "Niche Ranker",
   "shadowban-detector": "Shadowban Detector",
+  blueprint: "Channel Blueprint",
 };
 
 function HistoryPage() {
@@ -181,7 +183,7 @@ function HistoryPage() {
         {/* Filter tabs */}
         <div className="flex gap-2 mb-6 flex-wrap">
           {(
-            ["all", "pre-analysis", "thumbnail-test", "niche-ranker", "shadowban-detector"] as const
+            ["all", "pre-analysis", "thumbnail-test", "niche-ranker", "shadowban-detector", "blueprint"] as const
           ).map((f) => (
             <button
               key={f}

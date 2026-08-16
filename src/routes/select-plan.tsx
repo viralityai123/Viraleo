@@ -1,4 +1,4 @@
-﻿import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { ArrowRight, CheckCircle2, Lock, Sparkles, Zap, Crown } from "lucide-react";
 import { toast } from "sonner";
@@ -48,7 +48,7 @@ const PRICING = [
     original: "$25",
     sub: "per month",
     icon: Zap,
-    feats: ["10 analyses / day", "All 4 tools unlocked", "Thumbnail testing", "Shadowban detector"],
+    feats: ["10 analyses / month", "All 4 tools unlocked", "Thumbnail testing", "Shadowban detector"],
     cta: "Start Creator",
     popular: true,
     discount: "Save $5 — 20% off",
@@ -61,7 +61,7 @@ const PRICING = [
     original: "$100",
     sub: "per month",
     icon: Crown,
-    feats: ["25 analyses / day", "Everything in Creator", "Niche deep-dives", "Competitor tracking", "Priority support"],
+    feats: ["25 analyses / month", "Everything in Creator", "Niche deep-dives", "Competitor tracking", "Priority support"],
     cta: "Go Pro",
     popular: false,
     discount: null,
@@ -72,13 +72,13 @@ const PRICING = [
 export const Route = createFileRoute("/select-plan")({
   head: () => ({
     meta: [
-      { title: "Choose your plan ÔÇö Viraleo" },
+      { title: "Choose your plan — Viraleo" },
       { name: "description", content: "Pick the right plan for your YouTube content workflow. Free, Creator ($20/mo), or Pro ($50/mo)." },
-      { property: "og:title", content: "Choose your plan ÔÇö Viraleo" },
-      { property: "og:description", content: "Pick your Viraleo plan ÔÇö Free, Creator ($20/mo), or Pro ($50/mo)." },
+      { property: "og:title", content: "Choose your plan — Viraleo" },
+      { property: "og:description", content: "Pick your Viraleo plan — Free, Creator ($20/mo), or Pro ($50/mo)." },
       { property: "og:image", content: "https://viraleo.pro/vi-logo.png" },
       { property: "og:url", content: "https://viraleo.pro/select-plan" },
-      { name: "twitter:title", content: "Choose your plan ÔÇö Viraleo" },
+      { name: "twitter:title", content: "Choose your plan — Viraleo" },
       { name: "twitter:description", content: "Pick your Viraleo plan." },
       { name: "twitter:image", content: "https://viraleo.pro/vi-logo.png" },
     ],
@@ -121,7 +121,7 @@ function SelectPlanPage() {
       try {
         const tier = await fetchUserPlanFromKv({ data: { email: session.email } });
         if (tier && tier !== "free") {
-          navigate({ to: "/" });
+          navigate({ to: "/pre-analysis" });
           return;
         }
         if (tier) setCurrentTier(tier);
@@ -153,10 +153,7 @@ function SelectPlanPage() {
     try {
       const lsConfigured = await isLsConfigured();
       if (lsConfigured) {
-        const session = getSessionFromDocument();
-        const email = session?.email || "";
-        const name = session?.name || "Creator";
-        const checkoutUrl = await createLsCheckout({ data: { tier, email, name, referrer: ref } });
+        const checkoutUrl = await createLsCheckout({ data: { tier, referrer: ref } });
         if (checkoutUrl) {
           window.location.href = checkoutUrl;
           return;
@@ -166,7 +163,7 @@ function SelectPlanPage() {
       // fall through to local fallback
     }
 
-    // No fallback ÔÇö user must complete payment to unlock paid plan
+    // No fallback — user must complete payment to unlock paid plan
     toast.error("Payment service unavailable. Please try again.");
     setSelecting(null);
   }
@@ -247,7 +244,7 @@ function SelectPlanPage() {
           })}
         </div>
         <div className="text-center mt-10">
-          <Link to="/" className="lv2-btn-ghost text-[14px]">
+          <Link to="/pre-analysis" search={{ channel: undefined, activityId: undefined }} className="lv2-btn-ghost text-[14px]">
             Skip for now — go to dashboard →
           </Link>
         </div>

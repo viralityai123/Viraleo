@@ -26,7 +26,15 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Quote, CheckCircle2, Lock } from "lucide-react";
-import "./landing-v2.css";
+import { getSessionFromDocument } from "@/lib/auth/session";
+
+function useHasSession() {
+  const [hasSession, setHasSession] = useState(false);
+  useEffect(() => {
+    setHasSession(!!getSessionFromDocument());
+  }, []);
+  return hasSession;
+}
 
 /* ────────────────────────────────────────────────────────────────────── */
 /* Data                                                                    */
@@ -51,7 +59,7 @@ const FEATURES = [
     icon: Sparkles,
     eyebrow: "Niche Ranker",
     title: "See where the views actually live.",
-    body: "Real RPM, real outliers, real ceiling. Stop guessing if a niche is saturated — we show you the math behind the channels eating.",
+    body: "Real monetization data, real outliers, real ceiling. Stop guessing if a niche is saturated — we show you the math behind the channels eating.",
     color: "#ff9f1a",
   },
   {
@@ -81,7 +89,7 @@ const TESTIMONIALS = [
   },
   {
     quote:
-      "I was about to launch in a saturated niche. The Niche Ranker showed me a sub-niche with 4x less competition and higher RPM. Best decision I made.",
+      "I was about to launch in a saturated niche. The Niche Ranker showed me a sub-niche with 4x less competition and better monetization potential. Best decision I made.",
     name: "Sarah Mitchell",
     handle: "@sarahmitchell",
     avatar: "",
@@ -194,16 +202,16 @@ const FAQS = [
     a: "One-click cancel. No retention loops, no calls. We'd rather you come back because it works.",
   },
   {
-    q: "How do daily credits work?",
-    a: "Your credits refill every day at midnight. Each analysis costs 1 credit. Unused credits don't roll over — so use 'em or lose 'em.",
+    q: "How do credits work?",
+    a: "Your credits refill every month. Each analysis costs 1 credit. Unused credits don't roll over — so use 'em or lose 'em.",
   },
   {
     q: "What happens when I run out of credits?",
-    a: "You wait for the daily reset or upgrade to a higher tier. No surprise charges — you'll see the counter right in your dashboard.",
+    a: "You wait for the monthly reset or upgrade to a higher tier. No surprise charges — you'll see the counter right in your dashboard.",
   },
   {
     q: "Can I upgrade or downgrade mid-cycle?",
-    a: "Yes. Changes take effect immediately and your credits reset to the new daily limit on switch.",
+    a: "Yes. Changes take effect immediately and your credits reset to the new monthly limit on switch.",
   },
   {
     q: "Which tool should I start with?",
@@ -229,6 +237,7 @@ const FAQS = [
 
 function Hero() {
   const [glitching, setGlitching] = useState(false);
+  const hasSession = useHasSession();
 
   useEffect(() => {
     const t = setTimeout(() => setGlitching(true), 1000);
@@ -236,7 +245,7 @@ function Hero() {
   }, []);
 
   return (
-    <section className="lv2-section relative" style={{ paddingTop: 180, paddingBottom: 100 }}>
+    <section className="lv2-section relative" style={{ paddingTop: "clamp(100px, 18vw, 180px)", paddingBottom: 80 }}>
       <div className="lv2-container relative z-10 text-center">
         {/* Trust badge — 5 stars + count (crayo style) */}
         <motion.div
@@ -268,7 +277,7 @@ function Hero() {
             ))}
           </div>
           <span className="text-[12.5px] font-medium text-[color:var(--lv2-ink-soft)]">
-            Beta Testing Phase
+            Trusted by 100K+ Creators
           </span>
         </motion.div>
 
@@ -331,8 +340,8 @@ function Hero() {
           transition={{ duration: 0.35, delay: 0.26 }}
           className="mt-9 flex items-center justify-center gap-3 flex-wrap"
         >
-          <Link to="/login" className="lv2-btn-primary">
-            Analyze Your First Video
+          <Link to={hasSession ? "/pre-analysis" : "/login"} className="lv2-btn-primary">
+            {hasSession ? "Go to Dashboard" : "Analyze Your First Video"}
             <ArrowRight size={16} />
           </Link>
         </motion.div>
@@ -362,14 +371,7 @@ function ProductMock() {
         </div>
 
         <div ref={ref} className="relative max-w-[1080px] mx-auto">
-          {/* Mobile scroll hint */}
-          <p className="md:hidden text-center text-[11px] text-[color:var(--lv2-ink-mute)] mb-3">
-            ← Swipe to explore →
-          </p>
-          {/* Horizontal scroll container on mobile so frame is never clipped */}
-          <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0 md:overflow-visible pb-2 md:pb-0">
-            <div style={{ minWidth: "min(100%, 720px)" }}>
-              <motion.div
+          <motion.div
                 initial={{ opacity: 0, y: 60, rotateX: 8 }}
                 animate={inView ? { opacity: 1, y: 0, rotateX: 0 } : {}}
                 transition={{ duration: 1, ease: [0.2, 0.8, 0.2, 1] }}
@@ -384,14 +386,12 @@ function ProductMock() {
                 </div>
                 <MockDashboard />
               </motion.div>
-            </div>
-          </div>
 
           {/* floating chips — desktop only */}
           {[
             { x: "-8%", y: "12%", dot: "#18c964", k: "Hook score", v: "94" },
             { x: "92%", y: "20%", dot: "#7c5cff", k: "Predicted CTR", v: "12.8%" },
-            { x: "-6%", y: "70%", dot: "#ff9f1a", k: "Niche RPM", v: "$38" },
+            { x: "-6%", y: "70%", dot: "#ff9f1a", k: "Monetization", v: "Strong" },
             { x: "94%", y: "78%", dot: "#ff3d8b", k: "Outlier index", v: "3.4×" },
           ].map((chip, i) => (
             <motion.div
@@ -567,14 +567,14 @@ function FeatureReel() {
             Four tools, one suite
           </div>
           {/* Tab pills */}
-          <div className="inline-flex items-center gap-2 p-1.5 rounded-2xl bg-[color:var(--lv2-bg-2)] flex-wrap justify-center">
+          <div className="inline-flex items-center gap-2 p-1.5 rounded-2xl bg-[color:var(--lv2-bg-2)] flex-wrap justify-center max-w-full">
             {FEATURES.map((feat, i) => {
               const Icon = feat.icon;
               return (
                 <button
                   key={i}
                   onClick={() => setActive(i)}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-[13px] font-semibold transition-all duration-200"
+                  className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-[13px] font-semibold transition-all duration-200"
                   style={{
                     background: i === active ? "#fff" : "transparent",
                     color: i === active ? feat.color : "var(--lv2-ink-soft)",
@@ -582,7 +582,8 @@ function FeatureReel() {
                   }}
                 >
                   <Icon size={15} />
-                  {feat.eyebrow}
+                  <span className="hidden sm:inline">{feat.eyebrow}</span>
+                  <span className="sm:hidden">{feat.eyebrow.split(" ")[0]}</span>
                 </button>
               );
             })}
@@ -597,7 +598,7 @@ function FeatureReel() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.3, ease: [0.2, 0.8, 0.2, 1] }}
-            className="grid md:grid-cols-2 gap-10 items-center"
+            className="flex flex-col-reverse md:grid md:grid-cols-2 gap-8 md:gap-10 items-center"
           >
             {/* Left copy */}
             <div>
@@ -610,12 +611,12 @@ function FeatureReel() {
                   {f.eyebrow}
                 </span>
               </div>
-              <h3 className="display" style={{ fontSize: "clamp(28px, 3.8vw, 52px)" }}>
+              <h3 className="display" style={{ fontSize: "clamp(24px, 3.8vw, 52px)" }}>
                 {f.title}
               </h3>
               <p
                 className="mt-5 text-[color:var(--lv2-ink-soft)]"
-                style={{ fontSize: 17, lineHeight: 1.55, maxWidth: 460 }}
+                style={{ fontSize: 16, lineHeight: 1.55, maxWidth: 460 }}
               >
                 {f.body}
               </p>
@@ -637,9 +638,10 @@ function FeatureReel() {
 
             {/* Right visual */}
             <div
-              className="relative h-[380px] md:h-[460px] rounded-3xl"
+              className="relative w-full rounded-3xl overflow-hidden"
               style={{
-                background: `linear-gradient(135deg, ${f.color}, ${f.color}88)`,
+                aspectRatio: "4/3",
+                background: f.color,
                 boxShadow: `0 40px 100px -30px ${f.color}66, 0 20px 40px -20px rgba(0,0,0,.15)`,
               }}
             >
@@ -656,8 +658,18 @@ const FEATURE_IMAGES = ["/preanalysis.png", "/tx.png", "/niche.png", "/shadow.pn
 
 function FeatureVisual({ idx, color }: { idx: number; color: string }) {
   return (
-    <div className="absolute inset-0 p-0 flex items-center justify-center">
-      <img src={FEATURE_IMAGES[idx]} alt="" className="w-full h-full object-cover rounded-3xl" />
+    <div
+      className="absolute inset-0 flex items-center justify-center overflow-hidden"
+      style={{ background: color }}
+    >
+      <img
+        src={FEATURE_IMAGES[idx]}
+        alt=""
+        loading="lazy"
+        decoding="async"
+        className="w-full h-full object-cover"
+        style={{ mixBlendMode: "normal" }}
+      />
     </div>
   );
 }
@@ -783,7 +795,7 @@ function ChannelMarquee() {
                     src={`https://i.ytimg.com/vi/${s.id}/hqdefault.jpg`}
                     alt=""
                     className="w-full h-full object-cover"
-                    loading="lazy"
+                    loading="lazy" decoding="async"
                   />
                 )}
               </div>
@@ -825,7 +837,7 @@ const COMPARE_ROWS = [
   { bad: "Random thumbnail design", good: "AI-ranked CTR predictions" },
   { bad: "Blind hook writing", good: "Hook score (0-100) with detailed explanation" },
   { bad: "No retention insights", good: "Retention curve vs niche benchmarks" },
-  { bad: "Picking niches by gut feel", good: "Niche viability grade with RPM data" },
+  { bad: "Picking niches by gut feel", good: "Niche viability grade with monetization analysis" },
   { bad: "Unaware of shadowban", good: "Algorithmic suppression detection" },
   { bad: "No competitor benchmarks", good: "Top 10 competitor pattern decoding" },
   { bad: "Wasting money on bad ideas", good: "Smarter pivot recommendations" },
@@ -897,6 +909,7 @@ function CompareSection() {
 /* ────────────────────────────────────────────────────────────────────── */
 
 function WhySplit() {
+  const hasSession = useHasSession();
   return (
     <section className="lv2-section">
       <div className="lv2-container grid md:grid-cols-2 gap-16 items-center">
@@ -916,11 +929,11 @@ function WhySplit() {
             fingerprints across thousands of channels and tells you exactly which ones to copy.
           </p>
           <div className="mt-8 flex gap-3 flex-wrap">
-            <Link to="/login" className="lv2-btn-primary">
-              Try it free
+            <Link to={hasSession ? "/pre-analysis" : "/login"} className="lv2-btn-primary">
+              {hasSession ? "Go to Dashboard" : "Try it free"}
               <ArrowRight size={16} />
             </Link>
-            <Link to="/login" className="lv2-btn-ghost">
+            <Link to={hasSession ? "/niche-ranker" : "/login"} className="lv2-btn-ghost">
               Explore niches
             </Link>
           </div>
@@ -975,7 +988,7 @@ const PRICING = [
     price: "$20",
     original: "$25",
     sub: "per month",
-    feats: ["10 analyses / day", "All 4 tools unlocked", "Thumbnail testing", "Shadowban detector"],
+    feats: ["10 analyses / month", "All 4 tools unlocked", "Thumbnail testing", "Shadowban detector"],
     cta: "Start Creator",
     popular: true,
     discount: "Save $5 — 20% off",
@@ -986,7 +999,7 @@ const PRICING = [
     original: "$100",
     sub: "per month",
     feats: [
-      "25 analyses / day",
+      "25 analyses / month",
       "Everything in Creator",
       "Niche deep-dives",
       "Competitor tracking",
@@ -1001,6 +1014,7 @@ const PRICING = [
 const PRICING_FEAT_LOCKED = "Public benchmarks";
 
 function Pricing() {
+  const hasSession = useHasSession();
   function renderPricingFeat(f: string, idx: number, arr: string[]) {
     const p = PRICING[Math.floor(idx / arr.length)]; // won't work, need proper scoping
   }
@@ -1050,10 +1064,10 @@ function Pricing() {
                 )}
               </div>
               <Link
-                to="/login"
+                to={hasSession ? "/pre-analysis" : "/login"}
                 className={`mt-6 w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-full font-semibold text-[14px] transition-all lv2-plan-btn ${p.popular ? "bg-[color:var(--lv2-accent)] text-black hover:bg-[#1de077]" : "bg-[color:var(--lv2-ink)] text-white hover:bg-[#1a1a22]"}`}
               >
-                {p.cta}
+                {hasSession ? "Go to Dashboard" : p.cta}
                 <ArrowRight size={15} />
               </Link>
               <ul className="mt-7 space-y-3">
@@ -1457,7 +1471,7 @@ function ProofSection() {
           >
             <TiltCard>
               <div className="lv2-proof-img-wrap">
-                <img src="/testreal1.png" alt="Viraleo AI prediction" />
+                <img src="/testreal1.png" alt="Viraleo AI prediction" loading="lazy" />
               </div>
             </TiltCard>
           </a>
@@ -1493,7 +1507,7 @@ function ProofSection() {
           >
             <TiltCard>
               <div className="lv2-proof-img-wrap">
-                <img src="/testreal2.png" alt="11 million real YouTube views" />
+                <img src="/testreal2.png" alt="11 million real YouTube views" loading="lazy" />
               </div>
             </TiltCard>
           </a>
@@ -1504,6 +1518,7 @@ function ProofSection() {
 }
 
 function FinalCta() {
+  const hasSession = useHasSession();
   return (
     <section className="lv2-section" style={{ paddingTop: 100, paddingBottom: 100 }}>
       <div className="lv2-container text-center">
@@ -1516,8 +1531,8 @@ function FinalCta() {
           <h2 className="text-[clamp(36px,6vw,80px)] font-extrabold text-[color:var(--lv2-ink)] leading-[1.05] tracking-[-0.04em] mb-6">
             Stop guessing. <span className="dominate">Start dominating.</span>
           </h2>
-          <Link to="/login" className="lv2-btn-primary text-[18px] px-10 py-4">
-            Dominate Now
+          <Link to={hasSession ? "/pre-analysis" : "/login"} className="lv2-btn-primary text-[18px] px-10 py-4">
+            {hasSession ? "Go to Dashboard" : "Dominate Now"}
             <ArrowRight size={20} />
           </Link>
         </motion.div>
@@ -1532,6 +1547,7 @@ function FinalCta() {
 
 export function Nav() {
   const [scrolled, setScrolled] = useState(false);
+  const hasSession = useHasSession();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 80);
@@ -1553,8 +1569,8 @@ export function Nav() {
           FAQ
         </a>
       </div>
-      <Link to="/login" className="cta ml-1">
-        Decode <ArrowRight size={scrolled ? 14 : 16} />
+      <Link to={hasSession ? "/pre-analysis" : "/login"} className="cta ml-1">
+        {hasSession ? "Dashboard" : "Decode"} <ArrowRight size={scrolled ? 14 : 16} />
       </Link>
     </nav>
   );

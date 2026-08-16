@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { PLANS, type PlanTier } from "@/lib/plans";
 import { usePlanDisplay, useUserState, assignPlan } from "@/lib/user-state";
+import { clearSessionCookie } from "@/lib/auth/session";
 import { getRecentActivities, formatTimestamp, getFeatureRoute } from "@/lib/activity";
 import { getSettings, updateSettings, clearAllData, type UserSettings } from "@/lib/settings";
 import { getUsageWeek, getFeatureBreakdown } from "@/lib/usage";
@@ -70,7 +71,10 @@ function AccountPage() {
 
   function handleLogout() {
     clearAllData();
-    navigate({ to: "/" });
+    document.cookie = clearSessionCookie();
+    if (typeof window !== "undefined") {
+      window.location.href = "/";
+    }
   }
 
   return (

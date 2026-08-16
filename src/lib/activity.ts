@@ -46,7 +46,7 @@ export function purgeLegacySharedKeys(): void {
 
 export interface ActivityEntry {
   id: string;
-  feature: "pre-analysis" | "thumbnail-test" | "niche-ranker" | "shadowban-detector";
+  feature: "pre-analysis" | "thumbnail-test" | "niche-ranker" | "shadowban-detector" | "blueprint";
   label: string;
   target?: string;
   timestamp: number;
@@ -222,6 +222,7 @@ export function getFeatureIcon(feature: ActivityEntry["feature"]): string {
     "thumbnail-test": "ImageIcon",
     "niche-ranker": "Sparkles",
     "shadowban-detector": "ShieldAlert",
+    "blueprint": "GitBranch",
   };
   return icons[feature] || "FileText";
 }
@@ -232,6 +233,7 @@ export function getFeatureRoute(feature: ActivityEntry["feature"]): string {
     "thumbnail-test": "/thumbnail-test",
     "niche-ranker": "/niche-ranker",
     "shadowban-detector": "/shadowban-detector",
+    "blueprint": "/blueprint",
   };
   return routes[feature] || "/";
 }

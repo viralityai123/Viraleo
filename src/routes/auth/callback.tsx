@@ -63,10 +63,14 @@ const exchangeGoogleCode = createServerFn({ method: "POST" })
         jwtSecret,
       );
 
+      const { getUserState } = await import("@/lib/user-state-server");
+      const userState = await getUserState(user.email);
+
       return {
         ok: true,
         token,
         user: { id: user.id, email: user.email, name: user.name, picture: user.picture },
+        hasPlan: userState.hasPlan,
       } as const;
     } catch {
       return { ok: false, error: "Server error during authentication" } as const;
@@ -117,6 +121,8 @@ function CallbackPage() {
         if (state === "partner") {
           localStorage.setItem("viraleo:partner", "true");
           window.location.href = "/partner/dashboard";
+        } else if (result.hasPlan) {
+          window.location.href = "/pre-analysis";
         } else {
           window.location.href = "/select-plan";
         }

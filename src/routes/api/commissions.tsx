@@ -3,6 +3,13 @@ import { createServerFn } from "@tanstack/react-start";
 import { getAllCommissions, getCommissionsForReferrer, getTotalEarned } from "@/lib/partner-store";
 
 const fetchAllCommissions = createServerFn({ method: "GET" }).handler(async () => {
+  // Only allow admin users to fetch all commissions
+  const { requireAuth } = await import("@/lib/auth/server-auth");
+  const user = await requireAuth();
+  const adminEmail = process.env.ADMIN_EMAIL || "";
+  if (!adminEmail || user.email !== adminEmail) {
+    throw new Error("FORBIDDEN");
+  }
   const all = await getAllCommissions();
   const totalEarned = await getTotalEarned();
   return {

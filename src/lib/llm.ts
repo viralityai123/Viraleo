@@ -9,16 +9,35 @@ interface ImagePart {
 
 export type LLMQuality = "fast" | "quality";
 
-const FAST_MODELS = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.0-flash-lite"];
-const QUALITY_MODELS = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.5-pro"];
+const FAST_MODELS = [
+  "gemini-2.5-flash",
+  "gemini-2.0-flash",
+  "gemini-2.0-flash-lite",
+  "gemini-2.0-flash-exp",
+  "gemini-1.5-flash-latest",
+];
+const QUALITY_MODELS = [
+  "gemini-2.5-flash",
+  "gemini-2.5-pro",
+  "gemini-2.0-flash",
+  "gemini-1.5-pro-latest",
+  "gemini-2.0-flash-exp",
+];
 
 function cleanJsonResponse(text: string): string {
   let cleaned = text.trim();
   if (cleaned.startsWith("```")) {
     cleaned = cleaned
-      .replace(/^```json\s*/i, "")
-      .replace(/```$/, "")
+      .replace(/^```(?:json)?\s*/i, "")
+      .replace(/\s*```$/, "")
       .trim();
+  }
+  // If still not starting with { or [, attempt regex extraction
+  if (!cleaned.startsWith("{") && !cleaned.startsWith("[")) {
+    const objMatch = cleaned.match(/\{[\s\S]*\}/);
+    if (objMatch) return objMatch[0];
+    const arrMatch = cleaned.match(/\[[\s\S]*\]/);
+    if (arrMatch) return arrMatch[0];
   }
   return cleaned;
 }
@@ -151,5 +170,20 @@ export async function generateLLMJson(
 }
 
 export function parseLLMJson<T>(text: string): T {
-  return JSON.parse(cleanJsonResponse(text)) as T;
+  const cleaned = cleanJsonResponse(text);
+  try {
+    return JSON.parse(cleaned) as T;
+  } catch (e) {
+    // Second-chance regex parsing for embedded JSON
+    const match = cleaned.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+    if (match) {
+      try {
+        return JSON.parse(match[0]) as T;
+      } catch {
+        /* fallthrough */
+      }
+    }
+    console.error("parseLLMJson failed on text:", text.slice(0, 300));
+    throw new Error(`Failed to parse AI JSON response: ${e instanceof Error ? e.message : String(e)}`);
+  }
 }

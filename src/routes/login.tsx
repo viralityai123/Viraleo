@@ -1,6 +1,7 @@
-import { createFileRoute, useSearch } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, useSearch, useNavigate } from "@tanstack/react-router";
+import { useState, useEffect } from "react";
 import { ViraleoLogo } from "@/components/ViraleoLogo";
+import { getSessionFromDocument } from "@/lib/auth/session";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
@@ -36,6 +37,13 @@ function LoginPage() {
   const fromPartner = search.from === "partner";
   const [tab, setTab] = useState<"signin" | "signup">("signin");
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (getSessionFromDocument()) {
+      navigate({ to: "/pre-analysis" });
+    }
+  }, [navigate]);
 
   const handleGoogle = () => {
     setLoading(true);

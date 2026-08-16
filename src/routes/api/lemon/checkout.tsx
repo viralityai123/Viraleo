@@ -11,9 +11,11 @@ export const isLsConfigured = createServerFn({ method: "GET" }).handler(async ()
 });
 
 export const createLsCheckout = createServerFn({ method: "POST" })
-  .inputValidator((d: { tier: string; email: string; name: string; referrer?: string }) => d)
+  .inputValidator((d: { tier: string; referrer?: string }) => d)
   .handler(async ({ data }) => {
-    const { tier, email, name, referrer } = data;
+    const { requireAuth } = await import("@/lib/auth/server-auth");
+    const user = await requireAuth();
+    const { tier, referrer } = data;
     if (!process.env.LEMONSQUEEZY_API_KEY || !process.env.LEMONSQUEEZY_STORE_ID) return null;
     const variantMap: Record<string, string> = {
       creator: process.env.LEMONSQUEEZY_VARIANT_CREATOR || "",
@@ -24,9 +26,13 @@ export const createLsCheckout = createServerFn({ method: "POST" })
     const redirectUrl = process.env.APP_URL
       ? `${process.env.APP_URL}/payment/success?tier=${tier}`
       : `/payment/success?tier=${tier}`;
-    const checkout = await createCheckout({ variantId, email, name, redirectUrl, referrer }).catch(
-      () => null,
-    );
+    const checkout = await createCheckout({
+      variantId,
+      email: user.email,
+      name: user.name || user.email.split("@")[0],
+      redirectUrl,
+      referrer,
+    }).catch(() => null);
     return checkout?.url || null;
   });
 

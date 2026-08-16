@@ -18,8 +18,10 @@ export const THREADS_CONFIG = {
   freshWindowSec: int("THREADS_FRESH_WINDOW_SEC", 60 * 60),
   /** Aged window (seconds): posts up to this old are eligible only when they have zero replies. */
   maxAgedLeadAgeSec: int("THREADS_MAX_AGED_LEAD_AGE_SEC", 7 * 24 * 60 * 60),
-  /** Require zero replies for aged (non-fresh) posts. */
-  agedRequiresNoReplies: process.env.THREADS_AGED_REQUIRES_NO_REPLIES !== "0",
+  /** Require zero replies for aged (non-fresh) posts. OFF by default: buyer
+   *  posts attract replies fast (other designers pitch), and replied posts are
+   *  still hot leads — they land in the queue for manual review. */
+  agedRequiresNoReplies: process.env.THREADS_AGED_REQUIRES_NO_REPLIES === "1",
   /** Base jitter between keyword requests (ms). Lower = faster sweep, more aggressive. */
   requestJitterMs: int("THREADS_REQUEST_JITTER_MS", 1500),
   /** Ratio of blocked (429/403) keywords that triggers a polling pause. */

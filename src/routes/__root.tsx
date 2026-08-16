@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+
 import { Analytics } from "@vercel/analytics/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
@@ -97,6 +98,22 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
     typeof crypto !== "undefined" && crypto.randomUUID
       ? crypto.randomUUID().slice(0, 8)
       : String(Date.now()).slice(-6);
+
+  // Fire-and-forget: send error report email to viraleo.support@gmail.com
+  useEffect(() => {
+    const url = typeof window !== "undefined" ? window.location.href : "unknown";
+    const ua = typeof navigator !== "undefined" ? navigator.userAgent : "unknown";
+    reportErrorFn({
+      data: {
+        errorId: id,
+        message: error?.message ?? "Unknown error",
+        stack: error?.stack ?? "",
+        url,
+        userAgent: ua,
+      },
+    }).catch(() => { /* best-effort */ });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-surface px-4">
@@ -208,6 +225,8 @@ function RootShell({ children }: { children: React.ReactNode }) {
 }
 
 import { ViraleoLogo } from "@/components/ViraleoLogo";
+import { reportErrorFn } from "@/lib/report-error";
+
 
 function BrandMark() {
   return (
@@ -226,6 +245,7 @@ import {
   User,
   Clock,
   History,
+  GitBranch,
 } from "lucide-react";
 import { channelSearchFromIntel } from "@/lib/channel-session";
 import {
@@ -260,6 +280,9 @@ function CreditsDisplay() {
   if (loading) return <span>…</span>;
   const credits = state?.remaining ?? 0;
   const maxCredits = state?.maxCredits ?? PLANS.free.creditsPerMonth;
+  if (maxCredits >= 99999) {
+    return <span>Unlimited credits</span>;
+  }
   return (
     <span>
       {credits}/{maxCredits} credits
@@ -400,6 +423,16 @@ function RootSidebar({
       >
         <ShieldAlert size={20} className="icon" />
         <span className="label">Shadowban Detector</span>
+        <ChevronRight size={15} className="chevron" />
+      </Link>
+
+      <Link
+        to="/blueprint"
+        search={{ ...channelSearch, activityId: undefined }}
+        className="beautiful-sidebar-item"
+      >
+        <GitBranch size={20} className="icon" />
+        <span className="label">Channel Blueprint</span>
         <ChevronRight size={15} className="chevron" />
       </Link>
 

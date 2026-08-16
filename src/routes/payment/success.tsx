@@ -16,11 +16,14 @@ const recordReferralSignup = createServerFn({ method: "POST" })
   });
 
 const serverSaveUserPlan = createServerFn({ method: "POST" })
-  .inputValidator((d: { email: string; tier: string }) => d)
+  .inputValidator((d: { tier: string }) => d)
   .handler(async ({ data }) => {
+    // Auth check: only the authenticated user can set their own plan
+    const { requireAuth } = await import("@/lib/auth/server-auth");
+    const user = await requireAuth();
     const { saveUserPlan } = await import("@/lib/user-plan");
-    if (data.email && (data.tier === "creator" || data.tier === "pro")) {
-      await saveUserPlan(data.email, data.tier);
+    if (user.email && (data.tier === "creator" || data.tier === "pro")) {
+      await saveUserPlan(user.email, data.tier);
     }
     return { ok: true };
   });
@@ -141,10 +144,8 @@ function PaymentSuccessPage() {
       }
 
       setStatus("success");
-      const sessionEmail = userEmail || getSessionFromDocument()?.email || "";
-      if (sessionEmail) {
-        serverSaveUserPlan({ data: { email: sessionEmail, tier: planTier } }).catch(() => {});
-      }
+      // Plan is saved server-side using the authenticated session’s email
+      serverSaveUserPlan({ data: { tier: planTier } }).catch(() => {});
 
       const ref = localStorage.getItem("viraleo:referrer");
       if (ref) {

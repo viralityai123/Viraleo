@@ -19,10 +19,13 @@ export const THREADS_CATEGORIES: ThreadsCategory[] = [
       "website designer",
       "web designer",
       "web developer",
+      "website developer",
+      "website development",
       "redesign my website",
       "website redesign",
       "make me a website",
       "create a website",
+      "build a website",
       "site for my",
       "personal website",
       "business website",
@@ -77,6 +80,9 @@ export const THREADS_CATEGORIES: ThreadsCategory[] = [
     keywords: [
       "logo design",
       "logo for",
+      "logo creator",
+      "logo designer",
+      "design a logo",
       "brand identity",
       "branding package",
       "rebrand",
@@ -85,6 +91,7 @@ export const THREADS_CATEGORIES: ThreadsCategory[] = [
       "design my logo",
       "new logo",
       "brand designer",
+      "brand for my",
       "visual identity",
     ],
   },
@@ -287,7 +294,12 @@ export const INTENT_TRIGGERS = [
   "best way to",
 ];
 
-/** Cheap pre-filter: post must mention a category keyword AND an intent trigger. */
+/**
+ * Cheap pre-filter: post must mention an intent trigger. Category keywords
+ * give the LLM a head start, but posts from keyword-targeted surfaces (tag
+ * pages) with clear intent but no exact keyword still pass as "other" — the
+ * LLM scoring is the real judge.
+ */
 export function hasBuyingIntent(text: string): string | null {
   const t = text.toLowerCase();
   if (t.length > 600) return null;
@@ -295,5 +307,5 @@ export function hasBuyingIntent(text: string): string | null {
   for (const cat of THREADS_CATEGORIES) {
     if (cat.keywords.some((kw) => t.includes(kw))) return cat.id;
   }
-  return null;
+  return "other";
 }

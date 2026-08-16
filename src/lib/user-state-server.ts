@@ -15,8 +15,42 @@ function usageKey(email: string, month: string): string {
   return `usage:${normalizeEmail(email)}:${month}`;
 }
 
+const DEFAULT_UNLIMITED_EMAILS = [
+  "viraleo.support@gmail.com",
+  "virality.ai123@gmail.com",
+  "ganaganadeep172010@gmail.com",
+];
+
+function cleanEmailForMatch(email: string): string {
+  const normalized = normalizeEmail(email);
+  const [local, domain] = normalized.split("@");
+  if (!domain) return normalized;
+  if (domain === "gmail.com" || domain === "googlemail.com") {
+    const cleanLocal = local.replace(/\./g, "").split("+")[0];
+    return `${cleanLocal}@gmail.com`;
+  }
+  return normalized;
+}
+
+function getUnlimitedEmails(): string[] {
+  const envRaw = process.env.ADMIN_UNLIMITED_EMAILS || "";
+  const envList = envRaw
+    .split(",")
+    .map((e) => e.trim())
+    .filter(Boolean);
+  return [...DEFAULT_UNLIMITED_EMAILS, ...envList].map(cleanEmailForMatch);
+}
+
+function isUnlimited(email: string): boolean {
+  const target = cleanEmailForMatch(email);
+  return getUnlimitedEmails().some((e) => e === target);
+}
+
 export async function getUserState(email: string): Promise<UserState> {
   const month = currentMonthKey();
+  if (isUnlimited(email)) {
+    return { plan: "pro", used: 0, maxCredits: 999999, remaining: 999999, month, hasPlan: true };
+  }
   const stored = await getUserPlan(email);
   const plan = (stored?.tier ?? "free") as PlanTier;
   const maxCredits = PLANS[plan].creditsPerMonth;
@@ -35,6 +69,9 @@ export async function getUserState(email: string): Promise<UserState> {
 }
 
 export async function deductUserCredit(email: string): Promise<UserState> {
+  if (isUnlimited(email)) {
+    return { plan: "pro", used: 0, maxCredits: 999999, remaining: 999999, month: currentMonthKey(), hasPlan: true };
+  }
   const client = getKv();
   if (!client) throw new Error("KV_NOT_CONFIGURED");
 

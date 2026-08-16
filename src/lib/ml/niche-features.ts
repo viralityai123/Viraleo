@@ -1,4 +1,5 @@
-import { estimateNicheRpm } from "@/lib/niche-rpm";
+import { estimateNicheMonetizable } from "@/lib/niche-rpm";
+import type { MonetizationAnalysis } from "@/lib/niche-rpm";
 
 export interface NicheFeatures {
   wordCount: number;
@@ -24,8 +25,8 @@ export interface NicheHeuristic {
   difficulty: number;
   trendScore: number;
   trendDirection: "Rising" | "Stable" | "Declining";
-  rpmMin: number;
-  rpmMax: number;
+  monetizable: "yes" | "limited" | "no";
+  monetizationInsight: string;
   explanation: string;
 }
 
@@ -214,10 +215,7 @@ export function estimateNicheHeuristic(features: NicheFeatures): NicheHeuristic 
         ? "Declining"
         : ("Stable" as const);
 
-  const rpmEst = estimateNicheRpm(niche, format);
-  const specificityBonus = hasNumber ? 1.15 : 1;
-  const rpmMin = Math.round(rpmEst.min * specificityBonus * 10) / 10;
-  const rpmMax = Math.round(rpmEst.max * specificityBonus * (1 + specificityRatio * 0.3) * 10) / 10;
+  const monetization = estimateNicheMonetizable(niche, format);
 
   // Viability: inverse of competition + trend + specificity bonus
   const viabilityScore = Math.round(
@@ -236,8 +234,8 @@ export function estimateNicheHeuristic(features: NicheFeatures): NicheHeuristic 
     difficulty: Math.round(difficulty),
     trendScore: Math.round((trendScore + hasTrendModifier) * 100),
     trendDirection,
-    rpmMin,
-    rpmMax,
+    monetizable: monetization.isMonetizable,
+    monetizationInsight: monetization.insight,
     explanation,
   };
 }

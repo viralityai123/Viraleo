@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ThumbnailTestRouteImport } from './routes/thumbnail-test'
+import { Route as ThreadsQueueRouteImport } from './routes/threads-queue'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as SupportRouteImport } from './routes/support'
 import { Route as ShadowbanDetectorRouteImport } from './routes/shadowban-detector'
@@ -25,6 +26,7 @@ import { Route as FaqRouteImport } from './routes/faq'
 import { Route as DestroyRouteImport } from './routes/destroy'
 import { Route as CookiesRouteImport } from './routes/cookies'
 import { Route as ClearRouteImport } from './routes/clear'
+import { Route as BlueprintRouteImport } from './routes/blueprint'
 import { Route as BlogRouteImport } from './routes/blog'
 import { Route as BillingRouteImport } from './routes/billing'
 import { Route as AdminRouteImport } from './routes/admin'
@@ -40,12 +42,19 @@ import { Route as ApiCommissionsRouteImport } from './routes/api/commissions'
 import { Route as AdminPayoutsRouteImport } from './routes/admin/payouts'
 import { Route as AdminDashboardRouteImport } from './routes/admin/dashboard'
 import { Route as ApiTrainingRetrainThumbnailRouteImport } from './routes/api/training/retrain-thumbnail'
+import { Route as ApiThreadsExportRouteImport } from './routes/api/threads/export'
+import { Route as ApiThreadsAuthRouteImport } from './routes/api/threads/auth'
 import { Route as ApiLemonPortalRouteImport } from './routes/api/lemon/portal'
 import { Route as ApiLemonCheckoutRouteImport } from './routes/api/lemon/checkout'
 
 const ThumbnailTestRoute = ThumbnailTestRouteImport.update({
   id: '/thumbnail-test',
   path: '/thumbnail-test',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ThreadsQueueRoute = ThreadsQueueRouteImport.update({
+  id: '/threads-queue',
+  path: '/threads-queue',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TermsRoute = TermsRouteImport.update({
@@ -121,6 +130,11 @@ const CookiesRoute = CookiesRouteImport.update({
 const ClearRoute = ClearRouteImport.update({
   id: '/clear',
   path: '/clear',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BlueprintRoute = BlueprintRouteImport.update({
+  id: '/blueprint',
+  path: '/blueprint',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BlogRoute = BlogRouteImport.update({
@@ -199,6 +213,16 @@ const ApiTrainingRetrainThumbnailRoute =
     path: '/api/training/retrain-thumbnail',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiThreadsExportRoute = ApiThreadsExportRouteImport.update({
+  id: '/api/threads/export',
+  path: '/api/threads/export',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiThreadsAuthRoute = ApiThreadsAuthRouteImport.update({
+  id: '/api/threads/auth',
+  path: '/api/threads/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiLemonPortalRoute = ApiLemonPortalRouteImport.update({
   id: '/api/lemon/portal',
   path: '/api/lemon/portal',
@@ -216,6 +240,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRouteWithChildren
   '/billing': typeof BillingRoute
   '/blog': typeof BlogRouteWithChildren
+  '/blueprint': typeof BlueprintRoute
   '/clear': typeof ClearRoute
   '/cookies': typeof CookiesRoute
   '/destroy': typeof DestroyRoute
@@ -231,6 +256,7 @@ export interface FileRoutesByFullPath {
   '/shadowban-detector': typeof ShadowbanDetectorRoute
   '/support': typeof SupportRoute
   '/terms': typeof TermsRoute
+  '/threads-queue': typeof ThreadsQueueRoute
   '/thumbnail-test': typeof ThumbnailTestRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/payouts': typeof AdminPayoutsRoute
@@ -243,6 +269,8 @@ export interface FileRoutesByFullPath {
   '/ref/$slug': typeof RefSlugRoute
   '/api/lemon/checkout': typeof ApiLemonCheckoutRoute
   '/api/lemon/portal': typeof ApiLemonPortalRoute
+  '/api/threads/auth': typeof ApiThreadsAuthRoute
+  '/api/threads/export': typeof ApiThreadsExportRoute
   '/api/training/retrain-thumbnail': typeof ApiTrainingRetrainThumbnailRoute
 }
 export interface FileRoutesByTo {
@@ -251,6 +279,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminRouteWithChildren
   '/billing': typeof BillingRoute
   '/blog': typeof BlogRouteWithChildren
+  '/blueprint': typeof BlueprintRoute
   '/clear': typeof ClearRoute
   '/cookies': typeof CookiesRoute
   '/destroy': typeof DestroyRoute
@@ -266,6 +295,7 @@ export interface FileRoutesByTo {
   '/shadowban-detector': typeof ShadowbanDetectorRoute
   '/support': typeof SupportRoute
   '/terms': typeof TermsRoute
+  '/threads-queue': typeof ThreadsQueueRoute
   '/thumbnail-test': typeof ThumbnailTestRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/payouts': typeof AdminPayoutsRoute
@@ -278,6 +308,8 @@ export interface FileRoutesByTo {
   '/ref/$slug': typeof RefSlugRoute
   '/api/lemon/checkout': typeof ApiLemonCheckoutRoute
   '/api/lemon/portal': typeof ApiLemonPortalRoute
+  '/api/threads/auth': typeof ApiThreadsAuthRoute
+  '/api/threads/export': typeof ApiThreadsExportRoute
   '/api/training/retrain-thumbnail': typeof ApiTrainingRetrainThumbnailRoute
 }
 export interface FileRoutesById {
@@ -287,6 +319,7 @@ export interface FileRoutesById {
   '/admin': typeof AdminRouteWithChildren
   '/billing': typeof BillingRoute
   '/blog': typeof BlogRouteWithChildren
+  '/blueprint': typeof BlueprintRoute
   '/clear': typeof ClearRoute
   '/cookies': typeof CookiesRoute
   '/destroy': typeof DestroyRoute
@@ -302,6 +335,7 @@ export interface FileRoutesById {
   '/shadowban-detector': typeof ShadowbanDetectorRoute
   '/support': typeof SupportRoute
   '/terms': typeof TermsRoute
+  '/threads-queue': typeof ThreadsQueueRoute
   '/thumbnail-test': typeof ThumbnailTestRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/payouts': typeof AdminPayoutsRoute
@@ -314,6 +348,8 @@ export interface FileRoutesById {
   '/ref/$slug': typeof RefSlugRoute
   '/api/lemon/checkout': typeof ApiLemonCheckoutRoute
   '/api/lemon/portal': typeof ApiLemonPortalRoute
+  '/api/threads/auth': typeof ApiThreadsAuthRoute
+  '/api/threads/export': typeof ApiThreadsExportRoute
   '/api/training/retrain-thumbnail': typeof ApiTrainingRetrainThumbnailRoute
 }
 export interface FileRouteTypes {
@@ -324,6 +360,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/billing'
     | '/blog'
+    | '/blueprint'
     | '/clear'
     | '/cookies'
     | '/destroy'
@@ -339,6 +376,7 @@ export interface FileRouteTypes {
     | '/shadowban-detector'
     | '/support'
     | '/terms'
+    | '/threads-queue'
     | '/thumbnail-test'
     | '/admin/dashboard'
     | '/admin/payouts'
@@ -351,6 +389,8 @@ export interface FileRouteTypes {
     | '/ref/$slug'
     | '/api/lemon/checkout'
     | '/api/lemon/portal'
+    | '/api/threads/auth'
+    | '/api/threads/export'
     | '/api/training/retrain-thumbnail'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -359,6 +399,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/billing'
     | '/blog'
+    | '/blueprint'
     | '/clear'
     | '/cookies'
     | '/destroy'
@@ -374,6 +415,7 @@ export interface FileRouteTypes {
     | '/shadowban-detector'
     | '/support'
     | '/terms'
+    | '/threads-queue'
     | '/thumbnail-test'
     | '/admin/dashboard'
     | '/admin/payouts'
@@ -386,6 +428,8 @@ export interface FileRouteTypes {
     | '/ref/$slug'
     | '/api/lemon/checkout'
     | '/api/lemon/portal'
+    | '/api/threads/auth'
+    | '/api/threads/export'
     | '/api/training/retrain-thumbnail'
   id:
     | '__root__'
@@ -394,6 +438,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/billing'
     | '/blog'
+    | '/blueprint'
     | '/clear'
     | '/cookies'
     | '/destroy'
@@ -409,6 +454,7 @@ export interface FileRouteTypes {
     | '/shadowban-detector'
     | '/support'
     | '/terms'
+    | '/threads-queue'
     | '/thumbnail-test'
     | '/admin/dashboard'
     | '/admin/payouts'
@@ -421,6 +467,8 @@ export interface FileRouteTypes {
     | '/ref/$slug'
     | '/api/lemon/checkout'
     | '/api/lemon/portal'
+    | '/api/threads/auth'
+    | '/api/threads/export'
     | '/api/training/retrain-thumbnail'
   fileRoutesById: FileRoutesById
 }
@@ -430,6 +478,7 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRouteWithChildren
   BillingRoute: typeof BillingRoute
   BlogRoute: typeof BlogRouteWithChildren
+  BlueprintRoute: typeof BlueprintRoute
   ClearRoute: typeof ClearRoute
   CookiesRoute: typeof CookiesRoute
   DestroyRoute: typeof DestroyRoute
@@ -445,6 +494,7 @@ export interface RootRouteChildren {
   ShadowbanDetectorRoute: typeof ShadowbanDetectorRoute
   SupportRoute: typeof SupportRoute
   TermsRoute: typeof TermsRoute
+  ThreadsQueueRoute: typeof ThreadsQueueRoute
   ThumbnailTestRoute: typeof ThumbnailTestRoute
   ApiCommissionsRoute: typeof ApiCommissionsRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
@@ -453,6 +503,8 @@ export interface RootRouteChildren {
   RefSlugRoute: typeof RefSlugRoute
   ApiLemonCheckoutRoute: typeof ApiLemonCheckoutRoute
   ApiLemonPortalRoute: typeof ApiLemonPortalRoute
+  ApiThreadsAuthRoute: typeof ApiThreadsAuthRoute
+  ApiThreadsExportRoute: typeof ApiThreadsExportRoute
   ApiTrainingRetrainThumbnailRoute: typeof ApiTrainingRetrainThumbnailRoute
 }
 
@@ -463,6 +515,13 @@ declare module '@tanstack/react-router' {
       path: '/thumbnail-test'
       fullPath: '/thumbnail-test'
       preLoaderRoute: typeof ThumbnailTestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/threads-queue': {
+      id: '/threads-queue'
+      path: '/threads-queue'
+      fullPath: '/threads-queue'
+      preLoaderRoute: typeof ThreadsQueueRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/terms': {
@@ -570,6 +629,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ClearRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/blueprint': {
+      id: '/blueprint'
+      path: '/blueprint'
+      fullPath: '/blueprint'
+      preLoaderRoute: typeof BlueprintRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/blog': {
       id: '/blog'
       path: '/blog'
@@ -675,6 +741,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiTrainingRetrainThumbnailRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/threads/export': {
+      id: '/api/threads/export'
+      path: '/api/threads/export'
+      fullPath: '/api/threads/export'
+      preLoaderRoute: typeof ApiThreadsExportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/threads/auth': {
+      id: '/api/threads/auth'
+      path: '/api/threads/auth'
+      fullPath: '/api/threads/auth'
+      preLoaderRoute: typeof ApiThreadsAuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/lemon/portal': {
       id: '/api/lemon/portal'
       path: '/api/lemon/portal'
@@ -722,6 +802,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRouteWithChildren,
   BillingRoute: BillingRoute,
   BlogRoute: BlogRouteWithChildren,
+  BlueprintRoute: BlueprintRoute,
   ClearRoute: ClearRoute,
   CookiesRoute: CookiesRoute,
   DestroyRoute: DestroyRoute,
@@ -737,6 +818,7 @@ const rootRouteChildren: RootRouteChildren = {
   ShadowbanDetectorRoute: ShadowbanDetectorRoute,
   SupportRoute: SupportRoute,
   TermsRoute: TermsRoute,
+  ThreadsQueueRoute: ThreadsQueueRoute,
   ThumbnailTestRoute: ThumbnailTestRoute,
   ApiCommissionsRoute: ApiCommissionsRoute,
   AuthCallbackRoute: AuthCallbackRoute,
@@ -745,6 +827,8 @@ const rootRouteChildren: RootRouteChildren = {
   RefSlugRoute: RefSlugRoute,
   ApiLemonCheckoutRoute: ApiLemonCheckoutRoute,
   ApiLemonPortalRoute: ApiLemonPortalRoute,
+  ApiThreadsAuthRoute: ApiThreadsAuthRoute,
+  ApiThreadsExportRoute: ApiThreadsExportRoute,
   ApiTrainingRetrainThumbnailRoute: ApiTrainingRetrainThumbnailRoute,
 }
 export const routeTree = rootRouteImport
