@@ -9,7 +9,7 @@ import { publishReply } from "@/lib/threads/publisher";
 import { exchangeThreadsCode, getThreadsAuthUrl, isOAuthConfigured } from "@/lib/threads/oauth";
 import type { ThreadsLead } from "@/lib/threads/types";
 import {
-  listQueueFresh,
+  listQueue,
   removeFromQueue,
   getAuth,
   getRepliesToday,
@@ -56,7 +56,7 @@ const getQueueStatus = createServerFn({ method: "GET" }).handler(async () => {
     getAutoApprove(),
     getMonitorState(),
   ]);
-  const queueCount = (await listQueueFresh()).length;
+  const queueCount = (await listQueue()).length;
   const status: QueueStatus = {
     connected: !!auth?.accessToken,
     username: auth?.username || auth?.userId,
@@ -75,14 +75,14 @@ const getQueueStatus = createServerFn({ method: "GET" }).handler(async () => {
 
 const getQueueLeads = createServerFn({ method: "GET" }).handler(async () => {
   await adminUser();
-  return listQueueFresh();
+  return listQueue();
 });
 
 const approveLead = createServerFn({ method: "POST" })
   .inputValidator((d: { postId: string; draft: string }) => d)
   .handler(async ({ data }) => {
     await adminUser();
-    const leads = await listQueueFresh();
+    const leads = await listQueue();
     const lead = leads.find((l) => l.postId === data.postId);
     if (!lead) return { ok: false as const, error: "Lead no longer in queue" };
     const result = await publishReply(lead.postId, data.draft.slice(0, 500));
@@ -99,7 +99,7 @@ const skipLead = createServerFn({ method: "POST" })
   .inputValidator((d: { postId: string }) => d)
   .handler(async ({ data }) => {
     await adminUser();
-    const leads = await listQueueFresh();
+    const leads = await listQueue();
     const lead = leads.find((l) => l.postId === data.postId);
     if (!lead) return { ok: false as const, error: "Lead no longer in queue" };
     await removeFromQueue(lead);

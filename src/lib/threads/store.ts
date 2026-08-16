@@ -118,7 +118,8 @@ export async function listQueueFresh(): Promise<ThreadsLead[]> {
     .sort((a, b) => (a.takenAt ?? nowSec) - (b.takenAt ?? nowSec));
 }
 
-/** Removes queued leads outside the eligible window. Returns how many were removed. */
+/** Removes queued leads outside the eligible window. Returns how many were removed.
+ *  Uses per-item LREM only — never a del+recreate, which can wipe concurrent pushes. */
 export async function purgeExpiredLeads(): Promise<number> {
   const kv = getKv();
   if (!kv) return 0;
@@ -126,30 +127,20 @@ export async function purgeExpiredLeads(): Promise<number> {
     const raw = await kv.lrange<unknown>(QUEUE_KEY, 0, -1);
     if (!raw || raw.length === 0) return 0;
     const nowSec = Date.now() / 1000;
-    const kept: unknown[] = [];
     const keptIds = new Set<string>();
+    let removed = 0;
     for (const el of raw) {
       try {
         const lead = typeof el === "string" ? JSON.parse(el) : el;
-        if (!lead || typeof lead !== "object" || !("takenAt" in lead)) {
-          kept.push(el);
-          continue;
-        }
+        if (!lead || typeof lead !== "object" || !("takenAt" in lead)) continue;
         if (typeof lead.postId === "string" && keptIds.has(lead.postId)) continue;
         if (typeof lead.postId === "string") keptIds.add(lead.postId);
-        if (isLeadEligible(lead as ThreadsLead, nowSec)) kept.push(el);
+        if (!isLeadEligible(lead as ThreadsLead, nowSec)) {
+          await kv.lrem(QUEUE_KEY, 1, el as string);
+          removed++;
+        }
       } catch {
-        kept.push(el);
-      }
-    }
-    const removed = raw.length - kept.length;
-    if (removed > 0) {
-      await kv.del(QUEUE_KEY);
-      if (kept.length > 0) {
-        await kv.rpush(
-          QUEUE_KEY,
-          ...kept.map((l) => (typeof l === "string" ? l : JSON.stringify(l))),
-        );
+        // skip unparsable entries
       }
     }
     return removed;
