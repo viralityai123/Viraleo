@@ -118,6 +118,81 @@ async function tryGroq(prompt: string): Promise<string | null> {
   }
 }
 
+const HEURISTIC_DRAFTS: Record<string, [string, string]> = {
+  "web-design": [
+    "Hey! I build clean, fast websites for founders and small businesses — happy to share some live examples and a quote. What's your timeline?",
+    "I do websites for small businesses daily. If you're looking for ideas, I can send over a few I've built and we can talk scope. Down to chat?",
+  ],
+  "landing-page": [
+    "If you're after a high-converting landing page, that's literally what I do — I can show you examples and what yours could look like. Want to talk?",
+    "I build landing pages that convert traffic into customers. Happy to walk you through a few examples and a rough quote if you're interested.",
+  ],
+  "saas-app": [
+    "I build MVPs for founders — quick, clean, and launch-ready. Happy to walk through how I'd approach yours and give you a timeline.",
+    "Founders come to me to turn their idea into a working MVP. If you want, I can outline the build steps and what it'd cost.",
+  ],
+  branding: [
+    "I design brands and logos that don't blend in — happy to share recent work and some directions for yours.",
+    "If you're looking for a logo or full brand identity, I've got a portfolio of recent designs I can show you. Want to take a look?",
+  ],
+  "social-media": [
+    "I run social media and ads for small businesses — if you need help turning content into customers, I can put together a quick plan for you.",
+    "Social media and paid ads are my thing — happy to map out a simple strategy for your business if you're looking for help.",
+  ],
+  copywriting: [
+    "I write sales copy that converts — websites, emails, landing pages. Happy to show you examples and give you a quote.",
+    "If you need copy that actually sells, I can share some recent work and talk through what your project would look like.",
+  ],
+  video: [
+    "I edit videos for creators and businesses — YouTube, podcasts, ads. I can show you before/afters if you're looking for an editor.",
+    "Video editing is what I do — long-form, ads, podcasts. Happy to send over samples and a quote for your project.",
+  ],
+  "ai-automation": [
+    "I build AI automations that save teams hours a week — happy to map out what yours could look like. Want to talk?",
+    "If you're looking to automate repetitive work, I build those systems for businesses. Happy to sketch out a plan for you.",
+  ],
+  ecommerce: [
+    "I build Shopify stores that actually convert — happy to share examples and a quote for yours.",
+    "Shopify stores are my specialty. I can show you a few I've built and break down what yours would need. Interested?",
+  ],
+  systems: [
+    "I set up systems — Notion, CRMs, SOPs — that keep teams running without chaos. Happy to walk you through how I'd fix yours.",
+    "If your business runs on chaos, I build the systems that fix it — SOPs, CRMs, workflows. Want a quick overview of how I'd help?",
+  ],
+};
+
+/** Deterministic fallback when no LLM is reachable (missing key or quota).
+ *  "other" category scores below the threshold so junk never reaches the queue. */
+function heuristicScore(matchedCategory: string, text: string): ScoredPost {
+  if (matchedCategory === "other") {
+    return { category: "other", intentScore: 45, draftA: "", draftB: "" };
+  }
+  const lower = text.toLowerCase();
+  const strong = [
+    "urgent",
+    "need",
+    "hiring",
+    "hire",
+    "looking for",
+    "looking to",
+    "want to build",
+    "need a",
+    "want a",
+    "help me",
+    "who can",
+    "recommend",
+    "quote",
+    "budget",
+    "can you",
+    "anyone",
+    "price",
+  ];
+  const hits = strong.filter((w) => lower.includes(w)).length;
+  const score = Math.min(92, 58 + hits * 8);
+  const [draftA, draftB] = HEURISTIC_DRAFTS[matchedCategory] || HEURISTIC_DRAFTS["web-design"];
+  return { category: matchedCategory, intentScore: score, draftA, draftB };
+}
+
 export async function scorePost(
   username: string,
   text: string,
@@ -125,7 +200,7 @@ export async function scorePost(
 ): Promise<ScoredPost | null> {
   const prompt = `Threads post by @${username || "unknown"}:\n"""${text.slice(0, 600)}"""\n\nIt was pre-matched to category "${matchedCategory}" — confirm or correct it.`;
   const raw = (await tryGemini(prompt)) || (await tryGroq(prompt));
-  if (!raw) return null;
+  if (!raw) return heuristicScore(matchedCategory, text);
   try {
     const parsed = JSON.parse(cleanJson(raw)) as Partial<ScoredPost>;
     const score = Math.max(0, Math.min(100, Number(parsed.intentScore) || 0));
