@@ -82,3 +82,22 @@ if (process.env.POSTBUILD_SKIP_PING === "1") {
   console.log("[postbuild] Pinging search engines...");
   await import("./ping-search-engines.mjs");
 }
+
+// 4. Install Playwright Chromium (Linux only; non-fatal so local Windows builds still pass)
+if (process.platform === "linux" && process.env.POSTBUILD_SKIP_BROWSER !== "1") {
+  console.log("[postbuild] Installing Playwright Chromium...");
+  const { execSync } = await import("node:child_process");
+  try {
+    execSync("npx playwright install --with-deps chromium", { stdio: "inherit", cwd: root, timeout: 600_000 });
+    console.log("[postbuild] Chromium installed");
+  } catch (e) {
+    try {
+      execSync("npx playwright install chromium", { stdio: "inherit", cwd: root, timeout: 600_000 });
+      console.log("[postbuild] Chromium installed (no system deps)");
+    } catch (e2) {
+      console.log("[postbuild] WARN: Chromium install failed — auto-relogin disabled:", String(e2).slice(0, 300));
+    }
+  }
+} else {
+  console.log("[postbuild] Skipping browser install (platform:", process.platform, ")");
+}

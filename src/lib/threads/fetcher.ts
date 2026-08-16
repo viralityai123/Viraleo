@@ -1,6 +1,7 @@
 import { THREADS_CONFIG } from "./config";
 import type { ThreadsRawPost, ThreadsSource } from "./types";
 import { getKv } from "@/lib/kv";
+import { getSession } from "./session";
 import http from "node:http";
 import https from "node:https";
 import net from "node:net";
@@ -359,8 +360,8 @@ async function sessionFetch(
   path: string,
   label: string,
 ): Promise<{ html: string | null; blocked: boolean }> {
-  if (!hasThreadsSession()) return { html: null, blocked: false };
-  const cookie = sessionCookieHeader();
+  if (!(await hasThreadsSession())) return { html: null, blocked: false };
+  const cookie = await sessionCookieHeader();
   let blocked = false;
   for (const host of ["https://www.threads.com", "https://www.threads.net"]) {
     try {
@@ -534,8 +535,18 @@ export async function searchDiy(keyword: string): Promise<ThreadsRawPost[]> {
 /* Session-based search (needs a logged-in threads session)            */
 /* ------------------------------------------------------------------ */
 
-function hasThreadsSession(): boolean {
-  return Boolean(process.env.THREADS_SESSION_ID);
+let cachedHasSession: boolean | null = null;
+let lastSessionCheckAt = 0;
+
+async function hasThreadsSession(): Promise<boolean> {
+  if (Date.now() - lastSessionCheckAt > 60_000) {
+    cachedHasSession = null;
+    lastSessionCheckAt = Date.now();
+  }
+  if (cachedHasSession !== null) return cachedHasSession;
+  const s = await getSession();
+  cachedHasSession = Boolean(s && s.sessionId);
+  return cachedHasSession;
 }
 
 function randomIgDid(): string {
@@ -548,8 +559,9 @@ function randomIgDid(): string {
   );
 }
 
-function sessionCookieHeader(): string {
-  if (process.env.THREADS_COOKIES) return process.env.THREADS_COOKIES;
+async function sessionCookieHeader(): Promise<string> {
+  const s = await getSession();
+  if (s && s.cookies) return s.cookies;
   const parts = [`sessionid=${process.env.THREADS_SESSION_ID || ""}`];
   if (process.env.THREADS_CSRF_TOKEN) parts.push(`csrftoken=${process.env.THREADS_CSRF_TOKEN}`);
   if (process.env.THREADS_USER_ID) parts.push(`ds_user_id=${process.env.THREADS_USER_ID}`);
@@ -677,7 +689,7 @@ export async function searchKeyword(
   if (ssrAllowed) {
     try {
       let blocked = false;
-      if (hasThreadsSession()) {
+      if (await hasThreadsSession()) {
         const latest = await searchThreadsLatest(keyword);
         if (latest.posts && latest.posts.length > 0) {
           return { posts: latest.posts, source: "ssr", blocked: false };

@@ -235,6 +235,23 @@ export async function pollOnce(): Promise<void> {
       throttleBackoffMs = 0;
     }
 
+    if (keywords.length > 0 && fetched === 0 && blockedCount === 0) {
+      cleanZeroCycles++;
+      if (cleanZeroCycles >= 2) {
+        cleanZeroCycles = 0;
+        log("2 clean zero-fetch cycles — session likely dead, triggering auto-relogin");
+        try {
+          const base = process.env.APP_URL || "https://viraleo.onrender.com";
+          const res = await fetch(`${base}/api/threads/relogin`, { method: "POST" });
+          log("auto-relogin request:", res.status, (await res.text().catch(() => "")).slice(0, 300));
+        } catch (e) {
+          log("auto-relogin request failed:", e);
+        }
+      }
+    } else {
+      cleanZeroCycles = 0;
+    }
+
     candidates.sort((a, b) => (a.post.takenAt ?? 0) - (b.post.takenAt ?? 0));
 
     const deduped: { post: ThreadsRawPost; matched: string }[] = [];
@@ -414,6 +431,7 @@ let lastCycleAllFailed = false;
 let lastCycleFetched = 0;
 let throttleBackoffMs = 0;
 let lastProbeAt = 0;
+let cleanZeroCycles = 0;
 
 /** Starts the 24/7 monitor loop. Only runs on long-lived processes (Koyeb), never on Vercel. */
 export function startThreadsMonitor(): void {
