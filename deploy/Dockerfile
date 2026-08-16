@@ -34,22 +34,42 @@ RUN test -f /app/.output/server/index.mjs || (echo "FAILED: node-server preset n
 ENV POSTBUILD_SKIP_PING=1
 RUN timeout 90 node scripts/postbuild.mjs
 
+# Install Playwright Chromium (glibc) into the build stage cache so the runner
+# can use it for the auto-relogin bot
+RUN npx playwright install chromium --with-deps || npx playwright install chromium || echo "WARN: chromium install failed"
+
 # Drop the stray .vercel scaffolding the build leaves behind (cosmetic)
 RUN rm -rf /app/.vercel
 
-# ─── Stage 2: Production runtime ─────────────────────────────────────────────
-FROM node:24-alpine AS runner
+# Trim dev dependencies — runtime deps (playwright, upstash, ...) are copied
+# to the runner so the bundled server can require() them
+RUN npm prune --omit=dev
 
-# Install wget for healthcheck
-RUN apk add --no-cache wget ca-certificates tzdata
+# Stage 2: Production runtime (glibc — matches the chromium built above)
+FROM node:24-bookworm-slim AS runner
+
+# System libraries required by Playwright Chromium + wget for the healthcheck
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates wget \
+    libnss3 libnspr4 libatk1.0-0 libatk-bridge2.0-0 libcups2 libdrm2 \
+    libxkbcommon0 libxcomposite1 libxdamage1 libxfixes3 libxrandr2 libgbm1 \
+    libasound2 libpango-1.0-0 libcairo2 fonts-liberation \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
 # Create non-root user for security
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
-# Copy built output from builder (Nitro bundles all deps into .output/)
+# Copy built output from builder
 COPY --from=builder /app/.output /app/.output
+
+# Copy runtime dependencies (playwright & co are externalized by Nitro)
+COPY --from=builder /app/node_modules /app/node_modules
+
+# Copy Playwright chromium browsers (installed in the build stage)
+COPY --from=builder /root/.cache/ms-playwright /app/.cache/ms-playwright
+ENV PLAYWRIGHT_BROWSERS_PATH=/app/.cache/ms-playwright
 
 # Copy env template (actual values injected via --env-file at runtime)
 COPY deploy/.env.production /app/.env.example
