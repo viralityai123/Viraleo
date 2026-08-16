@@ -613,6 +613,16 @@ export async function searchExplore(): Promise<{ posts: ThreadsRawPost[] | null;
   return { posts: dedupe(parsed).slice(0, 100), blocked: false };
 }
 
+let exploreCache: { at: number; value: { posts: ThreadsRawPost[] | null; blocked: boolean } } | null = null;
+
+/** Explore fetched once per 10 min (per process) — the page isn't keyword-specific. */
+async function searchExploreCached(): Promise<{ posts: ThreadsRawPost[] | null; blocked: boolean }> {
+  if (exploreCache && Date.now() - exploreCache.at < 10 * 60_000) return exploreCache.value;
+  const value = await searchExplore();
+  exploreCache = { at: Date.now(), value };
+  return value;
+}
+
 /* ------------------------------------------------------------------ */
 /* Apify (emergency fallback)                                          */
 /* ------------------------------------------------------------------ */
@@ -694,12 +704,16 @@ export async function searchKeyword(
         if (latest.posts && latest.posts.length > 0) {
           return { posts: latest.posts, source: "ssr", blocked: false };
         }
-        if (latest.blocked) return { posts: [], source: "ssr", blocked: true };
         const tag = await searchTag(keyword);
         if (tag.posts && tag.posts.length > 0) {
           return { posts: tag.posts, source: "ssr", blocked: false };
         }
-        if (tag.blocked) return { posts: [], source: "ssr", blocked: true };
+        const explore = await searchExploreCached();
+        if (explore.posts && explore.posts.length > 0) {
+          return { posts: explore.posts, source: "ssr", blocked: false };
+        }
+        blocked = latest.blocked && tag.blocked && explore.blocked;
+        if (blocked) return { posts: [], source: "ssr", blocked: true };
       }
       const posts = await searchSsr(keyword);
       if (posts.length > 0) return { posts, source: "ssr", blocked: false };
