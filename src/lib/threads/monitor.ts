@@ -156,9 +156,6 @@ export async function pollOnce(): Promise<void> {
           if (ageSec <= THREADS_CONFIG.freshWindowSec) {
             freshFound++;
           } else {
-            if (THREADS_CONFIG.agedRequiresNoReplies && (post.replyCount ?? 0) > 0) {
-              continue;
-            }
             agedNoReplyFound++;
           }
         }

@@ -101,14 +101,12 @@ export async function listQueue(): Promise<ThreadsLead[]> {
   return out;
 }
 
-/** Two-tier eligibility: fresh (<= freshWindowSec) OR aged (<= maxAgedLeadAgeSec) with zero replies. */
+/** Two-tier eligibility: fresh (<= freshWindowSec) OR aged (<= maxAgedLeadAgeSec). Replies never disqualify a lead from the manual queue. */
 function isLeadEligible(lead: ThreadsLead, nowSec: number): boolean {
   if (!lead.takenAt) return true;
   const ageSec = nowSec - lead.takenAt;
   if (ageSec <= THREADS_CONFIG.freshWindowSec) return true;
-  if (ageSec > THREADS_CONFIG.maxAgedLeadAgeSec) return false;
-  if (!THREADS_CONFIG.agedRequiresNoReplies) return true;
-  return (lead.replyCount ?? 0) === 0;
+  return ageSec <= THREADS_CONFIG.maxAgedLeadAgeSec;
 }
 
 /** Eligible queue (fresh or no-reply aged), ascending by post time. */
