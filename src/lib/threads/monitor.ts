@@ -1,5 +1,5 @@
 import { THREADS_CONFIG, isMonitorEnabled } from "./config";
-import { searchKeyword, buildPostUrl } from "./fetcher";
+import { searchKeyword, searchExplore, searchThreadsLatest, buildPostUrl } from "./fetcher";
 import { scorePost } from "./scorer";
 import { publishReply } from "./publisher";
 import { getAuth } from "./store";
@@ -88,6 +88,27 @@ export async function pollOnce(): Promise<void> {
       return;
     }
 
+    if (Date.now() < recoveryUntil) {
+      if (Date.now() - lastProbeAt >= THREADS_CONFIG.probeIntervalMs) {
+        lastProbeAt = Date.now();
+        try {
+          const probe = await searchThreadsLatest("website design");
+          if (probe.posts && probe.posts.length > 0) {
+            recoveryUntil = 0;
+            log("session recovered — resuming full cycles");
+          } else {
+            log(
+              `session still down (${probe.blocked ? "blocked" : "no payload"}) — staying in recovery pause`,
+            );
+          }
+        } catch {
+          log("probe failed — staying in recovery pause");
+        }
+      }
+      await setMonitorState({ ...state, lastPollAt: Date.now() });
+      return;
+    }
+
     await checkTokenHealth();
 
     const allKeywords = THREADS_CATEGORIES.flatMap((c) => c.keywords);
@@ -114,6 +135,39 @@ export async function pollOnce(): Promise<void> {
     const concurrency = Math.max(1, THREADS_CONFIG.keywordConcurrency);
     let nextIdx = 0;
     let blockedCount = 0;
+    const consider = async (posts: ThreadsRawPost[]) => {
+      const fresh: { post: ThreadsRawPost; matched: string }[] = [];
+      for (const post of posts) {
+        if (
+          THREADS_CONFIG.ownUsername &&
+          post.username?.toLowerCase() === THREADS_CONFIG.ownUsername
+        ) {
+          continue;
+        }
+        if (!post.text) continue;
+        if (isExcludedPost(post.text)) {
+          await markSeen([post.id]);
+          continue;
+        }
+        if (post.takenAt) {
+          const ageSec = Date.now() / 1000 - post.takenAt;
+          if (ageSec > THREADS_CONFIG.maxAgedLeadAgeSec) continue;
+          if (ageSec <= THREADS_CONFIG.freshWindowSec) {
+            freshFound++;
+          } else {
+            if (THREADS_CONFIG.agedRequiresNoReplies && (post.replyCount ?? 0) > 0) {
+              continue;
+            }
+            agedNoReplyFound++;
+          }
+        }
+        const matched = hasBuyingIntent(post.text);
+        if (!matched) continue;
+        if (await isSeen(post.id)) continue;
+        fresh.push({ post, matched });
+      }
+      candidates.push(...fresh);
+    };
     const worker = async () => {
       while (true) {
         const idx = nextIdx++;
@@ -127,41 +181,7 @@ export async function pollOnce(): Promise<void> {
           if (blocked) blockedCount++;
           fetched += posts.length;
           lastSource = source;
-          if (posts.length === 0) continue;
-          const fresh: { post: ThreadsRawPost; matched: string }[] = [];
-          for (const post of posts) {
-            if (
-              THREADS_CONFIG.ownUsername &&
-              post.username?.toLowerCase() === THREADS_CONFIG.ownUsername
-            ) {
-              continue;
-            }
-            if (!post.text) continue;
-            if (isExcludedPost(post.text)) {
-              await markSeen([post.id]);
-              continue;
-            }
-            if (post.takenAt) {
-              const ageSec = Date.now() / 1000 - post.takenAt;
-              if (ageSec > THREADS_CONFIG.maxAgedLeadAgeSec) continue;
-              if (ageSec <= THREADS_CONFIG.freshWindowSec) {
-                freshFound++;
-              } else {
-                if (
-                  THREADS_CONFIG.agedRequiresNoReplies &&
-                  (post.replyCount ?? 0) > 0
-                ) {
-                  continue;
-                }
-                agedNoReplyFound++;
-              }
-            }
-            const matched = hasBuyingIntent(post.text);
-            if (!matched) continue;
-            if (await isSeen(post.id)) continue;
-            fresh.push({ post, matched });
-          }
-          candidates.push(...fresh);
+          if (posts.length > 0) await consider(posts);
         } catch (e) {
           const msg = e instanceof Error ? e.message : String(e);
           cycleFailures.push(msg);
@@ -179,11 +199,31 @@ export async function pollOnce(): Promise<void> {
       Array.from({ length: Math.min(concurrency, keywords.length) }, () => worker()),
     );
 
+    for (let e = 0; e < THREADS_CONFIG.explorePerCycle; e++) {
+      try {
+        const ex = await searchExplore();
+        if (ex.posts && ex.posts.length > 0) {
+          fetched += ex.posts.length;
+          await consider(ex.posts);
+        }
+      } catch {
+        // explore is a bonus surface; failures are non-fatal
+      }
+    }
+
     if (keywords.length > 0 && blockedCount / keywords.length >= THREADS_CONFIG.blockedRatio) {
-      throttleBackoffMs = THREADS_CONFIG.blockedBackoffMs;
-      log(
-        `session rate-limited (${blockedCount}/${keywords.length} keywords blocked) — backing off ${Math.round(throttleBackoffMs / 1000)}s`,
-      );
+      if (fetched === 0) {
+        recoveryUntil = Math.max(recoveryUntil, Date.now() + THREADS_CONFIG.recoveryBackoffMs);
+        lastProbeAt = 0;
+        log(
+          `cycle fetched 0 posts (${blockedCount}/${keywords.length} blocked) — recovery pause ${Math.round(THREADS_CONFIG.recoveryBackoffMs / 60_000)}min`,
+        );
+      } else {
+        throttleBackoffMs = THREADS_CONFIG.blockedBackoffMs;
+        log(
+          `session rate-limited (${blockedCount}/${keywords.length} keywords blocked) — backing off ${Math.round(throttleBackoffMs / 1000)}s`,
+        );
+      }
     } else {
       throttleBackoffMs = 0;
     }
@@ -366,6 +406,8 @@ let allFailedCycles = 0;
 let lastCycleAllFailed = false;
 let lastCycleFetched = 0;
 let throttleBackoffMs = 0;
+let recoveryUntil = 0;
+let lastProbeAt = 0;
 
 /** Starts the 24/7 monitor loop. Only runs on long-lived processes (Koyeb), never on Vercel. */
 export function startThreadsMonitor(): void {

@@ -9,7 +9,7 @@ export const THREADS_CONFIG = {
   /** How often the monitor loop polls Threads. Lower = faster catch, more requests. */
   pollIntervalMs: int("THREADS_POLL_INTERVAL_MS", 30_000),
   /** How many keywords to search per cycle. 0 = sweep the ENTIRE keyword list every cycle (fastest catch, more requests). */
-  keywordsPerCycle: int("THREADS_KEYWORDS_PER_CYCLE", 0),
+  keywordsPerCycle: int("THREADS_KEYWORDS_PER_CYCLE", 50),
   /** How many keyword searches to run in parallel. Lower = gentler on rate limits. */
   keywordConcurrency: int("THREADS_KEYWORD_CONCURRENCY", 2),
   /** Minimum LLM intent score (0-100) for a lead to hit the queue. */
@@ -29,6 +29,12 @@ export const THREADS_CONFIG = {
   })(),
   /** How long to pause polling after a high blocked-ratio cycle (ms). */
   blockedBackoffMs: int("THREADS_BLOCKED_BACKOFF_MS", 5 * 60_000),
+  /** Emergency full pause when a cycle fetched 0 posts (ms) — lets rate-limit buckets expire. */
+  recoveryBackoffMs: int("THREADS_RECOVERY_BACKOFF_MS", 30 * 60_000),
+  /** During recovery pause: how often to probe 1 keyword for session health (ms). */
+  probeIntervalMs: int("THREADS_PROBE_INTERVAL_MS", 15 * 60_000),
+  /** Explore-page fetches per cycle (separate throttle bucket, fresh posts). */
+  explorePerCycle: int("THREADS_EXPLORE_PER_CYCLE", 1),
   /** Score at or above which auto-approve fires (when a category is toggled on). */
   autoApproveThreshold: int("THREADS_AUTOAPPROVE_THRESHOLD", 50),
   /** Hard cap on auto-posted replies per 24h — protects the account from spam flags. */

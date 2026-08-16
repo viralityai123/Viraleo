@@ -1,5 +1,6 @@
 import { THREADS_CONFIG } from "./config";
 import type { ThreadsRawPost, ThreadsSource } from "./types";
+import { getKv } from "@/lib/kv";
 import http from "node:http";
 import https from "node:https";
 import net from "node:net";
@@ -229,17 +230,7 @@ function proxyFetch(
   });
 }
 
-/**
- * Parses the SSR search page. Returns `null` when the page contained no
- * search payload at all (block/challenge page or shape change), otherwise
- * the extracted posts (possibly an empty array for a legitimately empty
- * result set).
- *
- * The page contains multiple `{"__bbox":{"complete":true` JSON blocks (one
- * per server-rendered GraphQL query). Only the one with `searchResults`
- * carries the results, so each block is scanned in turn.
- */
-function parseSearchResults(html: string): ThreadsRawPost[] | null {
+function postsFromSearchResults(html: string): { posts: ThreadsRawPost[]; found: boolean } {
   const needle = '{"__bbox":{"complete":true';
   let from = 0;
   let foundSearchResults = false;
@@ -281,9 +272,144 @@ function parseSearchResults(html: string): ThreadsRawPost[] | null {
         });
       }
     }
-    return posts;
+    return { posts, found: true };
   }
-  return foundSearchResults ? [] : null;
+  return { posts: [], found: foundSearchResults };
+}
+
+/** Loose mode: any __bbox block whose data contains thread_items (tag/explore/feed shapes). */
+function postsFromAnyPayload(html: string): ThreadsRawPost[] {
+  const out: ThreadsRawPost[] = [];
+  const seenIds = new Set<string>();
+  const collect = (root: any) => {
+    if (!root || typeof root !== "object") return;
+    if (Array.isArray(root)) {
+      for (const item of root) collect(item);
+      return;
+    }
+    const items = root?.thread_items;
+    if (Array.isArray(items)) {
+      for (const item of items) {
+        const node = item?.post;
+        if (!node) continue;
+        const text = extractText(node);
+        if (!text) continue;
+        const id = String(node.pk ?? node.id ?? Math.random().toString(36).slice(2));
+        if (seenIds.has(id)) continue;
+        seenIds.add(id);
+        out.push({
+          id,
+          code: node.code,
+          username: node?.user?.username,
+          text,
+          takenAt: node.taken_at ? Number(node.taken_at) : undefined,
+          likeCount: node.like_count,
+          replyCount: node?.text_post_app_info?.direct_reply_count,
+        });
+      }
+      return;
+    }
+    for (const value of Object.values(root)) {
+      if (value && typeof value === "object") collect(value);
+    }
+  };
+  const needle = '{"__bbox":{"complete":true';
+  let from = 0;
+  while (true) {
+    const start = html.indexOf(needle, from);
+    if (start === -1) break;
+    from = start + 1;
+    const obj = balancedSlice(html, start);
+    if (!obj) continue;
+    try {
+      collect(JSON.parse(obj));
+    } catch {
+      // keep scanning
+    }
+  }
+  return out;
+}
+
+/** Universal page parser: searchResults shape, then any-payload loose mode. */
+function parseEmbeddedPosts(html: string): ThreadsRawPost[] | null {
+  const strict = postsFromSearchResults(html);
+  if (strict.found) return strict.posts;
+  const loose = postsFromAnyPayload(html);
+  if (loose.length > 0) return loose;
+  return null;
+}
+
+/** Stores a sample of unparseable HTML so the parser can be adapted to the live shape. */
+async function dumpDebugHtml(keyword: string, url: string, html: string): Promise<void> {
+  try {
+    const kv = getKv();
+    if (!kv) return;
+    await kv.set("threads:debughtml", {
+      ts: Date.now(),
+      keyword,
+      url,
+      sample: html.slice(0, 60_000),
+    });
+  } catch {
+    // non-fatal
+  }
+}
+
+/** Session fetch across hosts (threads.com + threads.net) to spread throttle buckets. */
+async function sessionFetch(
+  path: string,
+  label: string,
+): Promise<{ html: string | null; blocked: boolean }> {
+  if (!hasThreadsSession()) return { html: null, blocked: false };
+  const cookie = sessionCookieHeader();
+  let blocked = false;
+  for (const host of ["https://www.threads.com", "https://www.threads.net"]) {
+    try {
+      const res = await fetch(host + path, {
+        headers: {
+          cookie,
+          "user-agent": MOBILE_UA,
+          "accept-language": "en-GB,en;q=0.9",
+          accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+          referer: "https://www.threads.com/",
+        },
+        redirect: "follow",
+        signal: AbortSignal.timeout(THREADS_CONFIG.fetchTimeoutMs),
+      });
+      if (res.status === 429 || res.status === 403 || res.status === 401) {
+        blocked = true;
+        console.log(`[threads-session] "${label}" html blocked (${res.status})`);
+        continue;
+      }
+      if (!res.ok) {
+        console.log(
+          `[threads-session] "${label}" html status ${res.status}${res.redirected ? ` -> ${res.url}` : ""}`,
+        );
+        continue;
+      }
+      const html = await res.text();
+      const posts = parseEmbeddedPosts(html);
+      if (posts === null) {
+        console.log(
+          `[threads-session] "${label}" html had no search payload (${html.length}b, ${host})`,
+        );
+        await dumpDebugHtml(label, host + path, html);
+        continue;
+      }
+      console.log(
+        `[threads-session] "${label}" html ${res.status} (${html.length}b) -> ${posts.length} posts (${host})`,
+      );
+      return { html, blocked };
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      if (msg.includes("Blocked") || msg.includes("Timeout") || msg.includes("aborted")) {
+        blocked = true;
+        continue;
+      }
+      console.log(`[threads-session] "${label}" html fetch failed: ${msg}`);
+    }
+  }
+  return { html: null, blocked };
 }
 
 export async function searchSsr(keyword: string): Promise<ThreadsRawPost[]> {
@@ -337,7 +463,7 @@ export async function searchSsr(keyword: string): Promise<ThreadsRawPost[]> {
         if (r.status >= 400) continue;
         html = await r.text();
       }
-      const parsed = parseSearchResults(html);
+      const parsed = parseEmbeddedPosts(html);
       if (parsed === null) {
         lastErr = new Error("Search page had no payload (challenge/block page?)");
         continue;
@@ -443,51 +569,41 @@ function sessionCookieHeader(): string {
 export async function searchThreadsLatest(
   keyword: string,
 ): Promise<{ posts: ThreadsRawPost[] | null; blocked: boolean }> {
-  if (!hasThreadsSession()) return { posts: null, blocked: false };
-  const cookie = sessionCookieHeader();
-  const searchUrl = `https://www.threads.com/search?q=${encodeURIComponent(keyword)}`;
-
-  try {
-    const res = await fetch(searchUrl, {
-      headers: {
-        cookie,
-        "user-agent": MOBILE_UA,
-        "accept-language": "en-GB,en;q=0.9",
-        accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-        referer: "https://www.threads.com/",
-      },
-      redirect: "follow",
-      signal: AbortSignal.timeout(THREADS_CONFIG.fetchTimeoutMs),
-    });
-    if (res.status === 429 || res.status === 403 || res.status === 401) {
-      console.log(`[threads-session] "${keyword}" html blocked (${res.status})`);
-      return { posts: null, blocked: true };
-    }
-    if (!res.ok) {
-      console.log(
-        `[threads-session] "${keyword}" html status ${res.status}${res.redirected ? ` -> ${res.url}` : ""}`,
-      );
-      return { posts: null, blocked: false };
-    }
-    const html = await res.text();
-    const parsed = parseSearchResults(html);
-    if (parsed === null) {
-      console.log(`[threads-session] "${keyword}" html had no search payload (${html.length}b)`);
-      return { posts: null, blocked: false };
-    }
-    const posts = dedupe(parsed).slice(0, THREADS_CONFIG.maxResultsPerKeyword);
-    console.log(
-      `[threads-session] "${keyword}" html ${res.status} (${html.length}b) -> ${posts.length} posts`,
-    );
-    return { posts, blocked: false };
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e);
-    if (msg.includes("Blocked") || msg.includes("Timeout") || msg.includes("aborted")) {
-      return { posts: null, blocked: true };
-    }
-    console.log(`[threads-session] "${keyword}" html fetch failed: ${msg}`);
-    return { posts: null, blocked: false };
+  const path = `/search?q=${encodeURIComponent(keyword)}`;
+  const r = await sessionFetch(path, keyword);
+  if (r.html === null) return { posts: null, blocked: r.blocked };
+  const parsed = parseEmbeddedPosts(r.html);
+  if (parsed === null) {
+    await dumpDebugHtml(keyword, "https://www.threads.com" + path, r.html);
+    return { posts: null, blocked: r.blocked };
   }
+  return { posts: dedupe(parsed).slice(0, THREADS_CONFIG.maxResultsPerKeyword), blocked: false };
+}
+
+/** Hashtag page surface: /tag/<slug> — keyword-targeted fresh posts, separate throttle bucket. */
+export async function searchTag(
+  keyword: string,
+): Promise<{ posts: ThreadsRawPost[] | null; blocked: boolean }> {
+  const slug = keyword.toLowerCase().replace(/[^a-z0-9]+/g, "");
+  if (!slug) return { posts: null, blocked: false };
+  const path = `/tag/${slug}`;
+  const r = await sessionFetch(path, `tag:${slug}`);
+  if (r.html === null) return { posts: null, blocked: r.blocked };
+  const parsed = parseEmbeddedPosts(r.html);
+  if (parsed === null) {
+    await dumpDebugHtml(`tag:${slug}`, "https://www.threads.com" + path, r.html);
+    return { posts: null, blocked: r.blocked };
+  }
+  return { posts: dedupe(parsed).slice(0, THREADS_CONFIG.maxResultsPerKeyword), blocked: false };
+}
+
+/** Explore surface: fresh/trending posts, separate throttle bucket. */
+export async function searchExplore(): Promise<{ posts: ThreadsRawPost[] | null; blocked: boolean }> {
+  const r = await sessionFetch("/explore", "explore");
+  if (r.html === null) return { posts: null, blocked: r.blocked };
+  const parsed = parseEmbeddedPosts(r.html);
+  if (parsed === null) return { posts: null, blocked: r.blocked };
+  return { posts: dedupe(parsed).slice(0, 100), blocked: false };
 }
 
 /* ------------------------------------------------------------------ */
@@ -565,23 +681,24 @@ export async function searchKeyword(
 
   if (ssrAllowed) {
     try {
-      const latest = hasThreadsSession() ? await searchThreadsLatest(keyword) : null;
       let blocked = false;
-      if (latest) {
+      if (hasThreadsSession()) {
+        const latest = await searchThreadsLatest(keyword);
         if (latest.posts && latest.posts.length > 0) {
           return { posts: latest.posts, source: "ssr", blocked: false };
         }
-        blocked = latest.blocked;
+        if (latest.blocked) return { posts: [], source: "ssr", blocked: true };
+        const tag = await searchTag(keyword);
+        if (tag.posts && tag.posts.length > 0) {
+          return { posts: tag.posts, source: "ssr", blocked: false };
+        }
+        if (tag.blocked) return { posts: [], source: "ssr", blocked: true };
       }
       const posts = await searchSsr(keyword);
       if (posts.length > 0) return { posts, source: "ssr", blocked: false };
       return { posts: [], source: "ssr", blocked };
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      if (apifyAllowed) {
-        const posts = await searchApify(keyword);
-        if (posts.length > 0) return { posts, source: "apify", blocked: false };
-      }
       throw new Error(`Threads SSR search failed for "${keyword}": ${msg}`);
     }
   }
