@@ -205,17 +205,19 @@ export async function reloginThreadsSession(): Promise<ReloginResult> {
       .count()
       .catch(() => 0);
     if (!alreadyLoggedIn) {
-      // Threads login page: either the IG button or a direct email form.
+      // Threads login page: prefer the built-in email form (works for
+      // threads-only accounts, e.g. no Instagram account behind them), fall
+      // back to the "Continue with Instagram" OAuth flow.
       const igButton = page
         .locator('button:has-text("Continue with Instagram"), [role="button"]:has-text("Continue with Instagram"), a:has-text("Continue with Instagram"), button:has-text("Log in with Instagram"), a:has-text("Log in with Instagram")')
         .first();
       const emailForm = page.locator('input[name="username"], input[placeholder="Username, phone or email"], input[type="text"]').first();
-      if (await igButton.count().catch(() => 0)) {
+      if (await emailForm.count().catch(() => 0)) {
+        console.log("[relogin] using threads email login form");
+      } else if (await igButton.count().catch(() => 0)) {
         console.log("[relogin] clicking Log in with Instagram");
         await igButton.click({ timeout: 20_000 });
         await page.waitForTimeout(3000);
-      } else if (await emailForm.count().catch(() => 0)) {
-        console.log("[relogin] using threads email login form");
       } else {
         console.log("[relogin] no login UI found — trying direct IG login");
         await page.goto("https://www.instagram.com/accounts/login/", {
