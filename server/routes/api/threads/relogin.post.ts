@@ -7,12 +7,7 @@ const isAdminBypass =
 
 export default defineEventHandler(async (event) => {
   if (!isAdminBypass) {
-    const { requireAuth } = await import("../../../../src/lib/auth/server-auth");
-    const user = await requireAuth().catch(() => null);
-    const adminEmail = process.env.ADMIN_EMAIL || "";
-    if (!user || !adminEmail || user.email !== adminEmail) {
-      throw createError({ statusCode: 403, statusMessage: "Forbidden" });
-    }
+    throw createError({ statusCode: 403, statusMessage: "Forbidden" });
   }
 
   const gate = await canAttemptRelogin();
