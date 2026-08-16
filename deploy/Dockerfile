@@ -23,13 +23,16 @@ COPY public/ ./public/
 COPY src/ ./src/
 COPY server/ ./server/
 
-# Build with Node.js server preset (overrides Vercel preset from vite.config.ts)
-# vite build directly (not npm run build) skips the Vercel-specific postbuild
-RUN NITRO_PRESET=node-server ./node_modules/.bin/vite build
+# Build with Node.js server preset. The marker file is how vite.config.ts picks
+# the preset (env vars are unreliable inside Render's BuildKit runner).
+RUN touch /app/.render-node && ./node_modules/.bin/vite build
+
+# Fail fast with a clear message if the preset did not apply
+RUN test -f /app/.output/server/index.mjs || (echo "FAILED: node-server preset not applied (.output missing)" && exit 1)
 
 # Apply the nitro lazy-service patch (required for the 24/7 monitor to boot)
 ENV POSTBUILD_SKIP_PING=1
-RUN node scripts/postbuild.mjs
+RUN timeout 90 node scripts/postbuild.mjs
 
 # ─── Stage 2: Production runtime ─────────────────────────────────────────────
 FROM node:24-alpine AS runner
