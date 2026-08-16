@@ -34,6 +34,9 @@ RUN test -f /app/.output/server/index.mjs || (echo "FAILED: node-server preset n
 ENV POSTBUILD_SKIP_PING=1
 RUN timeout 90 node scripts/postbuild.mjs
 
+# Drop the stray .vercel scaffolding the build leaves behind (cosmetic)
+RUN rm -rf /app/.vercel
+
 # ─── Stage 2: Production runtime ─────────────────────────────────────────────
 FROM node:24-alpine AS runner
 
