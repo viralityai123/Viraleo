@@ -340,13 +340,12 @@ function parseEmbeddedPosts(html: string): ThreadsRawPost[] | null {
 }
 
 /** Stores a sample of unparseable HTML so the parser can be adapted to the live shape. */
-async function dumpDebugHtml(keyword: string, url: string, html: string): Promise<void> {
+async function dumpDebugHtml(key: string, url: string, html: string): Promise<void> {
   try {
     const kv = getKv();
     if (!kv) return;
-    await kv.set("threads:debughtml", {
+    await kv.set(key, {
       ts: Date.now(),
-      keyword,
       url,
       sample: html.slice(0, 60_000),
     });
@@ -393,7 +392,9 @@ async function sessionFetch(
         console.log(
           `[threads-session] "${label}" html had no search payload (${html.length}b, ${host})`,
         );
-        await dumpDebugHtml(label, host + path, html);
+        if (label !== "explore") {
+          await dumpDebugHtml(`threads:debughtml:${label}`, host + path, html);
+        }
         continue;
       }
       console.log(
@@ -573,10 +574,7 @@ export async function searchThreadsLatest(
   const r = await sessionFetch(path, keyword);
   if (r.html === null) return { posts: null, blocked: r.blocked };
   const parsed = parseEmbeddedPosts(r.html);
-  if (parsed === null) {
-    await dumpDebugHtml(keyword, "https://www.threads.com" + path, r.html);
-    return { posts: null, blocked: r.blocked };
-  }
+  if (parsed === null) return { posts: null, blocked: r.blocked };
   return { posts: dedupe(parsed).slice(0, THREADS_CONFIG.maxResultsPerKeyword), blocked: false };
 }
 
@@ -590,10 +588,7 @@ export async function searchTag(
   const r = await sessionFetch(path, `tag:${slug}`);
   if (r.html === null) return { posts: null, blocked: r.blocked };
   const parsed = parseEmbeddedPosts(r.html);
-  if (parsed === null) {
-    await dumpDebugHtml(`tag:${slug}`, "https://www.threads.com" + path, r.html);
-    return { posts: null, blocked: r.blocked };
-  }
+  if (parsed === null) return { posts: null, blocked: r.blocked };
   return { posts: dedupe(parsed).slice(0, THREADS_CONFIG.maxResultsPerKeyword), blocked: false };
 }
 

@@ -33,8 +33,8 @@ export const THREADS_CONFIG = {
   recoveryBackoffMs: int("THREADS_RECOVERY_BACKOFF_MS", 30 * 60_000),
   /** During recovery pause: how often to probe 1 keyword for session health (ms). */
   probeIntervalMs: int("THREADS_PROBE_INTERVAL_MS", 15 * 60_000),
-  /** Explore-page fetches per cycle (separate throttle bucket, fresh posts). */
-  explorePerCycle: int("THREADS_EXPLORE_PER_CYCLE", 1),
+  /** Explore-page fetches per cycle (client-rendered shell — off by default). */
+  explorePerCycle: int("THREADS_EXPLORE_PER_CYCLE", 0),
   /** Score at or above which auto-approve fires (when a category is toggled on). */
   autoApproveThreshold: int("THREADS_AUTOAPPROVE_THRESHOLD", 50),
   /** Hard cap on auto-posted replies per 24h — protects the account from spam flags. */

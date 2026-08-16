@@ -87,6 +87,7 @@ export async function pollOnce(): Promise<void> {
       await setMonitorState({ ...state, lastPollAt: Date.now() });
       return;
     }
+    const recoveryUntil = state.recoveryUntil ?? 0;
 
     if (Date.now() < recoveryUntil) {
       if (Date.now() - lastProbeAt >= THREADS_CONFIG.probeIntervalMs) {
@@ -94,7 +95,7 @@ export async function pollOnce(): Promise<void> {
         try {
           const probe = await searchThreadsLatest("website design");
           if (probe.posts && probe.posts.length > 0) {
-            recoveryUntil = 0;
+            await setMonitorState({ ...state, recoveryUntil: 0, lastPollAt: Date.now() });
             log("session recovered — resuming full cycles");
           } else {
             log(
@@ -213,8 +214,14 @@ export async function pollOnce(): Promise<void> {
 
     if (keywords.length > 0 && blockedCount / keywords.length >= THREADS_CONFIG.blockedRatio) {
       if (fetched === 0) {
-        recoveryUntil = Math.max(recoveryUntil, Date.now() + THREADS_CONFIG.recoveryBackoffMs);
+        const nextState = {
+          ...state,
+          recoveryUntil: Date.now() + THREADS_CONFIG.recoveryBackoffMs,
+          lastPollAt: Date.now(),
+          keywordCursor: nextCursor,
+        };
         lastProbeAt = 0;
+        await setMonitorState(nextState);
         log(
           `cycle fetched 0 posts (${blockedCount}/${keywords.length} blocked) — recovery pause ${Math.round(THREADS_CONFIG.recoveryBackoffMs / 60_000)}min`,
         );
@@ -406,7 +413,6 @@ let allFailedCycles = 0;
 let lastCycleAllFailed = false;
 let lastCycleFetched = 0;
 let throttleBackoffMs = 0;
-let recoveryUntil = 0;
 let lastProbeAt = 0;
 
 /** Starts the 24/7 monitor loop. Only runs on long-lived processes (Koyeb), never on Vercel. */

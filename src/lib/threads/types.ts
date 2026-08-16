@@ -46,6 +46,8 @@ export interface ThreadsMonitorState {
   lastEmailAt: number;
   lastEmailCount: number;
   tokenWarningSent: boolean;
+  /** UTC ms until which polling stays paused (recovery mode). Survives restarts. */
+  recoveryUntil?: number;
 }
 
 export interface ThreadsCategory {
