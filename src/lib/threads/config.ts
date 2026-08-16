@@ -10,8 +10,8 @@ export const THREADS_CONFIG = {
   pollIntervalMs: int("THREADS_POLL_INTERVAL_MS", 30_000),
   /** How many keywords to search per cycle. 0 = sweep the ENTIRE keyword list every cycle (fastest catch, more requests). */
   keywordsPerCycle: int("THREADS_KEYWORDS_PER_CYCLE", 0),
-  /** How many keyword searches to run in parallel. Higher = faster sweep, more aggressive. */
-  keywordConcurrency: int("THREADS_KEYWORD_CONCURRENCY", 3),
+  /** How many keyword searches to run in parallel. Lower = gentler on rate limits. */
+  keywordConcurrency: int("THREADS_KEYWORD_CONCURRENCY", 2),
   /** Minimum LLM intent score (0-100) for a lead to hit the queue. */
   intentThreshold: int("THREADS_INTENT_THRESHOLD", 50),
   /** Fresh window (seconds): posts this new are always eligible. */
@@ -21,7 +21,14 @@ export const THREADS_CONFIG = {
   /** Require zero replies for aged (non-fresh) posts. */
   agedRequiresNoReplies: process.env.THREADS_AGED_REQUIRES_NO_REPLIES !== "0",
   /** Base jitter between keyword requests (ms). Lower = faster sweep, more aggressive. */
-  requestJitterMs: int("THREADS_REQUEST_JITTER_MS", 300),
+  requestJitterMs: int("THREADS_REQUEST_JITTER_MS", 1500),
+  /** Ratio of blocked (429/403) keywords that triggers a polling pause. */
+  blockedRatio: (() => {
+    const raw = Number(process.env.THREADS_BLOCKED_RATIO);
+    return Number.isFinite(raw) && raw > 0 && raw <= 1 ? raw : 0.5;
+  })(),
+  /** How long to pause polling after a high blocked-ratio cycle (ms). */
+  blockedBackoffMs: int("THREADS_BLOCKED_BACKOFF_MS", 5 * 60_000),
   /** Score at or above which auto-approve fires (when a category is toggled on). */
   autoApproveThreshold: int("THREADS_AUTOAPPROVE_THRESHOLD", 50),
   /** Hard cap on auto-posted replies per 24h — protects the account from spam flags. */

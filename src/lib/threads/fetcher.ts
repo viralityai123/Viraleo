@@ -440,8 +440,10 @@ function sessionCookieHeader(): string {
  * payload (block/challenge/redirect), so the caller can fall back to the
  * anonymous SSR search.
  */
-export async function searchThreadsLatest(keyword: string): Promise<ThreadsRawPost[] | null> {
-  if (!hasThreadsSession()) return null;
+export async function searchThreadsLatest(
+  keyword: string,
+): Promise<{ posts: ThreadsRawPost[] | null; blocked: boolean }> {
+  if (!hasThreadsSession()) return { posts: null, blocked: false };
   const cookie = sessionCookieHeader();
   const searchUrl = `https://www.threads.com/search?q=${encodeURIComponent(keyword)}`;
 
@@ -459,30 +461,32 @@ export async function searchThreadsLatest(keyword: string): Promise<ThreadsRawPo
     });
     if (res.status === 429 || res.status === 403 || res.status === 401) {
       console.log(`[threads-session] "${keyword}" html blocked (${res.status})`);
-      return null;
+      return { posts: null, blocked: true };
     }
     if (!res.ok) {
       console.log(
         `[threads-session] "${keyword}" html status ${res.status}${res.redirected ? ` -> ${res.url}` : ""}`,
       );
-      return null;
+      return { posts: null, blocked: false };
     }
     const html = await res.text();
     const parsed = parseSearchResults(html);
     if (parsed === null) {
       console.log(`[threads-session] "${keyword}" html had no search payload (${html.length}b)`);
-      return null;
+      return { posts: null, blocked: false };
     }
     const posts = dedupe(parsed).slice(0, THREADS_CONFIG.maxResultsPerKeyword);
     console.log(
       `[threads-session] "${keyword}" html ${res.status} (${html.length}b) -> ${posts.length} posts`,
     );
-    return posts;
+    return { posts, blocked: false };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    if (msg.includes("Blocked") || msg.includes("Timeout") || msg.includes("aborted")) return null;
+    if (msg.includes("Blocked") || msg.includes("Timeout") || msg.includes("aborted")) {
+      return { posts: null, blocked: true };
+    }
     console.log(`[threads-session] "${keyword}" html fetch failed: ${msg}`);
-    return null;
+    return { posts: null, blocked: false };
   }
 }
 
@@ -545,7 +549,7 @@ export async function searchKeyword(
   keyword: string,
   consecutiveFailures: number,
   sourceOverride?: ThreadsSource,
-): Promise<{ posts: ThreadsRawPost[]; source: ThreadsSource }> {
+): Promise<{ posts: ThreadsRawPost[]; source: ThreadsSource; blocked: boolean }> {
   const mode = process.env.THREADS_FETCHER || "auto";
   const hasApify = !!process.env.APIFY_TOKEN;
   const ssrAllowed =
@@ -556,21 +560,27 @@ export async function searchKeyword(
 
   if (mode === "apify") {
     const posts = await searchApify(keyword);
-    return { posts, source: "apify" };
+    return { posts, source: "apify", blocked: false };
   }
 
   if (ssrAllowed) {
     try {
       const latest = hasThreadsSession() ? await searchThreadsLatest(keyword) : null;
-      if (latest && latest.length > 0) return { posts: latest, source: "ssr" };
+      let blocked = false;
+      if (latest) {
+        if (latest.posts && latest.posts.length > 0) {
+          return { posts: latest.posts, source: "ssr", blocked: false };
+        }
+        blocked = latest.blocked;
+      }
       const posts = await searchSsr(keyword);
-      if (posts.length > 0) return { posts, source: "ssr" };
-      return { posts: [], source: "ssr" };
+      if (posts.length > 0) return { posts, source: "ssr", blocked: false };
+      return { posts: [], source: "ssr", blocked };
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       if (apifyAllowed) {
         const posts = await searchApify(keyword);
-        if (posts.length > 0) return { posts, source: "apify" };
+        if (posts.length > 0) return { posts, source: "apify", blocked: false };
       }
       throw new Error(`Threads SSR search failed for "${keyword}": ${msg}`);
     }
@@ -578,18 +588,18 @@ export async function searchKeyword(
 
   if (apifyAllowed) {
     const posts = await searchApify(keyword);
-    if (posts.length > 0) return { posts, source: "apify" };
+    if (posts.length > 0) return { posts, source: "apify", blocked: false };
   }
 
   if (diyAllowed) {
     const posts = await searchDiy(keyword);
-    return { posts, source: "diy" };
+    return { posts, source: "diy", blocked: false };
   }
 
   if (ssrAllowed) {
     throw new Error(`Threads SSR search returned no posts for "${keyword}"`);
   }
-  return { posts: [], source: "diy" };
+  return { posts: [], source: "diy", blocked: false };
 }
 
 export function buildPostUrl(post: ThreadsRawPost): string {

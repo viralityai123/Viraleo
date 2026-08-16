@@ -112,13 +112,18 @@ export async function pollOnce(): Promise<void> {
 
     const concurrency = Math.max(1, THREADS_CONFIG.keywordConcurrency);
     let nextIdx = 0;
+    let blockedCount = 0;
     const worker = async () => {
       while (true) {
         const idx = nextIdx++;
         if (idx >= keywords.length) return;
         const keyword = keywords[idx];
         try {
-          const { posts, source } = await searchKeyword(keyword, state.consecutiveFailures);
+          const { posts, source, blocked } = await searchKeyword(
+            keyword,
+            state.consecutiveFailures,
+          );
+          if (blocked) blockedCount++;
           fetched += posts.length;
           lastSource = source;
           if (posts.length === 0) continue;
@@ -173,6 +178,15 @@ export async function pollOnce(): Promise<void> {
     await Promise.all(
       Array.from({ length: Math.min(concurrency, keywords.length) }, () => worker()),
     );
+
+    if (keywords.length > 0 && blockedCount / keywords.length >= THREADS_CONFIG.blockedRatio) {
+      throttleBackoffMs = THREADS_CONFIG.blockedBackoffMs;
+      log(
+        `session rate-limited (${blockedCount}/${keywords.length} keywords blocked) — backing off ${Math.round(throttleBackoffMs / 1000)}s`,
+      );
+    } else {
+      throttleBackoffMs = 0;
+    }
 
     candidates.sort((a, b) => (a.post.takenAt ?? 0) - (b.post.takenAt ?? 0));
 
@@ -343,6 +357,7 @@ export async function pollOnce(): Promise<void> {
 let allFailedCycles = 0;
 let lastCycleAllFailed = false;
 let lastCycleFetched = 0;
+let throttleBackoffMs = 0;
 
 /** Starts the 24/7 monitor loop. Only runs on long-lived processes (Koyeb), never on Vercel. */
 export function startThreadsMonitor(): void {
@@ -358,7 +373,7 @@ export function startThreadsMonitor(): void {
           if (lastCycleAllFailed) allFailedCycles = Math.min(allFailedCycles + 1, 4);
           else allFailedCycles = 0;
           const extraBackoff = lastCycleAllFailed ? allFailedCycles * 30_000 : 0;
-          schedule(THREADS_CONFIG.pollIntervalMs + extraBackoff);
+          schedule(THREADS_CONFIG.pollIntervalMs + extraBackoff + throttleBackoffMs);
         });
     }, delayMs);
   };
