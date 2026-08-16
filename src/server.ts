@@ -6,6 +6,15 @@ import { startThreadsMonitor } from "./lib/threads/monitor";
 
 startThreadsMonitor();
 
+// Self-heartbeat: keeps Render's free tier awake (15 min idle sleep). The
+// monitor loop runs in-process, so if the instance sleeps, lead catching stops.
+const HEARTBEAT_URL = process.env.APP_URL;
+if (HEARTBEAT_URL && process.env.VERCEL !== "1") {
+  setInterval(() => {
+    fetch(`${HEARTBEAT_URL}/`).catch(() => {});
+  }, 10 * 60 * 1000);
+}
+
 const SECURITY_HEADERS = {
   "content-type": "text/html; charset=utf-8",
   "x-content-type-options": "nosniff",
