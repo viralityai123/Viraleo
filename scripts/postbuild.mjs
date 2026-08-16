@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync, existsSync, rmSync, readdirSync } from "node:fs";
+import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -66,12 +66,6 @@ if (existsSync(join(nsDir, "index.mjs"))) {
     );
     ns += `\nsetTimeout(() => import("./_ssr/${entry}").catch(() => {}), 1500);\n`;
     changed = true;
-    const stale = existsSync(ssrDir)
-      ? readdirSync(ssrDir).filter(
-          (f) => /^index-[A-Za-z0-9_-]+\.mjs$/.test(f) && f !== entry,
-        )
-      : [];
-    for (const f of stale) rmSync(join(ssrDir, f), { force: true });
   }
   if (changed) {
     writeFileSync(nsIndexPath, ns, "utf8");
