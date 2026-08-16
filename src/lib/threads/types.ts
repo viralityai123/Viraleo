@@ -23,6 +23,7 @@ export interface ThreadsLead {
   source: ThreadsSource;
   matchedKeyword: string;
   replyDrafts: string[];
+  fiverrGig?: string;
   status: "queued" | "approved" | "skipped" | "failed";
   replyCount?: number;
   replyId?: string;

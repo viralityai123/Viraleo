@@ -200,6 +200,44 @@ export const THREADS_CATEGORIES: ThreadsCategory[] = [
   },
 ];
 
+/**
+ * Job-role/service posts we never want as leads (they're hiring PA/VA/data
+ * staff, not buying design services). Posts matching any term are skipped
+ * and marked seen so they never come back.
+ */
+export const EXCLUDED_TERMS = [
+  "personal assistant",
+  "virtual assistant",
+  "data entry",
+  "document typing",
+  "administrative assistant",
+  "admin assistant",
+  "customer support role",
+  "customer service rep",
+  "call center",
+  "transcription",
+  "bookkeeping",
+  "accounting assistant",
+  "telemarketing",
+  "chat support",
+  "back office",
+  "office assistant",
+  "secretary",
+  "typist",
+  "proofreading job",
+  "hiring a pa",
+  "hire a pa",
+  "pa needed",
+  "pa required",
+  "looking for a pa",
+  "virtual admin",
+];
+
+export function isExcludedPost(text: string): boolean {
+  const t = text.toLowerCase();
+  return EXCLUDED_TERMS.some((term) => t.includes(term));
+}
+
 export const INTENT_TRIGGERS = [
   "looking for",
   "need help",

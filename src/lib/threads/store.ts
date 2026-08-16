@@ -48,23 +48,23 @@ async function listAll(key: string): Promise<unknown[]> {
   }
 }
 
-// --- seen / dedupe ---
+// --- seen / dedupe (keyed by stable numeric post id) ---
 
-export async function isSeen(postUrl: string): Promise<boolean> {
+export async function isSeen(postId: string): Promise<boolean> {
   const kv = getKv();
   if (!kv) return true;
   try {
-    return Boolean(await kv.sismember(SEEN_KEY, postUrl));
+    return Boolean(await kv.sismember(SEEN_KEY, postId));
   } catch {
     return true;
   }
 }
 
-export async function markSeen(postUrls: string[]): Promise<void> {
+export async function markSeen(postIds: string[]): Promise<void> {
   const kv = getKv();
-  if (!kv || postUrls.length === 0) return;
+  if (!kv || postIds.length === 0) return;
   try {
-    await kv.sadd(SEEN_KEY, ...postUrls);
+    await kv.sadd(SEEN_KEY, ...postIds);
   } catch {
     // non-fatal
   }
@@ -127,6 +127,7 @@ export async function purgeExpiredLeads(): Promise<number> {
     if (!raw || raw.length === 0) return 0;
     const nowSec = Date.now() / 1000;
     const kept: unknown[] = [];
+    const keptIds = new Set<string>();
     for (const el of raw) {
       try {
         const lead = typeof el === "string" ? JSON.parse(el) : el;
@@ -134,6 +135,8 @@ export async function purgeExpiredLeads(): Promise<number> {
           kept.push(el);
           continue;
         }
+        if (typeof lead.postId === "string" && keptIds.has(lead.postId)) continue;
+        if (typeof lead.postId === "string") keptIds.add(lead.postId);
         if (isLeadEligible(lead as ThreadsLead, nowSec)) kept.push(el);
       } catch {
         kept.push(el);

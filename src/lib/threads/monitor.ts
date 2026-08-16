@@ -4,7 +4,8 @@ import { scorePost } from "./scorer";
 import { publishReply } from "./publisher";
 import { getAuth } from "./store";
 import { refreshAccessToken } from "./publisher";
-import { hasBuyingIntent, THREADS_CATEGORIES } from "./taxonomy";
+import { hasBuyingIntent, isExcludedPost, THREADS_CATEGORIES } from "./taxonomy";
+import { recommendFiverrGig } from "./fiverr";
 import { sendThreadsAlert, sendThreadsLeadAlert } from "@/lib/email";
 import type { ThreadsLead, ThreadsRawPost, ThreadsMonitorState, ThreadsSource } from "./types";
 import {
@@ -130,6 +131,10 @@ export async function pollOnce(): Promise<void> {
               continue;
             }
             if (!post.text) continue;
+            if (isExcludedPost(post.text)) {
+              await markSeen([post.id]);
+              continue;
+            }
             if (post.takenAt) {
               const ageSec = Date.now() / 1000 - post.takenAt;
               if (ageSec > THREADS_CONFIG.maxAgedLeadAgeSec) continue;
@@ -147,11 +152,11 @@ export async function pollOnce(): Promise<void> {
             }
             const matched = hasBuyingIntent(post.text);
             if (!matched) continue;
-            if (await isSeen(buildPostUrl(post))) continue;
+            if (await isSeen(post.id)) continue;
             fresh.push({ post, matched });
+            await markSeen([post.id]);
           }
           candidates.push(...fresh);
-          await markSeen(posts.map((p) => buildPostUrl(p)));
         } catch (e) {
           const msg = e instanceof Error ? e.message : String(e);
           cycleFailures.push(msg);
@@ -171,7 +176,14 @@ export async function pollOnce(): Promise<void> {
 
     candidates.sort((a, b) => (a.post.takenAt ?? 0) - (b.post.takenAt ?? 0));
 
-    const toScore = candidates.slice(0, THREADS_CONFIG.llmCallsPerCycle);
+    const deduped: { post: ThreadsRawPost; matched: string }[] = [];
+    const seenIds = new Set<string>();
+    for (const c of candidates) {
+      if (seenIds.has(c.post.id)) continue;
+      seenIds.add(c.post.id);
+      deduped.push(c);
+    }
+    const toScore = deduped.slice(0, THREADS_CONFIG.llmCallsPerCycle);
     const autoApprove = await getAutoApprove();
     const repliesToday = await getRepliesToday();
     const newLeads: ThreadsLead[] = [];
@@ -203,6 +215,7 @@ export async function pollOnce(): Promise<void> {
       if (scored.category === "other" && scored.intentScore < THREADS_CONFIG.autoApproveThreshold) {
         continue;
       }
+      if (await isSeen(post.id)) continue;
       const drafts = [scored.draftA, scored.draftB].filter((d) => d && d.length > 10);
       if (drafts.length === 0) continue;
 
@@ -220,6 +233,7 @@ export async function pollOnce(): Promise<void> {
         replyDrafts: drafts,
         status: "queued",
         replyCount: post.replyCount ?? 0,
+        fiverrGig: recommendFiverrGig(scored.category),
       };
 
       const canAutoApprove =
