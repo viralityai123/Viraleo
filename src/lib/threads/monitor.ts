@@ -316,7 +316,7 @@ export async function pollOnce(): Promise<void> {
       const drafts = [scored.draftA, scored.draftB].filter((d) => d && d.length > 10);
       if (drafts.length === 0) continue;
 
-      const postUrl = buildPostUrl(post);
+      const postUrl = post.url || buildPostUrl(post);
       if (repliedPostUrls.has(postUrl)) {
         log("already replied, skipping:", post.username || "unknown", postUrl);
         continue;
