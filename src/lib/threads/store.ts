@@ -77,6 +77,17 @@ export async function pushLead(lead: ThreadsLead): Promise<void> {
   const kv = getKv();
   if (!kv) return;
   try {
+    const existing = await kv.lrange<unknown>(QUEUE_KEY, 0, -1);
+    if (existing && existing.length > 0) {
+      for (const el of existing) {
+        try {
+          const l = typeof el === "string" ? JSON.parse(el) : el;
+          if (l && typeof l === "object" && l.postId === lead.postId) return;
+        } catch {
+          // skip unparsable
+        }
+      }
+    }
     await kv.rpush(QUEUE_KEY, JSON.stringify(lead));
   } catch (e) {
     console.error("[threads] pushLead failed:", e);
@@ -133,7 +144,11 @@ export async function purgeExpiredLeads(): Promise<number> {
       try {
         const lead = typeof el === "string" ? JSON.parse(el) : el;
         if (!lead || typeof lead !== "object" || !("takenAt" in lead)) continue;
-        if (typeof lead.postId === "string" && keptIds.has(lead.postId)) continue;
+        if (typeof lead.postId === "string" && keptIds.has(lead.postId)) {
+          await kv.lrem(QUEUE_KEY, 1, el as string);
+          removed++;
+          continue;
+        }
         if (typeof lead.postId === "string") keptIds.add(lead.postId);
         if (!isLeadEligible(lead as ThreadsLead, nowSec)) {
           await kv.lrem(QUEUE_KEY, 1, el as string);
