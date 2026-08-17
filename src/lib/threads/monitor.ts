@@ -313,7 +313,9 @@ export async function pollOnce(): Promise<void> {
       if (scored.category === "other" && scored.intentScore < THREADS_CONFIG.autoApproveThreshold) {
         continue;
       }
-      const drafts = [scored.draftA, scored.draftB].filter((d) => d && d.length > 10);
+      const drafts = [scored.draftA, scored.draftB, scored.draftC].filter(
+        (d): d is string => Boolean(d && d.length > 10),
+      );
       if (drafts.length === 0) continue;
 
       const postUrl = post.url || buildPostUrl(post);

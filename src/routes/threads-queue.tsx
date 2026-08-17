@@ -156,6 +156,7 @@ function ThreadsQueuePage() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [draftChoice, setDraftChoice] = useState<Record<string, number>>({});
   const [lastUpdated, setLastUpdated] = useState<number>(0);
+  const [hotFirst, setHotFirst] = useState(true);
   const inflightRef = useRef(false);
 
   const loadAll = useMemo(
@@ -198,6 +199,20 @@ function ThreadsQueuePage() {
       loadAll();
     }
   }, [loadAll]);
+
+  const isHotLead = (l: ThreadsLead) =>
+    /\[hiring\]|hiring|paid position|budget:|looking to pay|willing to pay/i.test(l.text || "");
+
+  const displayLeads = useMemo(() => {
+    if (!hotFirst) return leads;
+    return [...leads].sort((a, b) => {
+      const hotA = isHotLead(a) ? 1 : 0;
+      const hotB = isHotLead(b) ? 1 : 0;
+      if (hotA !== hotB) return hotB - hotA;
+      if (b.intentScore !== a.intentScore) return b.intentScore - a.intentScore;
+      return (b.takenAt || 0) - (a.takenAt || 0);
+    });
+  }, [leads, hotFirst]);
 
   const connect = async () => {
     setConnecting(true);
@@ -317,6 +332,17 @@ function ThreadsQueuePage() {
             </p>
           </div>
           <div className="flex items-center gap-3">
+            <button
+              onClick={() => setHotFirst((v) => !v)}
+              className={`rounded-lg border px-3 py-2 text-xs font-semibold transition-colors ${
+                hotFirst
+                  ? "border-red-500/40 bg-red-500/10 text-red-500"
+                  : "border-border text-muted-foreground hover:bg-muted"
+              }`}
+              title="Jobs and 90+ intent leads first"
+            >
+              {hotFirst ? "Hot first" : "All leads"}
+            </button>
             <a
               href="/api/threads/export"
               className="rounded-lg border border-border px-3 py-2 text-xs font-medium text-foreground hover:bg-muted"
@@ -400,7 +426,7 @@ function ThreadsQueuePage() {
           </div>
         ) : (
           <div className="space-y-4">
-            {leads.map((lead) => {
+            {displayLeads.map((lead) => {
               const idx = draftChoice[lead.postId] ?? 0;
               return (
                 <div key={lead.postId} className="rounded-xl border border-border p-4">
@@ -410,6 +436,11 @@ function ThreadsQueuePage() {
                       <span className="rounded-md bg-muted px-2 py-0.5 text-xs text-muted-foreground">
                         {lead.category}
                       </span>
+                      {isHotLead(lead) && (
+                        <span className="rounded-md bg-red-500/15 px-2 py-0.5 text-xs font-bold text-red-500">
+                          HOT
+                        </span>
+                      )}
                       {lead.takenAt &&
                         Date.now() / 1000 - lead.takenAt <= THREADS_CONFIG.freshWindowSec && (
                           <span className="rounded-md bg-emerald-500/15 px-2 py-0.5 text-xs font-semibold text-emerald-500">

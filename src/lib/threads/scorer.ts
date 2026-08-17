@@ -20,6 +20,8 @@ const CREDENTIALS = (() => {
   return parts.length > 0 ? `\nYOUR CREDENTIALS (real work you built — name it in ONE draft when it fits naturally):\n${parts.join("\n")}` : "";
 })();
 
+const SAME_DAY_OFFERS = `\nSAME-DAY OFFER (for draftC only — adapt the project part, keep the price/delivery/pay-when-happy promise):\n- Web/design/branding/landing leads: "${THREADS_CONFIG.sameDayOffer}"\n- Video editing leads: "${THREADS_CONFIG.sameDayOfferVideo}"`;
+
 const SCORER_SYSTEM_PROMPT = `You are a sharp sales lead analyst for Viraleo, a design studio that helps founders, creators, and small businesses launch websites, landing pages, SaaS products, and brands.${CREDENTIALS ? `\n\nIMPORTANT — REAL WORK YOU BUILT (use these EXACT names/links when instructed below):\n${CREDENTIALS.trim()}` : ""}
 
 Your job: read a social post and decide if the author is a POTENTIAL BUYER looking for a service, then score their buying intent.
@@ -40,15 +42,17 @@ Reply drafts (two variants, draftA and draftB):
 - Offer a zero-pressure next step: a free 5-minute audit, a quick recommendation, or a rough estimate — phrased like you do this daily.
 - Never include raw links/prices in drafts unless a credential URL is present (then it may appear in draftB).
 - Urgency works: "I can start today / first draft within 24h" ONLY when their post signals an immediate need (urgent, deadline, launch date).
+- draftC (ONLY when intentScore >= 85 or their post is a clear job/hire request): a fixed-price, same-day offer built from the SAME-DAY OFFER block, adapted to THEIR project — one sentence, always "I", keeps the price + same-day delivery + pay-when-happy promise. For every other lead, return draftC as an EMPTY string.
 - If the post is NOT a buyer, drafts can be short generic "good luck" style lines (they won't be used anyway).
 
-Return ONLY valid JSON: {"category":"...","intentScore":0-100,"draftA":"...","draftB":"...","reasoning":"one short line"}.`;
+Return ONLY valid JSON: {"category":"...","intentScore":0-100,"draftA":"...","draftB":"...","draftC":"...","reasoning":"one short line"} (draftC empty unless the lead is clearly hot).`;
 
 export interface ScoredPost {
   category: string;
   intentScore: number;
   draftA: string;
   draftB: string;
+  draftC?: string;
 }
 
 function cleanJson(text: string): string {
@@ -182,6 +186,13 @@ const HEURISTIC_DRAFTS: Record<string, [string, string]> = {
   ],
 };
 
+function heuristicDraftC(category: string, score: number): string {
+  if (score < 85) return "";
+  return category === "video"
+    ? THREADS_CONFIG.sameDayOfferVideo
+    : THREADS_CONFIG.sameDayOffer;
+}
+
 /** Deterministic fallback when no LLM is reachable (missing key or quota).
  *  "other" category scores below the threshold so junk never reaches the queue. */
 function heuristicScore(matchedCategory: string, text: string): ScoredPost {
@@ -211,7 +222,13 @@ function heuristicScore(matchedCategory: string, text: string): ScoredPost {
   const hits = strong.filter((w) => lower.includes(w)).length;
   const score = Math.min(92, 58 + hits * 8);
   const [draftA, draftB] = HEURISTIC_DRAFTS[matchedCategory] || HEURISTIC_DRAFTS["web-design"];
-  return { category: matchedCategory, intentScore: score, draftA, draftB };
+  return {
+    category: matchedCategory,
+    intentScore: score,
+    draftA,
+    draftB,
+    draftC: heuristicDraftC(matchedCategory, score),
+  };
 }
 
 export async function scorePost(
@@ -225,11 +242,13 @@ export async function scorePost(
   try {
     const parsed = JSON.parse(cleanJson(raw)) as Partial<ScoredPost>;
     const score = Math.max(0, Math.min(100, Number(parsed.intentScore) || 0));
+    const draftC = String(parsed.draftC || "").trim().slice(0, 500);
     return {
       category: typeof parsed.category === "string" ? parsed.category : "other",
       intentScore: score,
       draftA: String(parsed.draftA || "").slice(0, 500),
       draftB: String(parsed.draftB || "").slice(0, 500),
+      draftC: score >= 85 && draftC.length > 10 ? draftC : "",
     };
   } catch {
     return null;

@@ -78,6 +78,16 @@ export const THREADS_CONFIG = {
     const raw = (process.env.PORTFOLIO_URL_VIDEO || "").trim();
     return raw || "https://drive.google.com/drive/folders/128GTxm3No9XwI-HmPwmabglMGy9GP8we";
   })(),
+  /** Same-day offer line (draftC) for hot leads — web/design/branding categories. */
+  sameDayOffer: (() => {
+    const raw = (process.env.SAME_DAY_OFFER || "").trim();
+    return raw || "I've got an open slot today: one-page website + 10 AI promo videos for a fixed $150, delivered tonight — pay only when you're happy with it.";
+  })(),
+  /** Same-day offer line (draftC) for video-editing leads. */
+  sameDayOfferVideo: (() => {
+    const raw = (process.env.SAME_DAY_OFFER_VIDEO || "").trim();
+    return raw || "I've got an open slot today: a promo video pack — 10 videos for a fixed $150, first one tonight — pay only when you're happy with it.";
+  })(),
 } as const;
 
 export function isMonitorEnabled(): boolean {
