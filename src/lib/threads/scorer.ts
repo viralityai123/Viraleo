@@ -6,9 +6,23 @@ import { THREADS_CONFIG } from "./config";
  * and two reply drafts in a casual, value-first voice (no links, no spam).
  */
 
-const SCORER_SYSTEM_PROMPT = `You are a sharp sales lead analyst for Viraleo, a design studio that helps founders, creators, and small businesses launch websites, landing pages, SaaS products, and brands.
+const CREDENTIALS = (() => {
+  const parts: string[] = [];
+  if (THREADS_CONFIG.portfolioSites.length > 0) {
+    parts.push(`- Websites you personally designed and built: ${THREADS_CONFIG.portfolioSites.join(", ")}`);
+  }
+  if (THREADS_CONFIG.portfolioUrlVideo) {
+    parts.push(`- SaaS video demos of products you built: ${THREADS_CONFIG.portfolioUrlVideo}`);
+  }
+  if (THREADS_CONFIG.portfolioUrl) {
+    parts.push(`- Portfolio: ${THREADS_CONFIG.portfolioUrl}`);
+  }
+  return parts.length > 0 ? `\nYOUR CREDENTIALS (real work you built — name it in ONE draft when it fits naturally):\n${parts.join("\n")}` : "";
+})();
 
-Your job: read a Threads post and decide if the author is a POTENTIAL BUYER looking for a service, then score their buying intent.
+const SCORER_SYSTEM_PROMPT = `You are a sharp sales lead analyst for Viraleo, a design studio that helps founders, creators, and small businesses launch websites, landing pages, SaaS products, and brands.${CREDENTIALS ? `\n\nIMPORTANT — REAL WORK YOU BUILT (use these EXACT names/links when instructed below):\n${CREDENTIALS.trim()}` : ""}
+
+Your job: read a social post and decide if the author is a POTENTIAL BUYER looking for a service, then score their buying intent.
 
 Scoring rules:
 - 90-100: clearly asking for a service / hiring / wants to buy now ("need a website", "hiring a designer", "who can build my app")
@@ -19,11 +33,12 @@ Scoring rules:
 Category: pick the single best match from this list (use the exact id): ${THREADS_CATEGORIES.map((c) => `${c.id} (${c.label})`).join(", ")}. If none fit, use "other".
 
 Reply drafts (two variants, draftA and draftB):
-- 1-2 sentences. Natural, specific, consultative — like a sharp freelance designer who actually read their post. NO brag-bait, NO "I've built 10+ X", NO "DM me", NO emoji spam (max one subtle emoji).
-- OPEN with a SPECIFIC, concrete observation about THEIR post (quote their words or the exact task they described) to prove you read it.
-- Then ask ONE tight question that moves them toward a decision ("What's your budget?", "When do you need it live?", "Who's the site for — is this your main business site?").
+- 1-2 sentences each. Natural, specific, consultative — like a sharp freelance designer who actually read their post. NO brag-bait, NO "I've built 10+ X", NO "DM me", NO emoji spam (max one subtle emoji).
+- draftA: OPEN with a SPECIFIC, concrete observation about THEIR post (quote their words or the exact task they described), then ask ONE tight question that moves them toward a decision ("What's your budget?", "When do you need it live?", "Who's the site for — is this your main business site?").
+- draftB: MUST reference your real work from the IMPORTANT block above, naming a project literally — one of the exact site names (e.g. "viblo.ai is one I built", "I built viblo.ai and viewmax.io") OR, when a demo-video link is listed, referencing the demo videos ("I've got demo videos of products I've built"). Use the literal names/links as given — do not paraphrase them away.
+- You are an individual freelancer. NEVER write "we", "our agency", "At Viraleo", or any agency-brand claim. Always "I".
 - Offer a zero-pressure next step: a free 5-minute audit, a quick recommendation, or a rough estimate — phrased like you do this daily.
-- If a portfolio URL is provided in the context, weave it in naturally ("happy to send my portfolio over"). Never include links/prices otherwise.
+- Never include raw links/prices in drafts unless a credential URL is present (then it may appear in draftB).
 - Urgency works: "I can start today / first draft within 24h" ONLY when their post signals an immediate need (urgent, deadline, launch date).
 - If the post is NOT a buyer, drafts can be short generic "good luck" style lines (they won't be used anyway).
 
@@ -204,15 +219,7 @@ export async function scorePost(
   text: string,
   matchedCategory: string,
 ): Promise<ScoredPost | null> {
-  const isVideoCategory = matchedCategory === "video" || matchedCategory === "ai-automation";
-  const proofNote = isVideoCategory
-    ? THREADS_CONFIG.portfolioUrlVideo
-      ? `\nProof to offer: SaaS video demos at ${THREADS_CONFIG.portfolioUrlVideo} — if a draft mentions showing demos/examples, reference your demo videos naturally (no links otherwise).`
-      : ""
-    : THREADS_CONFIG.portfolioSites.length > 0
-      ? `\nProof to offer: websites you designed and built: ${THREADS_CONFIG.portfolioSites.join(", ")} — if a draft mentions sending examples/portfolio, weave the site names in naturally (no links otherwise).`
-      : "";
-  const prompt = `Social post by @${username || "unknown"}:\n"""${text.slice(0, 600)}"""\n\nIt was pre-matched to category "${matchedCategory}" — confirm or correct it.${proofNote}`;
+  const prompt = `Social post by @${username || "unknown"}:\n"""${text.slice(0, 600)}"""\n\nIt was pre-matched to category "${matchedCategory}" — confirm or correct it.`;
   const raw = (await tryGemini(prompt)) || (await tryGroq(prompt));
   if (!raw) return heuristicScore(matchedCategory, text);
   try {
