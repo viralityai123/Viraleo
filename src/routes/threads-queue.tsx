@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { THREADS_CATEGORIES } from "@/lib/threads/taxonomy";
@@ -155,22 +155,33 @@ function ThreadsQueuePage() {
   const [connecting, setConnecting] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [draftChoice, setDraftChoice] = useState<Record<string, number>>({});
+  const [lastUpdated, setLastUpdated] = useState<number>(0);
+  const inflightRef = useRef(false);
 
   const loadAll = useMemo(
     () => async () => {
+      if (inflightRef.current) return;
+      inflightRef.current = true;
       try {
         const [s, l] = await Promise.all([getQueueStatus(), getQueueLeads()]);
         setStatus(s);
         setLeads(l);
         setAuthError(null);
+        setLastUpdated(Date.now());
       } catch (e) {
         setAuthError(e instanceof Error ? e.message : String(e));
       } finally {
+        inflightRef.current = false;
         setLoading(false);
       }
     },
     [],
   );
+
+  useEffect(() => {
+    const iv = setInterval(loadAll, 20_000);
+    return () => clearInterval(iv);
+  }, [loadAll]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -293,6 +304,16 @@ function ThreadsQueuePage() {
                 ? ""
                 : " · Manual mode: copy the draft, open the thread, reply on Threads"}
               {status?.lastError ? ` · last error: ${status.lastError}` : ""}
+            </p>
+            <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+              </span>
+              Live · auto-refreshes every 20s
+              {lastUpdated > 0
+                ? ` · updated ${new Date(lastUpdated).toLocaleTimeString()}`
+                : ""}
             </p>
           </div>
           <div className="flex items-center gap-3">
