@@ -64,13 +64,20 @@ export const THREADS_CONFIG = {
   redditMaxPerCycle: 30,
   /** Your portfolio URL, woven into drafts when set. */
   portfolioUrl: (process.env.PORTFOLIO_URL || "").trim(),
-  /** Websites you built, referenced by name in web/design drafts. */
-  portfolioSites: (process.env.PORTFOLIO_SITES || "")
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean),
+  /** Websites you built, referenced by name in web/design drafts. Env overrides the built-in defaults. */
+  portfolioSites: (() => {
+    const raw = process.env.PORTFOLIO_SITES || "";
+    const list = raw
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    return list.length > 0 ? list : ["viblo.ai", "viewmax.io", "polifly.io", "viraleo.pro"];
+  })(),
   /** SaaS video demo portfolio (Drive folder etc) — referenced in video drafts. */
-  portfolioUrlVideo: (process.env.PORTFOLIO_URL_VIDEO || "").trim(),
+  portfolioUrlVideo: (() => {
+    const raw = (process.env.PORTFOLIO_URL_VIDEO || "").trim();
+    return raw || "https://drive.google.com/drive/folders/128GTxm3No9XwI-HmPwmabglMGy9GP8we";
+  })(),
 } as const;
 
 export function isMonitorEnabled(): boolean {
