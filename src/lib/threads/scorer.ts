@@ -204,10 +204,15 @@ export async function scorePost(
   text: string,
   matchedCategory: string,
 ): Promise<ScoredPost | null> {
-  const portfolioNote = THREADS_CONFIG.portfolioUrl
-    ? `\nPortfolio: ${THREADS_CONFIG.portfolioUrl} — if a draft mentions sending examples, work the portfolio URL into it naturally (no links otherwise).`
-    : "";
-  const prompt = `Social post by @${username || "unknown"}:\n"""${text.slice(0, 600)}"""\n\nIt was pre-matched to category "${matchedCategory}" — confirm or correct it.${portfolioNote}`;
+  const isVideoCategory = matchedCategory === "video" || matchedCategory === "ai-automation";
+  const proofNote = isVideoCategory
+    ? THREADS_CONFIG.portfolioUrlVideo
+      ? `\nProof to offer: SaaS video demos at ${THREADS_CONFIG.portfolioUrlVideo} — if a draft mentions showing demos/examples, reference your demo videos naturally (no links otherwise).`
+      : ""
+    : THREADS_CONFIG.portfolioSites.length > 0
+      ? `\nProof to offer: websites you designed and built: ${THREADS_CONFIG.portfolioSites.join(", ")} — if a draft mentions sending examples/portfolio, weave the site names in naturally (no links otherwise).`
+      : "";
+  const prompt = `Social post by @${username || "unknown"}:\n"""${text.slice(0, 600)}"""\n\nIt was pre-matched to category "${matchedCategory}" — confirm or correct it.${proofNote}`;
   const raw = (await tryGemini(prompt)) || (await tryGroq(prompt));
   if (!raw) return heuristicScore(matchedCategory, text);
   try {

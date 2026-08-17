@@ -64,6 +64,13 @@ export const THREADS_CONFIG = {
   redditMaxPerCycle: 30,
   /** Your portfolio URL, woven into drafts when set. */
   portfolioUrl: (process.env.PORTFOLIO_URL || "").trim(),
+  /** Websites you built, referenced by name in web/design drafts. */
+  portfolioSites: (process.env.PORTFOLIO_SITES || "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean),
+  /** SaaS video demo portfolio (Drive folder etc) — referenced in video drafts. */
+  portfolioUrlVideo: (process.env.PORTFOLIO_URL_VIDEO || "").trim(),
 } as const;
 
 export function isMonitorEnabled(): boolean {
