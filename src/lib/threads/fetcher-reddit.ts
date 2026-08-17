@@ -1,11 +1,12 @@
 import { THREADS_CONFIG } from "./config";
 import { hasBuyingIntent, EXCLUDED_TERMS } from "./taxonomy";
-import { isSeen, markSeen } from "./store";
+import { isSeen } from "./store";
 import type { ThreadsRawPost } from "./types";
 
 /**
- * Reddit lead hunting: searches job-oriented subreddits for design/web work.
- * Public JSON API — no auth needed for search.
+ * Reddit lead hunting: pulls each job-oriented subreddit's newest posts via
+ * the RSS endpoint (new.rss). One request per subreddit — cheap on rate
+ * limits and works from IPs where the JSON API returns 403.
  */
 
 const REDDIT_UA =
@@ -18,84 +19,105 @@ export const REDDIT_SUBREDDITS = [
   "freelance",
 ];
 
-const REDDIT_QUERIES = [
-  "website",
-  "ui/ux",
-  "ux",
-  "web designer",
-  "design",
-  "landing page",
-  "saas",
-  "logo",
-];
-
 /** Prefix so Threads/Reddit post ids never collide in the shared seen set. */
 export function redditPostId(id: string): string {
   return `rd:${id}`;
 }
 
-interface RedditPostJson {
-  data?: {
-    id?: string;
-    title?: string;
-    selftext?: string;
-    author?: string;
-    created_utc?: number;
-    num_comments?: number;
-    permalink?: string;
-    over_18?: boolean;
-    link_flair_text?: string | null;
-  };
+function unescape(s: string): string {
+  return s
+    .replace(/<!\[CDATA\[|\]\]>/g, "")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&#x27;/g, "'")
+    .replace(/&#x2F;/g, "/");
 }
 
-async function fetchJson(url: string): Promise<{ ok: boolean; data: any; blocked: boolean }> {
+function stripHtml(s: string): string {
+  return unescape(s.replace(/<[^>]+>/g, " ")).replace(/\s+/g, " ").trim();
+}
+
+interface RssEntry {
+  title: string;
+  link: string;
+  id: string;
+  author: string;
+  published: string;
+  content: string;
+}
+
+function parseEntries(xml: string): RssEntry[] {
+  const out: RssEntry[] = [];
+  const parts = xml.split("<entry>");
+  for (let i = 1; i < parts.length; i++) {
+    const e = parts[i];
+    const end = e.indexOf("</entry>");
+    const body = end === -1 ? e : e.slice(0, end);
+    const get = (tag: string) => {
+      const m = body.match(new RegExp(`<${tag}[^>]*>([\\s\\S]*?)</${tag}>`));
+      return m ? m[1] : "";
+    };
+    const linkM = body.match(/<link href="([^"]+)"/);
+    const idM = body.match(/<id>([^<]+)<\/id>/);
+    if (!linkM || !idM) continue;
+    out.push({
+      title: unescape(get("title")),
+      link: linkM[1],
+      id: idM[1].trim(),
+      author: unescape(get("name")),
+      published: get("published"),
+      content: stripHtml(get("content")),
+    });
+  }
+  return out;
+}
+
+async function fetchRss(url: string): Promise<{ ok: boolean; xml: string | null; blocked: boolean }> {
   try {
     const res = await fetch(url, {
       headers: { "user-agent": REDDIT_UA },
       signal: AbortSignal.timeout(THREADS_CONFIG.fetchTimeoutMs),
     });
-    if (res.status === 429 || res.status === 403) return { ok: false, data: null, blocked: true };
-    if (!res.ok) return { ok: false, data: null, blocked: false };
-    const data = await res.json();
-    return { ok: true, data, blocked: false };
+    if (res.status === 429 || res.status === 403) return { ok: false, xml: null, blocked: true };
+    if (!res.ok) return { ok: false, xml: null, blocked: false };
+    const xml = await res.text();
+    return { ok: xml.includes("<entry>"), xml, blocked: false };
   } catch {
-    return { ok: false, data: null, blocked: false };
+    return { ok: false, xml: null, blocked: false };
   }
 }
 
-function mapPost(raw: RedditPostJson): ThreadsRawPost | null {
-  const d = raw.data;
-  if (!d?.id || !d?.permalink) return null;
-  if (d.over_18) return null;
-  const text = `${d.title || ""} ${d.selftext || ""}`.trim().slice(0, 1000);
+function mapPost(e: RssEntry): ThreadsRawPost | null {
+  if (!e.id || !e.link) return null;
+  const id = redditPostId(e.id);
+  const text = `${e.title} ${e.content}`.trim().slice(0, 1000);
   if (text.length < 10) return null;
-  const flair = (d.link_flair_text || "").toLowerCase();
-  const id = redditPostId(d.id);
+  let takenAt: number | undefined;
+  const t = Date.parse(e.published);
+  if (Number.isFinite(t)) takenAt = t / 1000;
   return {
     id,
-    code: undefined,
-    username: d.author || "unknown",
+    username: e.author.replace(/^u\//, "") || "unknown",
     text,
-    takenAt: d.created_utc || undefined,
-    replyCount: d.num_comments ?? 0,
-    url: `https://www.reddit.com${d.permalink}`,
-    flair,
+    takenAt,
+    replyCount: 0,
+    url: e.link,
   };
 }
 
-/** Searches one subreddit for one query. Returns posts sorted newest-first. */
+/** Fetches the newest posts from one subreddit. Returns posts newest-first. */
 export async function searchRedditSub(
   sub: string,
-  query: string,
-  limit = 25,
+  _query = "",
+  limit = 100,
 ): Promise<{ posts: ThreadsRawPost[]; blocked: boolean }> {
-  const url = `https://www.reddit.com/r/${sub}/search.json?q=${encodeURIComponent(
-    query,
-  )}&restrict_sr=1&sort=new&t=week&limit=${limit}`;
-  const { ok, data, blocked } = await fetchJson(url);
-  if (!ok) return { posts: [], blocked };
-  const children: RedditPostJson[] = data?.data?.children ?? [];
-  const posts = children
+  const url = `https://www.reddit.com/r/${sub}/new.rss?limit=${limit}`;
+  const { ok, xml, blocked } = await fetchRss(url);
+  if (!ok || !xml) return { posts: [], blocked };
+  const posts = parseEntries(xml)
     .map(mapPost)
     .filter((p): p is ThreadsRawPost => p !== null)
     .sort((a, b) => (b.takenAt ?? 0) - (a.takenAt ?? 0));
@@ -103,23 +125,33 @@ export async function searchRedditSub(
 }
 
 /**
- * Sweep: all subreddits x all queries, deduped, intent-filtered, unseen only.
- * Returns candidate posts ready for scoring, and how many searches ran.
+ * Sweep: one request per subreddit, deduped, intent-filtered, unseen only.
+ * Returns candidate posts ready for scoring.
  */
 export async function sweepReddit(
-  jitterMs = 2500,
+  jitterMs = 60_000,
 ): Promise<{ posts: ThreadsRawPost[]; searched: number; blocked: number }> {
-  const subs = THREADS_CONFIG.redditSubreddits.length > 0 ? THREADS_CONFIG.redditSubreddits : REDDIT_SUBREDDITS;
-  const queries = REDDIT_QUERIES;
+  const subs =
+    THREADS_CONFIG.redditSubreddits.length > 0
+      ? THREADS_CONFIG.redditSubreddits
+      : REDDIT_SUBREDDITS;
   const results: ThreadsRawPost[] = [];
   const seen = new Set<string>();
   let searched = 0;
   let blocked = 0;
+  let consecutiveBlocks = 0;
 
-  const run = async (sub: string, q: string) => {
+  for (const sub of subs) {
     searched++;
-    const { posts, blocked: b } = await searchRedditSub(sub, q);
-    if (b) blocked++;
+    const { posts, blocked: b } = await searchRedditSub(sub);
+    if (b) {
+      blocked++;
+      consecutiveBlocks++;
+      if (consecutiveBlocks >= 3) break;
+      await new Promise((r) => setTimeout(r, 8_000));
+      continue;
+    }
+    consecutiveBlocks = 0;
     for (const p of posts) {
       if (seen.has(p.id)) continue;
       seen.add(p.id);
@@ -128,28 +160,9 @@ export async function sweepReddit(
       if (await isSeen(p.id)) continue;
       results.push(p);
     }
-    await new Promise((r) => setTimeout(r, jitterMs + Math.random() * jitterMs));
-  };
-
-  const tasks: Promise<void>[] = [];
-  let idx = 0;
-  const workerCount = Math.min(2, subs.length * queries.length);
-  const workers = Array.from({ length: Math.max(1, workerCount) }, async () => {
-    while (true) {
-      const i = idx++;
-      if (i >= subs.length * queries.length) return;
-      const sub = subs[Math.floor(i / queries.length)];
-      const q = queries[i % queries.length];
-      await run(sub, q);
-    }
-  });
-  await Promise.all(workers);
+    await new Promise((r) => setTimeout(r, jitterMs + Math.random() * 4_000));
+  }
 
   results.sort((a, b) => (b.takenAt ?? 0) - (a.takenAt ?? 0));
   return { posts: results.slice(0, THREADS_CONFIG.redditMaxPerCycle), searched, blocked };
-}
-
-/** Marks reddit posts seen (called by monitor after scoring attempt). */
-export async function markRedditSeen(postIds: string[]): Promise<void> {
-  await markSeen(postIds);
 }
