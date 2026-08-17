@@ -21,6 +21,7 @@ import { Route as PreAnalysisRouteImport } from './routes/pre-analysis'
 import { Route as PartnerProgramRouteImport } from './routes/partner-program'
 import { Route as NicheRankerRouteImport } from './routes/niche-ranker'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as LeadsRouteImport } from './routes/leads'
 import { Route as HistoryRouteImport } from './routes/history'
 import { Route as FaqRouteImport } from './routes/faq'
 import { Route as DestroyRouteImport } from './routes/destroy'
@@ -105,6 +106,11 @@ const NicheRankerRoute = NicheRankerRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LeadsRoute = LeadsRouteImport.update({
+  id: '/leads',
+  path: '/leads',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HistoryRoute = HistoryRouteImport.update({
@@ -246,6 +252,7 @@ export interface FileRoutesByFullPath {
   '/destroy': typeof DestroyRoute
   '/faq': typeof FaqRoute
   '/history': typeof HistoryRoute
+  '/leads': typeof LeadsRoute
   '/login': typeof LoginRoute
   '/niche-ranker': typeof NicheRankerRoute
   '/partner-program': typeof PartnerProgramRoute
@@ -285,6 +292,7 @@ export interface FileRoutesByTo {
   '/destroy': typeof DestroyRoute
   '/faq': typeof FaqRoute
   '/history': typeof HistoryRoute
+  '/leads': typeof LeadsRoute
   '/login': typeof LoginRoute
   '/niche-ranker': typeof NicheRankerRoute
   '/partner-program': typeof PartnerProgramRoute
@@ -325,6 +333,7 @@ export interface FileRoutesById {
   '/destroy': typeof DestroyRoute
   '/faq': typeof FaqRoute
   '/history': typeof HistoryRoute
+  '/leads': typeof LeadsRoute
   '/login': typeof LoginRoute
   '/niche-ranker': typeof NicheRankerRoute
   '/partner-program': typeof PartnerProgramRoute
@@ -366,6 +375,7 @@ export interface FileRouteTypes {
     | '/destroy'
     | '/faq'
     | '/history'
+    | '/leads'
     | '/login'
     | '/niche-ranker'
     | '/partner-program'
@@ -405,6 +415,7 @@ export interface FileRouteTypes {
     | '/destroy'
     | '/faq'
     | '/history'
+    | '/leads'
     | '/login'
     | '/niche-ranker'
     | '/partner-program'
@@ -444,6 +455,7 @@ export interface FileRouteTypes {
     | '/destroy'
     | '/faq'
     | '/history'
+    | '/leads'
     | '/login'
     | '/niche-ranker'
     | '/partner-program'
@@ -484,6 +496,7 @@ export interface RootRouteChildren {
   DestroyRoute: typeof DestroyRoute
   FaqRoute: typeof FaqRoute
   HistoryRoute: typeof HistoryRoute
+  LeadsRoute: typeof LeadsRoute
   LoginRoute: typeof LoginRoute
   NicheRankerRoute: typeof NicheRankerRoute
   PartnerProgramRoute: typeof PartnerProgramRoute
@@ -592,6 +605,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/leads': {
+      id: '/leads'
+      path: '/leads'
+      fullPath: '/leads'
+      preLoaderRoute: typeof LeadsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/history': {
@@ -808,6 +828,7 @@ const rootRouteChildren: RootRouteChildren = {
   DestroyRoute: DestroyRoute,
   FaqRoute: FaqRoute,
   HistoryRoute: HistoryRoute,
+  LeadsRoute: LeadsRoute,
   LoginRoute: LoginRoute,
   NicheRankerRoute: NicheRankerRoute,
   PartnerProgramRoute: PartnerProgramRoute,

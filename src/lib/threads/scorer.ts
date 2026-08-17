@@ -17,10 +17,13 @@ const CREDENTIALS = (() => {
   if (THREADS_CONFIG.portfolioUrl) {
     parts.push(`- Portfolio: ${THREADS_CONFIG.portfolioUrl}`);
   }
+  if (THREADS_CONFIG.leadServiceUrl) {
+    parts.push(`- A live 24/7 system you built that hunts Threads + Reddit and finds 30+ fresh design/web leads daily (your own tool — see ${THREADS_CONFIG.leadServiceUrl})`);
+  }
   return parts.length > 0 ? `\nYOUR CREDENTIALS (real work you built — name it in ONE draft when it fits naturally):\n${parts.join("\n")}` : "";
 })();
 
-const SAME_DAY_OFFERS = `\nSAME-DAY OFFER (for draftC only — adapt the project part, keep the price/delivery/pay-when-happy promise):\n- Web/design/branding/landing leads: "${THREADS_CONFIG.sameDayOffer}"\n- Video editing leads: "${THREADS_CONFIG.sameDayOfferVideo}"`;
+const SAME_DAY_OFFERS = `\nSAME-DAY OFFER (for draftC only — adapt the project part, keep the price/delivery/pay-when-happy promise):\n- Web/design/branding/landing leads: "${THREADS_CONFIG.sameDayOffer}"\n- Video editing leads: "${THREADS_CONFIG.sameDayOfferVideo}"\n- Designers/agencies needing clients (lead-service): "${THREADS_CONFIG.leadServiceOffer}" — sell the lead feed, not design work.`;
 
 const SCORER_SYSTEM_PROMPT = `You are a sharp sales lead analyst for Viraleo, a design studio that helps founders, creators, and small businesses launch websites, landing pages, SaaS products, and brands.${CREDENTIALS ? `\n\nIMPORTANT — REAL WORK YOU BUILT (use these EXACT names/links when instructed below):\n${CREDENTIALS.trim()}` : ""}
 
@@ -32,12 +35,14 @@ Scoring rules:
 - 50-69: possible need, vague ("any advice on tools?", "thinking about rebranding")
 - 0-49: not a buyer (designer promoting themselves, general discussion, joke, news, spam)
 
+SPECIAL CASE — the "lead-service" category: posts where the AUTHOR is a freelancer, designer, or agency SEEKING MORE CLIENTS ("need clients", "freelance is dry", "looking for clients/work", "grow my agency"). These people are BUYERS OF YOUR LEAD-FEED SYSTEM — not of design work. Score 85+ when the need for clients is explicit, 60-84 when implied. NEVER score them 0-49 just because they aren't hiring a designer — a dry freelancer is a hot lead for your system.
+
 Category: pick the single best match from this list (use the exact id): ${THREADS_CATEGORIES.map((c) => `${c.id} (${c.label})`).join(", ")}. If none fit, use "other".
 
 Reply drafts (two variants, draftA and draftB):
 - 1-2 sentences each. Natural, specific, consultative — like a sharp freelance designer who actually read their post. NO brag-bait, NO "I've built 10+ X", NO "DM me", NO emoji spam (max one subtle emoji).
 - draftA: OPEN with a SPECIFIC, concrete observation about THEIR post (quote their words or the exact task they described), then ask ONE tight question that moves them toward a decision ("What's your budget?", "When do you need it live?", "Who's the site for — is this your main business site?").
-- draftB: MUST reference your real work from the IMPORTANT block above, naming a project literally — one of the exact site names (e.g. "viblo.ai is one I built", "I built viblo.ai and viewmax.io") OR, when a demo-video link is listed, referencing the demo videos ("I've got demo videos of products I've built"). Use the literal names/links as given — do not paraphrase them away.
+- draftB: MUST reference your real work from the IMPORTANT block above, naming a project literally — one of the exact site names (e.g. "viblo.ai is one I built", "I built viblo.ai and viewmax.io") OR, when a demo-video link is listed, referencing the demo videos ("I've got demo videos of products I've built"). Use the literal names/links as given — do not paraphrase them away. For lead-service posts, draftB references the 24/7 lead-hunting system you built and offers a FREE 3-LEAD SAMPLE.
 - You are an individual freelancer. NEVER write "we", "our agency", "At Viraleo", or any agency-brand claim. Always "I".
 - Offer a zero-pressure next step: a free 5-minute audit, a quick recommendation, or a rough estimate — phrased like you do this daily.
 - Never include raw links/prices in drafts unless a credential URL is present (then it may appear in draftB).
@@ -184,13 +189,17 @@ const HEURISTIC_DRAFTS: Record<string, [string, string]> = {
     "Which process wastes the most time right now — client onboarding, project tracking, or follow-ups? I'd start there — happy to show you how I'd fix it.",
     "Are you using Notion, Airtable, or a CRM already? Tell me what you've got and I'll tell you what to keep and what to change.",
   ],
+  "lead-service": [
+    "Finding clients is the grind, right? I built a system that finds 30+ fresh design leads daily on Threads and Reddit — happy to send you a free 3-lead sample and you judge for yourself.",
+    "What's your client drought costing you right now — empty weeks or last-minute panic projects? I've got a system that pulls fresh design leads daily; I can start your free sample today.",
+  ],
 };
 
 function heuristicDraftC(category: string, score: number): string {
   if (score < 85) return "";
-  return category === "video"
-    ? THREADS_CONFIG.sameDayOfferVideo
-    : THREADS_CONFIG.sameDayOffer;
+  if (category === "video") return THREADS_CONFIG.sameDayOfferVideo;
+  if (category === "lead-service") return THREADS_CONFIG.leadServiceOffer;
+  return THREADS_CONFIG.sameDayOffer;
 }
 
 /** Deterministic fallback when no LLM is reachable (missing key or quota).

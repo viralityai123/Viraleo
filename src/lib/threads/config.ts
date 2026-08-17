@@ -88,6 +88,16 @@ export const THREADS_CONFIG = {
     const raw = (process.env.SAME_DAY_OFFER_VIDEO || "").trim();
     return raw || "I've got an open slot today: a promo video pack — 10 videos for a fixed $150, first one tonight — pay only when you're happy with it.";
   })(),
+  /** Pitch for designers/agencies who need clients (lead-service category). */
+  leadServiceOffer: (() => {
+    const raw = (process.env.LEAD_SERVICE_OFFER || "").trim();
+    return raw || "I built a system that finds 30+ fresh design leads daily — I send the hot ones straight to you for $150/month. Want a free 3-lead sample today?";
+  })(),
+  /** Lead feed sales page, linked from drafts for designers needing clients. */
+  leadServiceUrl: (() => {
+    const raw = (process.env.LEAD_SERVICE_URL || "").trim();
+    return raw || "https://viraleo.onrender.com/leads";
+  })(),
 } as const;
 
 export function isMonitorEnabled(): boolean {
