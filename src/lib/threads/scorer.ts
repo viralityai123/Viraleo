@@ -1,4 +1,5 @@
 import { THREADS_CATEGORIES } from "./taxonomy";
+import { THREADS_CONFIG } from "./config";
 
 /**
  * Scores a candidate post with an LLM: buying-intent score, category,
@@ -18,11 +19,12 @@ Scoring rules:
 Category: pick the single best match from this list (use the exact id): ${THREADS_CATEGORIES.map((c) => `${c.id} (${c.label})`).join(", ")}. If none fit, use "other".
 
 Reply drafts (two variants, draftA and draftB):
-- 1-2 short, high-energy sentences. Boastful, confident, street-smart — like a top designer with real wins who just saw their post.
-- OPEN with a brag tied to their need, with receipts: "I've built 10+ winning websites", "I've shipped 10+ sites that actually convert", "I've built brands people actually remember", "I've taken 10+ startups from idea to launch". Vary the brag between draftA and draftB — never repeat the same brag verbatim in both.
-- Then reference THEIR specific post ("that site", "your launch", "your logo") and close by pushing the convo to DMs ("hit me up", "DM me", "message me").
-- Max ONE emoji per draft (fire/rocket/eyes energy), zero all-caps spam, zero corporate talk.
-- Never include links, prices, or "check my profile".
+- 1-2 sentences. Natural, specific, consultative — like a sharp freelance designer who actually read their post. NO brag-bait, NO "I've built 10+ X", NO "DM me", NO emoji spam (max one subtle emoji).
+- OPEN with a SPECIFIC, concrete observation about THEIR post (quote their words or the exact task they described) to prove you read it.
+- Then ask ONE tight question that moves them toward a decision ("What's your budget?", "When do you need it live?", "Who's the site for — is this your main business site?").
+- Offer a zero-pressure next step: a free 5-minute audit, a quick recommendation, or a rough estimate — phrased like you do this daily.
+- If a portfolio URL is provided in the context, weave it in naturally ("happy to send my portfolio over"). Never include links/prices otherwise.
+- Urgency works: "I can start today / first draft within 24h" ONLY when their post signals an immediate need (urgent, deadline, launch date).
 - If the post is NOT a buyer, drafts can be short generic "good luck" style lines (they won't be used anyway).
 
 Return ONLY valid JSON: {"category":"...","intentScore":0-100,"draftA":"...","draftB":"...","reasoning":"one short line"}.`;
@@ -119,45 +121,49 @@ async function tryGroq(prompt: string): Promise<string | null> {
 }
 
 const HEURISTIC_DRAFTS: Record<string, [string, string]> = {
+  "ui-ux": [
+    "You mentioned needing UI/UX work — what's the core flow your users keep getting stuck on? Happy to sketch a quick recommendation (and send my portfolio over) once I know.",
+    "For a project like yours the first thing I'd map is the screens and the user flow. Do you have a rough idea of the feature set yet? Happy to walk through it with you.",
+  ],
   "web-design": [
-    "Hey! I build clean, fast websites for founders and small businesses — happy to share some live examples and a quote. What's your timeline?",
-    "I do websites for small businesses daily. If you're looking for ideas, I can send over a few I've built and we can talk scope. Down to chat?",
+    "What's the site for — your main business site or a new product? If you tell me the goal and who it serves, I'll send over a couple of options that fit it (plus my portfolio).",
+    "You mentioned needing a website — roughly when do you want it live? I can start as soon as this week and have a first draft for you within days.",
   ],
   "landing-page": [
-    "If you're after a high-converting landing page, that's literally what I do — I can show you examples and what yours could look like. Want to talk?",
-    "I build landing pages that convert traffic into customers. Happy to walk you through a few examples and a rough quote if you're interested.",
+    "What's the landing page converting to — signups, demo calls, sales? Tell me the one action and I'll send a recommendation for the structure (and my portfolio).",
+    "For a page like this, the headline and the CTA do most of the work. Who's the traffic coming from — ads, organic, cold outreach? Happy to give you a quick take.",
   ],
   "saas-app": [
-    "I build MVPs for founders — quick, clean, and launch-ready. Happy to walk through how I'd approach yours and give you a timeline.",
-    "Founders come to me to turn their idea into a working MVP. If you want, I can outline the build steps and what it'd cost.",
+    "Is this an MVP to validate, or a build you're fully committed to? That changes how I'd approach it — happy to map out the first version with you.",
+    "What's the core job your app does in one sentence? If you give me that, I'll outline the screens and what the first build looks like.",
   ],
   branding: [
-    "I design brands and logos that don't blend in — happy to share recent work and some directions for yours.",
-    "If you're looking for a logo or full brand identity, I've got a portfolio of recent designs I can show you. Want to take a look?",
+    "What's the vibe you want — is this a refresh or a completely new identity? If you share a competitor whose look you like, I can send some directions (and my portfolio).",
+    "For your logo, what matters more: standing out on a shelf or fitting a clean corporate look? Happy to show you both directions.",
   ],
   "social-media": [
-    "I run social media and ads for small businesses — if you need help turning content into customers, I can put together a quick plan for you.",
-    "Social media and paid ads are my thing — happy to map out a simple strategy for your business if you're looking for help.",
+    "What's the main goal with your socials — leads, brand awareness, or sales? Tell me that and I'll put together a simple 2-week plan for you.",
+    "Are you running any ads right now, or is this all organic? That changes the strategy — happy to give you a quick recommendation either way.",
   ],
   copywriting: [
-    "I write sales copy that converts — websites, emails, landing pages. Happy to show you examples and give you a quote.",
-    "If you need copy that actually sells, I can share some recent work and talk through what your project would look like.",
+    "What's the copy for — a website, emails, or an ad? If you tell me the page and who reads it, I'll send a quick rewrite of the first section as a sample.",
+    "Where are you losing people right now — visitors leave before buying, or emails don't convert? Happy to take a look and give you a specific fix.",
   ],
   video: [
-    "I edit videos for creators and businesses — YouTube, podcasts, ads. I can show you before/afters if you're looking for an editor.",
-    "Video editing is what I do — long-form, ads, podcasts. Happy to send over samples and a quote for your project.",
+    "What type of content is this — YouTube, ads, or client work? If you share a rough cut or a reference, I'll tell you exactly how I'd edit it (and send samples).",
+    "What's your turnaround — are these weekly videos or a one-off project? I can tell you how I'd structure it and give you a quote.",
   ],
   "ai-automation": [
-    "I build AI automations that save teams hours a week — happy to map out what yours could look like. Want to talk?",
-    "If you're looking to automate repetitive work, I build those systems for businesses. Happy to sketch out a plan for you.",
+    "What's the task you're most tired of doing manually? If you describe that one process, I'll tell you exactly how I'd automate it.",
+    "Is this for one workflow or several? List the top two time-sinks and I'll map out what the automation looks like.",
   ],
   ecommerce: [
-    "I build Shopify stores that actually convert — happy to share examples and a quote for yours.",
-    "Shopify stores are my specialty. I can show you a few I've built and break down what yours would need. Interested?",
+    "What platform are you on, or are you starting from zero? If you tell me the products, I'll send over a plan for the store (and my portfolio).",
+    "What's the main bottleneck — traffic, conversion, or setup? Happy to look at the store and give you a specific fix.",
   ],
   systems: [
-    "I set up systems — Notion, CRMs, SOPs — that keep teams running without chaos. Happy to walk you through how I'd fix yours.",
-    "If your business runs on chaos, I build the systems that fix it — SOPs, CRMs, workflows. Want a quick overview of how I'd help?",
+    "Which process wastes the most time right now — client onboarding, project tracking, or follow-ups? I'd start there — happy to show you how I'd fix it.",
+    "Are you using Notion, Airtable, or a CRM already? Tell me what you've got and I'll tell you what to keep and what to change.",
   ],
 };
 
@@ -198,7 +204,10 @@ export async function scorePost(
   text: string,
   matchedCategory: string,
 ): Promise<ScoredPost | null> {
-  const prompt = `Threads post by @${username || "unknown"}:\n"""${text.slice(0, 600)}"""\n\nIt was pre-matched to category "${matchedCategory}" — confirm or correct it.`;
+  const portfolioNote = THREADS_CONFIG.portfolioUrl
+    ? `\nPortfolio: ${THREADS_CONFIG.portfolioUrl} — if a draft mentions sending examples, work the portfolio URL into it naturally (no links otherwise).`
+    : "";
+  const prompt = `Social post by @${username || "unknown"}:\n"""${text.slice(0, 600)}"""\n\nIt was pre-matched to category "${matchedCategory}" — confirm or correct it.${portfolioNote}`;
   const raw = (await tryGemini(prompt)) || (await tryGroq(prompt));
   if (!raw) return heuristicScore(matchedCategory, text);
   try {

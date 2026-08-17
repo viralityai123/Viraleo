@@ -7,9 +7,11 @@ export interface ThreadsRawPost {
   takenAt?: number;
   likeCount?: number;
   replyCount?: number;
+  url?: string;
+  flair?: string;
 }
 
-export type ThreadsSource = "ssr" | "diy" | "apify";
+export type ThreadsSource = "ssr" | "diy" | "apify" | "reddit";
 
 export interface ThreadsLead {
   postId: string;

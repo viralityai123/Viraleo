@@ -1,5 +1,6 @@
 import { THREADS_CONFIG, isMonitorEnabled } from "./config";
 import { searchKeyword, searchExplore, searchThreadsLatest, buildPostUrl } from "./fetcher";
+import { sweepReddit } from "./fetcher-reddit";
 import { scorePost } from "./scorer";
 import { publishReply } from "./publisher";
 import { getAuth } from "./store";
@@ -206,6 +207,26 @@ export async function pollOnce(): Promise<void> {
         }
       } catch {
         // explore is a bonus surface; failures are non-fatal
+      }
+    }
+
+    // Reddit job-board sweep (r/forhire, r/designjobs, r/web_design, r/freelance)
+    if (THREADS_CONFIG.redditEnabled) {
+      try {
+        const rd = await sweepReddit();
+        fetched += rd.searched;
+        if (rd.blocked > 0) log(`reddit: ${rd.blocked}/${rd.searched} searches blocked`);
+        for (const post of rd.posts) {
+          const matched = hasBuyingIntent(post.text || "");
+          if (!matched) continue;
+          if (await isSeen(post.id)) continue;
+          candidates.push({ post, matched });
+        }
+        if (rd.posts.length > 0) {
+          log(`reddit: ${rd.posts.length} candidate posts (${rd.searched} searches)`);
+        }
+      } catch (e) {
+        log("reddit sweep failed:", e instanceof Error ? e.message : String(e));
       }
     }
 

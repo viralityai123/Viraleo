@@ -85,6 +85,13 @@ const approveLead = createServerFn({ method: "POST" })
     const leads = await listQueue();
     const lead = leads.find((l) => l.postId === data.postId);
     if (!lead) return { ok: false as const, error: "Lead no longer in queue" };
+    if (lead.postId.startsWith("rd:")) {
+      await removeFromQueue(lead);
+      lead.status = "approved";
+      lead.repliedAt = Date.now();
+      await appendTrackerRow(trackerRow(lead, "", "approved-manual"));
+      return { ok: true as const, replyId: "" };
+    }
     const result = await publishReply(lead.postId, data.draft.slice(0, 500));
     if (!result.ok) return { ok: false as const, error: result.error || "Reply failed" };
     await removeFromQueue(lead);

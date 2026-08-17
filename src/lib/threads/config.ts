@@ -53,6 +53,17 @@ export const THREADS_CONFIG = {
   fetchTimeoutMs: 15_000,
   /** Consecutive failures before an error email is fired. */
   errorEmailAfterFailures: 12,
+  /** Hunt Reddit job boards each cycle (r/forhire etc). No auth needed. */
+  redditEnabled: process.env.THREADS_REDDIT_ENABLED !== "0",
+  /** Comma-separated subreddits to hunt. Empty = defaults. */
+  redditSubreddits: (process.env.THREADS_REDDIT_SUBREDDITS || "")
+    .split(",")
+    .map((s) => s.trim().replace(/^r\//, "").toLowerCase())
+    .filter(Boolean),
+  /** Max reddit posts scored per cycle. */
+  redditMaxPerCycle: 30,
+  /** Your portfolio URL, woven into drafts when set. */
+  portfolioUrl: (process.env.PORTFOLIO_URL || "").trim(),
 } as const;
 
 export function isMonitorEnabled(): boolean {
