@@ -7,8 +7,8 @@ const HEADER =
 
 const checkAdmin = createServerFn({ method: "GET" }).handler(async () => {
   if (
-    (process.env.THREADS_DEV_BYPASS === "1" || !process.env.GOOGLE_CLIENT_ID) &&
-    process.env.VERCEL !== "1"
+    process.env.VERCEL !== "1" &&
+    (process.env.THREADS_DEV_BYPASS === "1" || !process.env.ADMIN_EMAIL || !process.env.GOOGLE_CLIENT_ID)
   ) {
     return { ok: true } as const;
   }
