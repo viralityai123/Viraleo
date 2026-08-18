@@ -128,14 +128,15 @@ const exchangeAuthCode = createServerFn({ method: "POST" })
     return exchangeThreadsCode(data.code, data.redirectUri);
   });
 
-const getConnectUrl = createServerFn({ method: "GET" }).handler(async () => {
-  await adminUser();
-  if (!isOAuthConfigured()) {
-    return { ok: false as const, error: "META_APP_ID / META_APP_SECRET not configured" };
-  }
-  const appUrl = (process.env.APP_URL || "https://viraleo.pro").replace(/\/$/, "");
-  return { ok: true as const, url: getThreadsAuthUrl(`${appUrl}/threads-queue`) };
-});
+const getConnectUrl = createServerFn({ method: "POST" })
+  .inputValidator((d: { redirectUri: string }) => d)
+  .handler(async ({ data }) => {
+    await adminUser();
+    if (!isOAuthConfigured()) {
+      return { ok: false as const, error: "META_APP_ID / META_APP_SECRET not configured" };
+    }
+    return { ok: true as const, url: getThreadsAuthUrl(data.redirectUri) };
+  });
 
 export const Route = createFileRoute("/threads-queue")({
   head: () => ({
@@ -217,7 +218,9 @@ function ThreadsQueuePage() {
   const connect = async () => {
     setConnecting(true);
     try {
-      const res = await getConnectUrl();
+      const res = await getConnectUrl({
+        data: { redirectUri: `${window.location.origin}/threads-queue` },
+      });
       if (res.ok) window.location.href = res.url;
       else toast.error(res.error || "Not configured yet");
     } finally {

@@ -78,10 +78,10 @@ export const THREADS_CONFIG = {
     const raw = (process.env.PORTFOLIO_URL_VIDEO || "").trim();
     return raw || "https://drive.google.com/drive/folders/128GTxm3No9XwI-HmPwmabglMGy9GP8we";
   })(),
-  /** Meeting-booking pitch (draftC) for hot web/UI/UX/landing leads — no prices in chat. */
+  /** Direct-close pitch (draftC) for hot web/UI/UX/landing leads — quote in chat, no meeting. */
   sameDayOffer: (() => {
     const raw = (process.env.SAME_DAY_OFFER || "").trim();
-    return raw || "I can jump on a quick call tonight at 5 PM — you walk me through what you need, I'll map it out and give you a clear quote. Does 5 PM work?";
+    return raw || "I'll send you a proposal tonight with a fixed price — nothing to pay until you approve it. What's your timeline for getting this live?";
   })(),
   /** Same-day offer line (draftC) for video-editing leads. */
   sameDayOfferVideo: (() => {
