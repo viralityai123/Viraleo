@@ -17,6 +17,14 @@ export const REDDIT_SUBREDDITS = [
   "designjobs",
   "web_design",
   "freelance",
+  "LogoRequests",
+  "smallbusiness",
+  "Entrepreneur",
+  "startups",
+  "business",
+  "jobs",
+  "DesignerJobs",
+  "WebDevBuddies",
 ];
 
 /** Prefix so Threads/Reddit post ids never collide in the shared seen set. */

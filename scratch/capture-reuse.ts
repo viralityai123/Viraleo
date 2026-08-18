@@ -22,6 +22,8 @@ const page = await context.newPage();
 page.setDefaultTimeout(25_000);
 
 const captured: any[] = [];
+const jsonl = `${SHOTS}/graphql-all.jsonl`;
+writeFileSync(jsonl, "");
 page.on("request", (req) => {
   const post = req.postData() || "";
   if (!post.includes("doc_id")) return;
@@ -29,10 +31,12 @@ page.on("request", (req) => {
   const doc = (post.match(/doc_id=(\d+)/) || [])[1];
   const fn = decodeURIComponent((post.match(/fb_api_req_friendly_name=([^&]+)/) || [])[1] || "");
   captured.push({ url: req.url(), doc, fn, vars });
+  writeFileSync(jsonl, JSON.stringify({ url: req.url(), doc, fn, vars, post: post.slice(0, 9000) }) + "\n", { flag: "a" });
+  console.log("REQ:", fn, "doc:", doc, req.url());
   if (/post|reply|create|compose/i.test(fn) && !/counts|presence|screen/i.test(fn)) {
     writeFileSync(
-      `${SHOTS}/mutation-FINAL.json`,
-      JSON.stringify({ url: req.url(), doc, fn, vars, post: post.slice(0, 5000) }, null, 1)
+      `${SHOTS}/mutation-${doc}.json`,
+      JSON.stringify({ url: req.url(), doc, fn, vars, post }, null, 1)
     );
     console.log(">>> MUTATION CAPTURED:", fn, "doc:", doc, req.url());
   }
@@ -75,6 +79,29 @@ await page.waitForTimeout(400);
 await page.keyboard.type(text, { delay: 12 });
 await page.waitForTimeout(1500);
 
+const editorText = await page
+  .locator('[contenteditable="true"]')
+  .first()
+  .evaluate((el) => (el as HTMLElement).innerText)
+  .catch(() => "");
+console.log("editor text length:", editorText.length, "| matches:", editorText.includes("winning"));
+
+const dialog2 = page.locator('[role="dialog"]');
+const postBtn = dialog2.locator('[role="button"]:has-text("Post")').last();
+const disabledNow = await postBtn.getAttribute("aria-disabled").catch(() => null);
+console.log("dialog Post aria-disabled:", disabledNow);
+
+await page.keyboard.press("Enter");
+console.log("pressed Enter");
+await page.waitForTimeout(9000);
+
+if (captured.length === 0) {
+  console.log("no mutation after Enter — clicking Post");
+  await postBtn.click({ timeout: 6000 }).catch((e) => console.log("post click err:", e.message.slice(0, 100)));
+  await page.waitForTimeout(9000);
+}
+await page.screenshot({ path: `${SHOTS}/c11-after.png` });
+
 const allBtns = await page.locator('[role="button"], button').evaluateAll((els) =>
   els.map((b, i) => {
     const r = (b as HTMLElement).getBoundingClientRect();
@@ -91,9 +118,11 @@ writeFileSync(`${SHOTS}/all-buttons.json`, JSON.stringify(allBtns, null, 1));
 const postish = allBtns.filter((b: any) => /post/i.test(b.text) || /post/i.test(b.aria || "") || b.text === "");
 console.log(JSON.stringify(postish.slice(-25)));
 
-let submit =
-  allBtns.find((b: any) => b.text === "" && !b.disabled && b.w === b.h && b.w > 28 && b.y > 350) ||
-  allBtns.find((b: any) => b.text === "" && !b.disabled && b.w === b.h);
+const postBtns = allBtns.filter(
+  (b: any) => b.text === "Post" && !b.disabled && b.w > 40 && b.h > 25 && b.x > 400
+);
+console.log("Post candidates:", JSON.stringify(postBtns));
+const submit = postBtns[postBtns.length - 1] || null;
 console.log("submit candidate:", JSON.stringify(submit));
 if (submit) {
   const b = page.locator('[role="button"], button').nth(submit.i);

@@ -23,7 +23,7 @@ export const THREADS_CONFIG = {
    *  still hot leads — they land in the queue for manual review. */
   agedRequiresNoReplies: process.env.THREADS_AGED_REQUIRES_NO_REPLIES === "1",
   /** Base jitter between keyword requests (ms). Lower = faster sweep, more aggressive. */
-  requestJitterMs: int("THREADS_REQUEST_JITTER_MS", 1500),
+  requestJitterMs: int("THREADS_REQUEST_JITTER_MS", 800),
   /** Ratio of blocked (429/403) keywords that triggers a polling pause. */
   blockedRatio: (() => {
     const raw = Number(process.env.THREADS_BLOCKED_RATIO);
@@ -42,7 +42,7 @@ export const THREADS_CONFIG = {
   /** Hard cap on auto-posted replies per 24h — protects the account from spam flags. */
   dailyReplyCap: int("THREADS_DAILY_REPLY_CAP", 20),
   /** Max Gemini scoring calls per cycle. */
-  llmCallsPerCycle: int("THREADS_LLM_CALLS_PER_CYCLE", 240),
+  llmCallsPerCycle: int("THREADS_LLM_CALLS_PER_CYCLE", 600),
   /** Min gap between lead alert emails. */
   emailMinGapMs: 10 * 60_000,
   /** Max leads included in a single alert email. */
@@ -61,7 +61,7 @@ export const THREADS_CONFIG = {
     .map((s) => s.trim().replace(/^r\//, "").toLowerCase())
     .filter(Boolean),
   /** Max reddit posts scored per cycle. */
-  redditMaxPerCycle: 30,
+  redditMaxPerCycle: 60,
   /** Your portfolio URL, woven into drafts when set. */
   portfolioUrl: (process.env.PORTFOLIO_URL || "").trim(),
   /** Websites you built, referenced by name in web/design drafts. Env overrides the built-in defaults. */

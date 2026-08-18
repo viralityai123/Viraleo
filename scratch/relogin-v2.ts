@@ -240,6 +240,12 @@ async function main() {
   await setSession(s);
   clearSessionCache();
   console.log("SESSION SAVED: uid=", s.userId);
+  try {
+    await context.storageState({ path: `${process.cwd()}/scratch/shots/storage-state.json` });
+    console.log("storageState saved");
+  } catch (e: any) {
+    console.log("storageState save failed:", e?.message);
+  }
   await browser.close().catch(() => {});
 }
 

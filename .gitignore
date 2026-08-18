@@ -44,3 +44,8 @@ youtube-scraper/marketing_list.csv
 deploy/koyeb-env.txt
 
 certs/
+
+# session capture / scratch artifacts
+scratch/shots/
+scratch/hot-leads.md
+
