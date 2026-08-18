@@ -6,6 +6,15 @@ export interface ThreadsSession {
   csrfToken: string;
   userId: string;
   ts: number;
+  lsd?: string;
+  fbDtsg?: string;
+  jazoest?: string;
+  spinR?: string;
+  spinB?: string;
+  spinT?: string;
+  rev?: string;
+  hs?: string;
+  docId?: string;
 }
 
 const SESSION_KEY = "threads:cookies";

@@ -1,4 +1,5 @@
 import { getAuth, setAuth, clearAuth } from "./store";
+import { publishReplyWeb } from "./webPublish";
 
 /**
  * Official Threads Graph API (graph.threads.net) — publishing + token handling.
@@ -72,8 +73,27 @@ export interface ReplyResult {
  */
 export async function publishReply(postId: string, text: string): Promise<ReplyResult> {
   const token = await getAccessToken();
+  if (!token) {
+    const web = await publishReplyWeb(postId, text);
+    if (web.ok || web.error === "NO_SESSION" || web.error === "NO_WEB_TOKENS" || web.error === "NO_DOC_ID") {
+      return web;
+    }
+    return { ok: false, error: `NOT_CONNECTED; web: ${web.error}` };
+  }
+  const official = await publishReplyOfficial(postId, text, token);
+  if (official.ok) return official;
+  const web = await publishReplyWeb(postId, text);
+  if (web.ok) return web;
+  return {
+    ok: false,
+    error: `${official.error || "official failed"}; web: ${web.error}`,
+    errorCode: official.errorCode,
+  };
+}
+
+async function publishReplyOfficial(postId: string, text: string, token: string): Promise<ReplyResult> {
   const auth = await getAuth();
-  if (!token || !auth?.userId) {
+  if (!auth?.userId) {
     return { ok: false, error: "NOT_CONNECTED" };
   }
   try {

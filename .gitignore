@@ -42,3 +42,5 @@ youtube-scraper/rendered_output.html
 youtube-scraper/blast.bat
 youtube-scraper/marketing_list.csv
 deploy/koyeb-env.txt
+
+certs/
