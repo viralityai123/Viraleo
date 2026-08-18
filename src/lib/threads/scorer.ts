@@ -23,7 +23,7 @@ const CREDENTIALS = (() => {
   return parts.length > 0 ? `\nYOUR CREDENTIALS (real work you built — name it in ONE draft when it fits naturally):\n${parts.join("\n")}` : "";
 })();
 
-const SAME_DAY_OFFERS = `\nSAME-DAY OFFER (for draftC only — adapt the project part, keep the price/delivery/pay-when-happy promise):\n- Web/design/branding/landing leads: "${THREADS_CONFIG.sameDayOffer}"\n- Video editing leads: "${THREADS_CONFIG.sameDayOfferVideo}"\n- Designers/agencies needing clients (lead-service): "${THREADS_CONFIG.leadServiceOffer}" — sell the lead feed, not design work.`;
+const SAME_DAY_OFFERS = `\nDRAFT-C RULES (the close-booking draft — only for hot leads):\n- Web/design/branding/landing leads: use the MEETING PITCH verbatim — "${THREADS_CONFIG.sameDayOffer}" — adapt only the meeting time if their post signals a different availability. NEVER mention prices, budgets, or payments in draftC.\n- Video editing leads: "${THREADS_CONFIG.sameDayOfferVideo}"\n- Designers/agencies needing clients (lead-service): "${THREADS_CONFIG.leadServiceOffer}" — sell the lead feed, not design work.`;
 
 const SCORER_SYSTEM_PROMPT = `You are a sharp sales lead analyst for Viraleo, a design studio that helps founders, creators, and small businesses launch websites, landing pages, SaaS products, and brands.${CREDENTIALS ? `\n\nIMPORTANT — REAL WORK YOU BUILT (use these EXACT names/links when instructed below):\n${CREDENTIALS.trim()}` : ""}
 
@@ -47,7 +47,7 @@ Reply drafts (two variants, draftA and draftB):
 - Offer a zero-pressure next step: a free 5-minute audit, a quick recommendation, or a rough estimate — phrased like you do this daily.
 - Never include raw links/prices in drafts unless a credential URL is present (then it may appear in draftB).
 - Urgency works: "I can start today / first draft within 24h" ONLY when their post signals an immediate need (urgent, deadline, launch date).
-- draftC (ONLY when intentScore >= 85 or their post is a clear job/hire request): a fixed-price, same-day offer built from the SAME-DAY OFFER block, adapted to THEIR project — one sentence, always "I", keeps the price + same-day delivery + pay-when-happy promise. For every other lead, return draftC as an EMPTY string.
+- draftC (ONLY when intentScore >= 85 or their post is a clear job/hire request): the close-booking pitch from the DRAFT-C RULES block, adapted to THEIR project. For web/design/landing leads this is the 5 PM meeting pitch — NO prices, NO budgets, NO payments in text; the quote happens on the call. For every other lead, return draftC as an EMPTY string.
 - If the post is NOT a buyer, drafts can be short generic "good luck" style lines (they won't be used anyway).
 
 Return ONLY valid JSON: {"category":"...","intentScore":0-100,"draftA":"...","draftB":"...","draftC":"...","reasoning":"one short line"} (draftC empty unless the lead is clearly hot).`;

@@ -38,7 +38,7 @@ export const THREADS_CONFIG = {
   /** Explore-page fetches per cycle (client-rendered shell — off by default). */
   explorePerCycle: int("THREADS_EXPLORE_PER_CYCLE", 0),
   /** Score at or above which auto-approve fires (when a category is toggled on). */
-  autoApproveThreshold: int("THREADS_AUTOAPPROVE_THRESHOLD", 50),
+  autoApproveThreshold: int("THREADS_AUTOAPPROVE_THRESHOLD", 85),
   /** Hard cap on auto-posted replies per 24h — protects the account from spam flags. */
   dailyReplyCap: int("THREADS_DAILY_REPLY_CAP", 20),
   /** Max Gemini scoring calls per cycle. */
@@ -78,10 +78,10 @@ export const THREADS_CONFIG = {
     const raw = (process.env.PORTFOLIO_URL_VIDEO || "").trim();
     return raw || "https://drive.google.com/drive/folders/128GTxm3No9XwI-HmPwmabglMGy9GP8we";
   })(),
-  /** Same-day offer line (draftC) for hot leads — web/design/branding categories. */
+  /** Meeting-booking pitch (draftC) for hot web/UI/UX/landing leads — no prices in chat. */
   sameDayOffer: (() => {
     const raw = (process.env.SAME_DAY_OFFER || "").trim();
-    return raw || "I've got an open slot today: one-page website + 10 AI promo videos for a fixed $150, delivered tonight — pay only when you're happy with it.";
+    return raw || "I can jump on a quick call tonight at 5 PM — you walk me through what you need, I'll map it out and give you a clear quote. Does 5 PM work?";
   })(),
   /** Same-day offer line (draftC) for video-editing leads. */
   sameDayOfferVideo: (() => {
